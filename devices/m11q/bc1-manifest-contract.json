@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BC1-modern-mmtel-discovery",
+  "input": {
+    "manifest_package": "com.sec.imsservice",
+    "android_namespace": "http://schemas.android.com/apk/res/android"
+  },
+  "service": {
+    "name": "com.sec.internal.google.GoogleModernImsService",
+    "permission": "android.permission.BIND_IMS_SERVICE",
+    "enabled": true,
+    "exported": true,
+    "single_user": true,
+    "action": "android.telephony.ims.ImsService",
+    "metadata": {
+      "android.telephony.ims.MMTEL_FEATURE": true
+    }
+  },
+  "excluded_features": [
+    "android.telephony.ims.EMERGENCY_MMTEL_FEATURE",
+    "android.telephony.ims.RCS_FEATURE"
+  ]
+}

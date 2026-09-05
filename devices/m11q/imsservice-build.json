@@ -36,6 +36,9 @@
     "BC2-modern-bridge-native-hooks",
     "BG1-network-statistics-guard"
   ],
+  "transformation_contracts": {
+    "BC1-modern-mmtel-discovery": "devices/m11q/bc1-manifest-contract.json"
+  },
   "allowed_entry_changes": {
     "removed_exact": [
       "META-INF/CERT.RSA",
