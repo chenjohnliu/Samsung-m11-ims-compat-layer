@@ -302,6 +302,8 @@ Minimum hard failures:
 - Modern service manifest action, permission or MMTEL metadata is absent.
 - Bridge classes or native hook targets are absent.
 - Project compile-only Samsung stubs leaked into the output APK.
+- Generated compile-only ABI stubs or their reports were committed, or any
+  generated stub class entered either candidate DEX.
 - APK ZIP integrity or alignment check fails.
 - A patch applies with fuzz, rejected hunks or already-applied state.
 - An undeclared APK entry changes relative to the expected transformation.

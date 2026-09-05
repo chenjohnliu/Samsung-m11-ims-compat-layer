@@ -3,6 +3,8 @@
 /out/
 /build-inputs/
 /work/
+/compile-stubs/
+compile-stub-report.json
 
 # Firmware, partitions, Android packages and native/JVM payloads
 *.apk
