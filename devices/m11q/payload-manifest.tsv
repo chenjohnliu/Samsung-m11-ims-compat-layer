@@ -1,0 +1,14 @@
+stock_path	destination	stock_sha256	stock_size	architecture	licensing_class	action
+/system/bin/imsd	ims/proprietary/bin/imsd	29ac01503989fba9cc9551a45d65d06ad31a3935e2b303fe7b575916362cebed	18176	arm32-elf	Samsung-proprietary	copy
+/system/bin/multiclientd	ims/proprietary/bin/multiclientd	4a7c0658ecaa9f9c4486f5c790d7905a69a37e125b4f1a15d73693d465e77b28	27792	arm32-elf	Samsung-proprietary	copy
+/system/framework/EpdgManager.jar	ims/proprietary/framework/EpdgManager.jar	1663083cf57c5a4c1f795319644087d3bfa9132e48413b1b0aedc8c21f56a60a	34282	java-dex	Samsung-proprietary	copy
+/system/framework/imsmanager.jar	ims/proprietary/framework/imsmanager.jar	ba88f7111ea5c678d597dcb0498ee9fc42611fd4f6af12b6312fad05495de78b	671422	java-dex	Samsung-proprietary	copy
+/system/framework/rcsopenapi.jar	ims/proprietary/framework/rcsopenapi.jar	14283b6a81d4a12f948aa721ec59192128af0a842e02ce5760506c00bdfd8c8e	400474	java-dex	Samsung-proprietary	copy
+/system/framework/vsimmanager.jar	ims/proprietary/framework/vsimmanager.jar	a6e02b64382da93b240b79a7337ba78f170f5cb256f441201677b3aae1773c55	557228	java-dex	Samsung-proprietary	copy
+/system/lib/libaresdns.so	ims/proprietary/lib/arm/libaresdns.so	be52a5741a05097ecf0e262efb49a3d86787a6e3dea28f20cfbb6cd7b1c974fa	44000	arm32-elf	Samsung-proprietary	copy
+/system/lib/libcurl2.so	ims/proprietary/lib/arm/libcurl2.so	62d23c365a0ac4ead65bf12b5fb981cec029e8524a81d39ba8301bc32b894945	267756	arm32-elf	Samsung-proprietary	copy
+/system/lib/libext2_uuid.so	ims/proprietary/lib/arm/libext2_uuid.so	4c03c8cf9af3647fa48dd45406d0bd8fb1a77e1858c48f3af90b2307157fe217	11228	arm32-elf	Samsung-proprietary	copy
+/system/lib/libsec-ims.so	ims/proprietary/lib/arm/libsec-ims.so	9f629903d4f7b0c5558f8e60afe6a93f403170124930e1da85cf51b909892cb2	6541012	arm32-elf	Samsung-proprietary	copy
+/system/lib/vendor.samsung.hardware.radio.bridge@2.0.so	ims/proprietary/lib/vendor.samsung.hardware.radio.bridge@2.0.so	52a32850eff2195eec3e3ee5475587aa543a32652e85c85ce8f29fb5be89d7dd	122212	arm32-elf	Samsung-proprietary	copy
+/system/lib/vendor.samsung.hardware.radio.bridge@2.1.so	ims/proprietary/lib/vendor.samsung.hardware.radio.bridge@2.1.so	a6a7f797bb85c4edd9f29dbf25ccc0e388391b0b366b6c5489919898d8d71229	62996	arm32-elf	Samsung-proprietary	copy
+/system/priv-app/imsservice/imsservice.apk	ims/proprietary/priv-app/imsservice/imsservice.apk	490e600fa7a8b111de83da6d20d87607f8db68b8447c98cacd2313055fd47f91	4813922	android-apk-arm32	Samsung-proprietary	patch-to-stage1
