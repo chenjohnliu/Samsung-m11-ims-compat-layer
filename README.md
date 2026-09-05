@@ -1,0 +1,67 @@
+# Samsung Galaxy M11 IMS compatibility layer
+
+Reproducible tooling and documentation for bringing Samsung's stock IMS stack
+to Android 13 custom ROMs on the Galaxy M11 (`SM-M115F`, `m11q`).
+
+## Status
+
+This repository is an early **private engineering checkpoint**, not a release or
+flashable package.
+
+Confirmed on one device with CherishOS 4.12 / Android 13:
+
+- SIM1 WWAN IMS registration;
+- outgoing VoLTE establishment;
+- clear two-way speech;
+- local and remote teardown;
+- SELinux Enforcing throughout the validated call.
+
+Not yet claimed: incoming calls, SIM2/DSDS, VoWiFi, IMS emergency calls,
+handover, other Samsung models, other stock builds, or general carrier support.
+
+## Proprietary-file policy
+
+This repository intentionally contains no Samsung APK, JAR, shared library,
+daemon, firmware image, signing key, or decoded stock tree. Users must extract
+the exact inputs locally from firmware they are entitled to use. Hash-pinned
+tools then verify and transform those inputs.
+
+Current validated stock reference:
+
+```text
+Device:  Samsung Galaxy M11 SM-M115F
+CSC:     BRI
+Build:   M115FXXS5CWK3
+Android: 12
+```
+
+See [the public-release SOP](docs/PUBLIC_RELEASE_SOP.md) and the
+[M11 payload manifest](devices/m11q/payload-manifest.tsv).
+
+## Tools currently available
+
+- `tools/verify_payload.py` verifies the 13 declared stock inputs and can stage
+  only the explicitly permitted payload categories.
+- `tools/apk_entry_replace.py` rebuilds a ZIP/APK from a stock base while
+  changing only explicitly allowed entries and removing only exact stale v1
+  signature entries.
+- Synthetic unit tests contain no Samsung code or binaries.
+
+Run the tests:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+## Work still required before a release
+
+- Consolidate the historical BC1, BC2 and BG1 transformations into one
+  relocatable clean-stock-to-final APK builder.
+- Verify the new ZIP-preserving package from a fresh firmware extraction.
+- Build and flash a ROM manually, then repeat the runtime acceptance tests.
+- Review provenance of stock-derived text configuration and framework
+  compatibility source before publication.
+- Add a licence for project-authored work after the provenance boundary is
+  finalized.
+
+No ROM build is performed by the tools in this repository.

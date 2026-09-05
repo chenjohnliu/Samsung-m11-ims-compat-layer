@@ -1,0 +1,420 @@
+# Samsung M115F IMS compatibility layer — public release SOP (draft)
+
+Status: **reviewed release design, not yet a one-command public builder**.  This
+document records the safe publication model and the exact validated Stage 1
+artifact chain.  The final public scripts still need to be consolidated and run
+from a clean firmware extraction before release.
+
+This is not legal advice.  The conservative project policy is that Samsung APK,
+JAR, ELF and executable files are supplied by the user from firmware they are
+entitled to use; the public repository contains only project-authored source,
+patches, manifests, hash gates, integration code and documentation.
+
+## 1. Validated scope
+
+Known-good device/firmware baseline:
+
+- Device: Samsung Galaxy M11 `SM-M115F`.
+- Region/CSC used for the golden reference: `BRI`.
+- Stock build: `M115FXXS5CWK3`, Android 12.
+- AP archive contains `super.img.lz4`.
+- Extracted `system.img` SHA-256:
+  `9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d`.
+- Target validated so far: CherishOS 4.12 / Android 13.
+- Confirmed function: outgoing SIM1 WWAN VoLTE registration, establishment,
+  clear two-way speech and teardown under SELinux Enforcing.
+
+Do not describe incoming calls, SIM2/DSDS, VoWiFi, IMS emergency calling,
+handover, other Samsung devices, other stock builds or general carrier support
+as working until each is tested separately.
+
+## 2. What the public repository may contain
+
+Publishable project material:
+
+- Device integration, init definitions, SELinux policy and Android overlays.
+- Android framework compatibility source/patches.
+- Project-authored modern `ImsService`/MmTel bridge source.
+- Ordered smali patches which describe the required transformation.
+- Extraction, assembly and structural-verification scripts.
+- File paths, sizes, SHA-256 values and ABI/behavior documentation.
+- Tests and redacted runtime evidence.
+- An Apache-2.0 or otherwise selected licence covering only project-authored
+  work.
+
+Keep out of the public repository:
+
+- Stock or patched `imsservice.apk`.
+- Samsung `*.jar`, `*.so`, `imsd` and `multiclientd` payloads.
+- Full firmware, partition images and decoded stock smali trees.
+- ROM platform private keys or any other signing key.
+- Build outputs, backups and intermediate APKs.
+- Runtime captures containing IMSI, MSISDN, SIP identities, IP addresses or
+  other subscriber/carrier secrets unless reviewed and redacted.
+
+The current `config/cscfeature.xml`, `config/floating_feature.xml` and
+`config/customer_carrier_feature.json` are stock-derived inputs.  Before public
+release, either extract them locally as firmware inputs or replace them with a
+reviewed minimal project-authored configuration.  Do not assume that being text
+rather than an ELF makes redistribution automatically safe.
+
+Likewise, framework compatibility `.java` files need a provenance review.  Only
+clean-room/project-authored implementations should be offered under the
+project's licence; a Java filename or source representation is not by itself
+proof of redistributability.
+
+## 3. Proposed public repository layout
+
+```text
+Samsung-QCOM-IMS-Compat/
+  README.md
+  LICENSE
+  docs/
+    M115F_STAGE1.md
+    ARCHITECTURE.md
+    PORTING_GUIDE.md
+    RUNTIME_VALIDATION.md
+  devices/m11q/
+    payload-manifest.tsv
+    integration/
+    init/
+    permissions/
+    sepolicy/
+    overlay/
+    patches/frameworks-base/
+    patches/device-tree/
+    patches/imsservice/
+  bridge/
+    java/
+    tests/
+  tools/
+    extract-firmware.sh
+    patch-imsservice.sh
+    verify-input.sh
+    verify-output.sh
+    prepare-device-tree.sh
+  proprietary/                 # generated locally; gitignored
+  out/                         # generated locally; gitignored
+```
+
+Recommended `.gitignore` minimum:
+
+```gitignore
+/proprietary/
+/out/
+/build-inputs/
+/**/*.apk
+/**/*.jar
+/**/*.so
+/**/*.img
+/**/*.bin
+/**/*.tar
+/**/*.tar.md5
+/**/*.lz4
+/**/*.pk8
+/**/*.pem
+/**/*.orig
+```
+
+If a project-authored test fixture legitimately uses one of these extensions,
+add it back with a narrow `!path/to/file` exception after review.
+
+## 4. Obtain and identify the stock input
+
+The user obtains the exact Samsung firmware independently.  The script must not
+download firmware or silently accept a nearby build.
+
+Example local inputs:
+
+```text
+AP_M115FXXS5CWK3_...tar.md5
+```
+
+Record at least:
+
+```text
+model=SM-M115F
+build=M115FXXS5CWK3
+android=12
+csc=BRI
+AP archive SHA-256=<locally calculated>
+```
+
+The public tool must stop on model/build mismatch.  Supporting another CSC or
+firmware revision is a new porting input, not a warning that may be ignored.
+
+## 5. Extract `system.img` without modifying it
+
+Reference Linux/WSL sequence:
+
+```bash
+mkdir -p work/ap work/super work/partitions
+tar -xf "/path/to/AP_M115FXXS5CWK3_...tar.md5" -C work/ap super.img.lz4
+lz4 -d work/ap/super.img.lz4 work/super/super.sparse.img
+simg2img work/super/super.sparse.img work/super/super.raw.img
+python3 tools/lpunpack.py -p system work/super/super.raw.img work/partitions
+sha256sum work/partitions/system.img
+```
+
+Expected `system.img` SHA-256 is the value in section 1.  Stop if it differs.
+Tool versions and their own hashes must be documented in the final public
+`tools/README.md`.  The exact command above is a reference derived from the
+current local extraction method; the public wrapper still requires a clean
+end-to-end verification run.
+
+## 6. Extract the payload locally
+
+Extract only paths declared in `PAYLOAD_MANIFEST.tsv`.  The current research
+workspace has a local `stock_analysis/extract_ext4.py` helper which supports an
+explicit path list.  The example below describes the planned public
+`tools/extract_ext4.py`; that public helper has not yet been packaged or tested
+from a clean checkout:
+
+```bash
+python3 tools/extract_ext4.py \
+  work/partitions/system.img proprietary \
+  /system/bin/imsd \
+  /system/bin/multiclientd \
+  /system/framework/EpdgManager.jar \
+  /system/framework/imsmanager.jar \
+  /system/framework/rcsopenapi.jar \
+  /system/framework/vsimmanager.jar \
+  /system/lib/libaresdns.so \
+  /system/lib/libcurl2.so \
+  /system/lib/libext2_uuid.so \
+  /system/lib/libsec-ims.so \
+  /system/lib/vendor.samsung.hardware.radio.bridge@2.0.so \
+  /system/lib/vendor.samsung.hardware.radio.bridge@2.1.so \
+  /system/priv-app/imsservice/imsservice.apk
+```
+
+The release wrapper should then copy each file into the device-tree destination
+specified by the manifest.  It must verify every stock SHA-256 before applying
+any transformation.
+
+## 7. Rebuild the IMS APK from stock
+
+The public design should follow the useful part of the S20 project:
+
+1. Pin the exact stock APK input.
+2. Decode into a private temporary directory.
+3. Apply complete ordered patches; never patch a stale working directory.
+4. Compile project-authored bridge Java against the selected Android framework.
+5. Inject the generated DEX while preserving all required stock APK entries.
+6. Rebuild, zipalign and structurally verify.
+7. Leave the APK unsigned for an Android ROM source build, because the ROM's
+   `LOCAL_CERTIFICATE := platform` signs it with that build's platform key.
+8. Never distribute a platform private key.
+
+The validated M11 chain is currently:
+
+```text
+stock CWK3 APK
+  490e600fa7a8b111de83da6d20d87607f8db68b8447c98cacd2313055fd47f91
+    │ Stage1BC1: modern service discovery/manifest baseline
+    ▼
+  1ee5307ddbb1b9d7f1fad12da19be711a32078dadf606beac4f3a1256b961b5e
+    │ Stage1BC2: modern SIM1 registration/capability/call bridge
+    ▼
+  087c5ffbd86ecf002627e0e1c9055688e68e3b5c7e6e73a96ccf9a2538ad6414
+    │ Stage1BG1: optional network-statistics compatibility guard
+    ▼
+  23bff0e7b91a55d206adf5bf2ff8fb277f0d5143a21b63fc05b9afe842a4124c
+```
+
+Final validated DEX identities before ROM signing:
+
+```text
+classes.dex  f0b64b6f2c9eae38b60fff9a3b1a27e3d84c101829188691aa030948aeee6b6e
+classes2.dex fec3ab32d03b929edf432fd810b824108eb02acd781d051c987ca3a1d8ad9c34
+```
+
+The whole APK hash is a useful exact-toolchain checkpoint, but the final public
+verifier must prioritize structure and DEX identities because ZIP metadata,
+compression and ROM signing can change the whole-file hash.
+
+### Historical packaging caveat
+
+The `23bff0e7...` APK is the confirmed on-device Stage 1 runtime reference, but
+an entry-level comparison found that the historical BC1 apktool rebuild also
+rewrote `resources.arsc` and several resource XML files, removed nine
+non-signature `META-INF/maven/...` entries, and changed one WebP entry path.
+Those collateral differences were not intended compatibility changes.
+
+Therefore `23bff0e7...` remains historical evidence, not the expected whole-file
+hash of the public builder.  The public packer must use the stock ZIP as its
+base and import only the rebuilt `AndroidManifest.xml` and DEX entries.  It may
+remove only the exact stale signature entries:
+
+```text
+META-INF/CERT.RSA
+META-INF/CERT.SF
+META-INF/MANIFEST.MF
+```
+
+All other `META-INF`, resource and asset entries must remain byte-for-byte
+present.  A newly packaged APK must receive a new runtime validation before it
+becomes the public golden baseline, even if its final DEX hashes match the
+historical candidate.
+
+Current source records for consolidation:
+
+```text
+work/stage1bc1_discovery/
+  0002-imsservice-modern-mmtel-discovery.patch
+  rebuild_and_apply.sh
+work/stage1bc2_bridge/
+  src/
+  compile-only/
+  generate_adapters.py
+  native-hooks.patch
+  patch_native.py
+  pack_dex.py
+  verify_candidate.py
+work/stage1bg_stats_guard/
+  stats-guard.patch
+  patch_stats.py
+  pack_candidate.py
+  verify_candidate.py
+```
+
+These scripts proved the individual stages locally, but they contain absolute
+paths and depend on historical intermediate artifacts.  **Do not publish them
+as a claimed one-command builder yet.**  First consolidate them into one tool:
+
+```bash
+tools/patch-imsservice.sh \
+  --stock-apk proprietary/system/priv-app/imsservice/imsservice.apk \
+  --android-tree /path/to/android \
+  --output out/imsservice.apk
+```
+
+That command must reproduce the complete behavior from the clean stock hash in
+one invocation, not require the BC1 or BC2 intermediate APK to be supplied by
+the user.
+
+## 8. Verify the generated APK
+
+Minimum hard failures:
+
+- Input APK hash is not the exact CWK3 stock hash.
+- Required DEX is missing, duplicated or unexpectedly changed.
+- Modern service manifest action, permission or MMTEL metadata is absent.
+- Bridge classes or native hook targets are absent.
+- Project compile-only Samsung stubs leaked into the output APK.
+- APK ZIP integrity or alignment check fails.
+- A patch applies with fuzz, rejected hunks or already-applied state.
+- An undeclared APK entry changes relative to the expected transformation.
+
+The verifier should emit a machine-readable report containing input hashes,
+tool versions, applied patch IDs, DEX hashes, changed-entry inventory and final
+structural results.  A signed APK may have a different whole-file hash; verify
+its DEX and manifest contents independently after signing.
+
+## 9. Place payload into the Android tree
+
+The preparation script should copy verified local inputs into:
+
+```text
+device/samsung/m11q/ims/proprietary/
+```
+
+and apply the published integration/framework patches.  It must refuse to:
+
+- overwrite a non-matching APK or source file;
+- apply to an unsupported branch;
+- copy signing keys;
+- enable global permissive SELinux;
+- change SIM2, VoWiFi or emergency behavior implicitly.
+
+Known local source checkpoints:
+
+```text
+device/samsung/m11q: 4ada41f + 566bfd4 on m11q-volte-stage1
+frameworks/base:      e9346dd40f60 on m11q-volte-stage1
+```
+
+These are local checkpoint identities, not public remote references.  Export
+reviewable patches or recreate clean commits in the eventual public repo.
+
+## 10. Builder responsibility
+
+The user builds the ROM normally.  This compatibility project does not need and
+must not ship platform keys.  For an in-tree Android build, the generated
+`imsservice.apk` is an unsigned input and the target ROM build applies its own
+platform signature.
+
+After building, verify the APK extracted from the ROM or device:
+
+- package is privileged and platform-signed for that ROM;
+- DEX identities/bridge structure match the generated candidate;
+- expected SELinux domains and services are present;
+- no proprietary payload entered Git history.
+
+## 11. Runtime acceptance gates
+
+Publish results as separate facts:
+
+```text
+registration -> outgoing signaling -> bearer -> audio -> teardown
+             -> incoming ringing/answer/audio/teardown
+```
+
+For the current M11 Stage 1, only the first outgoing branch is complete.  The
+next test is one incoming call under stable RF conditions.  Carrier availability
+must not be presented as a universal hard-coded Taiwan setting; the current
+temporary gate was a controlled test mechanism and restored after testing.
+
+Required issue template fields for other testers:
+
+- exact model, CSC and firmware build;
+- ROM name, Android version and source revisions;
+- SIM slot and carrier;
+- payload verifier report;
+- SELinux enforcing state;
+- redacted boot/registration/call logs;
+- precise result stage, without treating `ril.lte.voice.status=0` alone as a
+  failure (stock VoLTE was proven working with that value).
+
+## 12. Release gate
+
+Do not tag a public release until all of these are true:
+
+- clean-room run starts from exact CWK3 firmware and an empty output directory;
+- all stock inputs pass `PAYLOAD_MANIFEST.tsv`;
+- a single command regenerates the final APK without historical binary inputs;
+- structural checks and source-extracted unit tests pass;
+- a manually built/flashed ROM made from those exact generated inputs repeats
+  the confirmed outgoing two-way call under Enforcing;
+- A full Git-history scan—not only `git status`—finds no Samsung binaries,
+  firmware, decoded trees or keys;
+- README clearly limits support to the actually tested configuration;
+- incoming-call status is reported separately until validated.
+
+## 13. Confirmed, recommended and pending
+
+Confirmed:
+
+- The 13 current payload identities and the three-stage APK hash chain.
+- The final local source APK and successful phone runtime used the
+  `23bff0e7...` candidate.
+- Device/framework source checkpoints exist locally without the proprietary
+  payload being committed.
+
+Recommended design:
+
+- Use exact input hash gates, ordered patches, private temporary decode trees,
+  structural verification and locally generated proprietary output, similar to
+  the staged design documented by the S20 project.
+- Be more conservative than the current S20 repository by not publishing the
+  Samsung prebuilt payload itself.
+
+Pending before public release:
+
+- Refactor BC1 + BC2 + BG1 into one relocatable builder.
+- Expand the current seven-file `verify_payload.ps1` to the full manifest and
+  separate stock-input hashes from patched-output hashes.
+- Re-run the complete pipeline from a fresh CWK3 extraction.
+- Decide how to handle the three stock-derived configuration files.
+- Create the new public repository, choose its final name/licence and prepare
+  clean public commits; nothing has been pushed yet.

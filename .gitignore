@@ -1,0 +1,35 @@
+# User-supplied Samsung inputs and generated output
+/proprietary/
+/out/
+/build-inputs/
+/work/
+
+# Firmware, partitions, Android packages and native/JVM payloads
+*.apk
+*.jar
+*.so
+*.img
+*.bin
+*.tar
+*.tar.md5
+*.lz4
+
+# Keys and certificates
+*.pk8
+*.pem
+*.jks
+*.keystore
+
+# Decoded/intermediate trees and backups
+decoded/
+verified/
+*.orig
+*.rej
+*.bak
+
+# Python/editor artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.vscode/
