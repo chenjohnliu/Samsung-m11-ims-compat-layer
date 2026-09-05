@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "device": {
+    "codename": "m11q",
+    "model": "SM-M115F",
+    "stock_build": "M115FXXS5CWK3",
+    "stock_android": 12,
+    "target_android": 13
+  },
+  "stock_apk": {
+    "sha256": "490e600fa7a8b111de83da6d20d87607f8db68b8447c98cacd2313055fd47f91",
+    "size": 4813922,
+    "dex_count": 1,
+    "dex_entries": {
+      "classes.dex": "e535a125cd31c42326bca9748beed02fd32832903790a70d228e7c3531f2ec67"
+    }
+  },
+  "toolchain": {
+    "apktool": {
+      "version": "2.9.3",
+      "sha256": "7956eb04194300ce0d0a84ad18771eebc94b89fb8d1ddcce8ea4c056818646f4"
+    },
+    "golden_framework_minus_apex": {
+      "sha256": "d9fa3a725a6dc2e23d8f446ead2ee04d96411d8d5ca8db19a5a592da3d1b7207",
+      "target": "CherishOS 4.12 / Android 13",
+      "repository_policy": "user-supplied local build artifact; never committed"
+    }
+  },
+  "abi_fixture_root": "../..",
+  "abi_fixtures": {
+    "com.android.ims.internal.IImsCallSession": "bridge/abi/IImsCallSession.android13.javap.txt",
+    "android.telephony.ims.aidl.IImsCallSessionListener": "bridge/abi/IImsCallSessionListener.android13.javap.txt"
+  },
+  "ordered_patches": [
+    "BC1-modern-mmtel-discovery",
+    "BC2-modern-bridge-native-hooks",
+    "BG1-network-statistics-guard"
+  ],
+  "allowed_entry_changes": {
+    "removed_exact": [
+      "META-INF/CERT.RSA",
+      "META-INF/CERT.SF",
+      "META-INF/MANIFEST.MF"
+    ],
+    "BC1-modern-mmtel-discovery": {
+      "replace_existing": ["AndroidManifest.xml", "classes.dex"],
+      "add": []
+    },
+    "BC2-modern-bridge-native-hooks": {
+      "replace_existing": ["classes.dex"],
+      "add": ["classes2.dex"]
+    },
+    "BG1-network-statistics-guard": {
+      "replace_existing": ["classes.dex"],
+      "add": []
+    }
+  },
+  "final_dex_invariants": {
+    "dex_count": 2,
+    "entries": {
+      "classes.dex": "f0b64b6f2c9eae38b60fff9a3b1a27e3d84c101829188691aa030948aeee6b6e",
+      "classes2.dex": "fec3ab32d03b929edf432fd810b824108eb02acd781d051c987ca3a1d8ad9c34"
+    },
+    "classes2_policy": "BC2 bridge DEX must remain byte-for-byte unchanged through BG1"
+  },
+  "historical_reference": {
+    "hard_gate": false,
+    "reason": "Historical apktool packaging changed unrelated ZIP entries; whole-APK hashes are evidence only and are not expected from the ZIP-preserving public builder.",
+    "apk_sha256": {
+      "BC1": "1ee5307ddbb1b9d7f1fad12da19be711a32078dadf606beac4f3a1256b961b5e",
+      "BC2": "087c5ffbd86ecf002627e0e1c9055688e68e3b5c7e6e73a96ccf9a2538ad6414",
+      "BG1_final_runtime_reference": "23bff0e7b91a55d206adf5bf2ff8fb277f0d5143a21b63fc05b9afe842a4124c"
+    },
+    "BC2_rebuilt_base_sha256": "d9a7adc923171354604205d8fc18ee3d055b7ef870e0a46e7100f542c36fb646",
+    "bridge_jar_sha256": "89ee3a57e0eacf4be45784be03cd7db6dfa484a405295188f71a466ce8885e2c"
+  }
+}

@@ -36,7 +36,11 @@ Android: 12
 ```
 
 See [the public-release SOP](docs/PUBLIC_RELEASE_SOP.md) and the
-[M11 payload manifest](devices/m11q/payload-manifest.tsv).
+[M11 payload manifest](devices/m11q/payload-manifest.tsv). Reproducible APK and
+toolchain identities are centralized in
+[`devices/m11q/imsservice-build.json`](devices/m11q/imsservice-build.json).
+The historical patch material is being filtered through the conservative
+[`docs/PATCH_PROVENANCE.md`](docs/PATCH_PROVENANCE.md) publication boundary.
 
 ## Tools currently available
 
@@ -45,6 +49,9 @@ See [the public-release SOP](docs/PUBLIC_RELEASE_SOP.md) and the
 - `tools/apk_entry_replace.py` rebuilds a ZIP/APK from a stock base while
   changing only explicitly allowed entries and removing only exact stale v1
   signature entries.
+- `tools/verify_framework_abi.py` verifies the local Android 13
+  `framework-minus-apex.jar` in exact golden-hash or ABI-compatible mode; see
+  [the framework ABI guide](docs/FRAMEWORK_ABI.md).
 - Synthetic unit tests contain no Samsung code or binaries.
 
 Run the tests:

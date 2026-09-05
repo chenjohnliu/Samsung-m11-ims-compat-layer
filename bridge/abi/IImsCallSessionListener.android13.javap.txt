@@ -1,0 +1,46 @@
+Compiled from "IImsCallSessionListener.java"
+public interface android.telephony.ims.aidl.IImsCallSessionListener extends android.os.IInterface {
+  public static final java.lang.String DESCRIPTOR;
+  public abstract void callSessionInitiating(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionInitiatingFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionProgressing(android.telephony.ims.ImsStreamMediaProfile) throws android.os.RemoteException;
+  public abstract void callSessionInitiated(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionInitiatedFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionTerminated(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionHeld(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionHoldFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionHoldReceived(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionResumed(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionResumeFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionResumeReceived(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionMergeStarted(com.android.ims.internal.IImsCallSession, android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionMergeComplete(com.android.ims.internal.IImsCallSession) throws android.os.RemoteException;
+  public abstract void callSessionMergeFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionUpdated(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionUpdateFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionUpdateReceived(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionConferenceExtended(com.android.ims.internal.IImsCallSession, android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionConferenceExtendFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionConferenceExtendReceived(com.android.ims.internal.IImsCallSession, android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionInviteParticipantsRequestDelivered() throws android.os.RemoteException;
+  public abstract void callSessionInviteParticipantsRequestFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionRemoveParticipantsRequestDelivered() throws android.os.RemoteException;
+  public abstract void callSessionRemoveParticipantsRequestFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionConferenceStateUpdated(android.telephony.ims.ImsConferenceState) throws android.os.RemoteException;
+  public abstract void callSessionUssdMessageReceived(int, java.lang.String) throws android.os.RemoteException;
+  public abstract void callSessionHandover(int, int, android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionHandoverFailed(int, int, android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionMayHandover(int, int) throws android.os.RemoteException;
+  public abstract void callSessionTtyModeReceived(int) throws android.os.RemoteException;
+  public abstract void callSessionMultipartyStateChanged(boolean) throws android.os.RemoteException;
+  public abstract void callSessionSuppServiceReceived(android.telephony.ims.ImsSuppServiceNotification) throws android.os.RemoteException;
+  public abstract void callSessionRttModifyRequestReceived(android.telephony.ims.ImsCallProfile) throws android.os.RemoteException;
+  public abstract void callSessionRttModifyResponseReceived(int) throws android.os.RemoteException;
+  public abstract void callSessionRttMessageReceived(java.lang.String) throws android.os.RemoteException;
+  public abstract void callSessionRttAudioIndicatorChanged(android.telephony.ims.ImsStreamMediaProfile) throws android.os.RemoteException;
+  public abstract void callSessionTransferred() throws android.os.RemoteException;
+  public abstract void callSessionTransferFailed(android.telephony.ims.ImsReasonInfo) throws android.os.RemoteException;
+  public abstract void callSessionDtmfReceived(char) throws android.os.RemoteException;
+  public abstract void callQualityChanged(android.telephony.CallQuality) throws android.os.RemoteException;
+  public abstract void callSessionRtpHeaderExtensionsReceived(java.util.List<android.telephony.ims.RtpHeaderExtension>) throws android.os.RemoteException;
+}
