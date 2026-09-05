@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "purpose": "compile-only ABI projections; never package these classes",
+  "roots": ["imsmanager", "imsservice"],
+  "classes": [
+    {
+      "descriptor": "Lcom/sec/ims/ImsRegistration;",
+      "root": "imsmanager",
+      "access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "java_super": null,
+      "java_kind": "class",
+      "stock_methods": [
+        {"name": "getPhoneId", "descriptor": "()I", "access": ["public"], "throws": []},
+        {"name": "hasVolteService", "descriptor": "()Z", "access": ["public"], "throws": []},
+        {"name": "getCurrentRat", "descriptor": "()I", "access": ["public"], "throws": []},
+        {"name": "getImsProfile", "descriptor": "()Lcom/sec/ims/settings/ImsProfile;", "access": ["public"], "throws": []}
+      ],
+      "project_hooks": []
+    },
+    {
+      "descriptor": "Lcom/sec/ims/settings/ImsProfile;",
+      "root": "imsmanager",
+      "access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "java_super": null,
+      "java_kind": "class",
+      "stock_methods": [
+        {"name": "hasEmergencySupport", "descriptor": "()Z", "access": ["public"], "throws": []},
+        {"name": "getCmcType", "descriptor": "()I", "access": ["public"], "throws": []}
+      ],
+      "project_hooks": []
+    },
+    {
+      "descriptor": "Lcom/sec/internal/google/GoogleImsService;",
+      "root": "imsservice",
+      "access": ["public"],
+      "super": "Lcom/android/ims/internal/IImsService$Stub;",
+      "java_super": null,
+      "java_kind": "class",
+      "stock_methods": [
+        {"name": "open", "descriptor": "(IILandroid/app/PendingIntent;Lcom/android/ims/internal/IImsRegistrationListener;)I", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "isOpened", "descriptor": "(I)Z", "access": ["public"], "throws": []},
+        {"name": "close", "descriptor": "(I)V", "access": ["public"], "throws": []},
+        {"name": "getRegistration", "descriptor": "(I)Landroid/telephony/ims/aidl/IImsRegistration;", "access": ["public"], "throws": []},
+        {"name": "createCallProfile", "descriptor": "(III)Landroid/telephony/ims/ImsCallProfile;", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "createCallSession", "descriptor": "(ILandroid/telephony/ims/ImsCallProfile;Lcom/android/ims/internal/IImsCallSessionListener;)Lcom/android/ims/internal/IImsCallSession;", "access": ["public"], "throws": ["Landroid/os/RemoteException;", "Ljava/lang/UnsupportedOperationException;"]},
+        {"name": "getPendingCallSession", "descriptor": "(ILjava/lang/String;)Lcom/android/ims/internal/IImsCallSession;", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]}
+      ],
+      "project_hooks": [
+        {"name": "getInstanceIfReady", "descriptor": "()Lcom/sec/internal/google/GoogleImsService;", "access": ["public", "static", "declared-synchronized"], "throws": [], "provenance": "project-added BC2 hook", "verify_in_smali": true},
+        {"name": "getModernIncomingIdentity", "descriptor": "(I)Landroid/os/IBinder;", "access": ["public"], "throws": [], "provenance": "project-added BC2 hook", "verify_in_smali": true}
+      ]
+    },
+    {
+      "descriptor": "Lcom/sec/internal/google/ImsCallSessionImpl;",
+      "root": "imsservice",
+      "access": ["public"],
+      "super": "Lcom/android/ims/internal/IImsCallSession$Stub;",
+      "java_super": "Lcom/android/ims/internal/IImsCallSession$Stub;",
+      "java_kind": "abstract_class",
+      "stock_methods": [
+        {"name": "releaseSessionListeners", "descriptor": "()V", "access": ["protected"], "throws": []}
+      ],
+      "project_hooks": []
+    },
+    {
+      "descriptor": "Lcom/sec/internal/ims/registry/ImsRegistry;",
+      "root": "imsservice",
+      "access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "java_super": null,
+      "java_kind": "class",
+      "stock_methods": [
+        {"name": "getRegistrationManager", "descriptor": "()Lcom/sec/internal/interfaces/ims/core/IRegistrationManager;", "access": ["public", "static"], "throws": []}
+      ],
+      "project_hooks": []
+    },
+    {
+      "descriptor": "Lcom/sec/internal/interfaces/ims/core/IRegistrationManager;",
+      "root": "imsservice",
+      "access": ["public", "interface", "abstract"],
+      "super": "Ljava/lang/Object;",
+      "java_super": null,
+      "java_kind": "interface",
+      "stock_methods": [
+        {"name": "getRegistrationInfo", "descriptor": "()[Lcom/sec/ims/ImsRegistration;", "access": ["public", "abstract"], "throws": []}
+      ],
+      "project_hooks": []
+    }
+  ]
+}

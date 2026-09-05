@@ -52,6 +52,9 @@ The historical patch material is being filtered through the conservative
 - `tools/verify_framework_abi.py` verifies the local Android 13
   `framework-minus-apex.jar` in exact golden-hash or ABI-compatible mode; see
   [the framework ABI guide](docs/FRAMEWORK_ABI.md).
+- `tools/generate_compile_stubs.py` verifies allowlisted declarations in
+  private local smali roots and emits disposable compile-only Java ABI stubs.
+  It never copies implementations, fields or debug metadata.
 - Synthetic unit tests contain no Samsung code or binaries.
 
 Run the tests:
