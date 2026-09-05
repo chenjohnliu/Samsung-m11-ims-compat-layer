@@ -28,6 +28,43 @@ policy, not legal advice.
   until the project settles their provenance/licensing treatment or replaces
   them with locally generated stubs.
 
+### Bridge-source audit
+
+The historical generator mechanically produces `ModernCallRelay.java` and
+`ModernCallSession.java` from the two Android 13 AOSP Binder ABI listings plus
+project-authored relay/delegation templates. No Samsung method implementation
+was found in either generated adapter.
+
+`GoogleModernImsService.java`, `GoogleModernMmTelFeature.java`,
+`ModernEventQueue.java` and `ModernVoiceContext.java` have the structure of
+project-authored service, ownership and queue state machines; the audit found
+no decompiler markers or copied Samsung method bodies. They remain withheld
+until their authorship/licence record is finalized. `ModernVoiceContext.java`
+has the widest dependency on Samsung private API declarations and therefore
+receives the strictest review.
+
+The six historical `compile-only` Java files are generator literals containing
+minimal Samsung API projections and dummy bodies. They are not runtime payload,
+but their current checked-in-like form is not a publication input. Two methods
+in the `GoogleImsService` projection, `getInstanceIfReady()` and
+`getModernIncomingIdentity(int)`, are project-added hook contracts rather than
+stock declarations and must be identified as such.
+
+### Planned local stub generation
+
+The public builder will generate compile-only stubs in a private temporary
+directory from user-supplied, hash-pinned stock APK/JAR inputs. Extraction is
+limited to an allowlist of class/superclass names, method access flags, names,
+descriptors and declared exceptions. It must not copy instructions, fields,
+line tables, parameter names or neighboring decoded content.
+
+Every expected class and method must occur exactly once and match its declared
+descriptor. Project-added hook contracts are merged from a separate
+project-owned specification only after the patcher verifies those hooks were
+inserted. Fixed dummy bodies are generated solely for compilation, the output
+is excluded from the candidate DEX, a leakage gate checks the final APK, and
+the temporary stubs are deleted after use.
+
 ## Never publish
 
 - Stock, intermediate or patched APK/JAR/DEX/class files.
