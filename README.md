@@ -55,6 +55,10 @@ The historical patch material is being filtered through the conservative
 - `tools/generate_compile_stubs.py` verifies allowlisted declarations in
   private local smali roots and emits disposable compile-only Java ABI stubs.
   It never copies implementations, fields or debug metadata.
+- `tools/transform_bc1_manifest.py` performs the fail-closed, MMTEL-only BC1
+  manifest transformation without embedding the surrounding stock XML; see
+  [the BC1 manifest guide](docs/BC1_MANIFEST.md). The future outer orchestrator,
+  not this XML tool, is responsible for stock APK and apktool hash pinning.
 - Synthetic unit tests contain no Samsung code or binaries.
 
 Run the tests:
