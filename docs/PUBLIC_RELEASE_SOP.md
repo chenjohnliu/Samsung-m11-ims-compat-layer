@@ -412,9 +412,10 @@ Recommended design:
 Pending before public release:
 
 - Refactor BC1 + BC2 + BG1 into one relocatable builder.
-- Expand the current seven-file `verify_payload.ps1` to the full manifest and
-  separate stock-input hashes from patched-output hashes.
+- Exercise the current 13-file `verify_payload.py` against a fresh firmware
+  extraction and keep stock-input hashes separate from patched-output hashes.
 - Re-run the complete pipeline from a fresh CWK3 extraction.
 - Decide how to handle the three stock-derived configuration files.
-- Create the new public repository, choose its final name/licence and prepare
-  clean public commits; nothing has been pushed yet.
+- Select a licence for project-authored work after the remaining provenance
+  boundary is finalized. The current GitHub repository remains a private
+  engineering checkpoint, not a public release.
