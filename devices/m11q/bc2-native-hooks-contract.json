@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BC2-modern-bridge-native-hooks",
+  "targets": [
+    {
+      "path": "com/sec/internal/google/GoogleImsService.smali",
+      "class": "Lcom/sec/internal/google/GoogleImsService;",
+      "class_access": ["public"],
+      "super": "Lcom/android/ims/internal/IImsService$Stub;",
+      "required_fields": [
+        {"identity": "mInstance:Lcom/sec/internal/google/GoogleImsService;", "access": ["static"]},
+        {"identity": "mVolteServiceModule:Lcom/sec/internal/interfaces/ims/servicemodules/volte2/IVolteServiceModule;", "access": []}
+      ],
+      "method_anchor": "# direct methods",
+      "hooks": [
+        {"id": "service_ready_accessor", "method": "getInstanceIfReady()Lcom/sec/internal/google/GoogleImsService;", "expected_pre": 0, "expected_post": 1},
+        {"id": "incoming_identity_accessor", "method": "getModernIncomingIdentity(I)Landroid/os/IBinder;", "expected_pre": 0, "expected_post": 1}
+      ]
+    },
+    {
+      "path": "com/sec/internal/google/ImsCallSessionImpl.smali",
+      "class": "Lcom/sec/internal/google/ImsCallSessionImpl;",
+      "class_access": ["public"],
+      "super": "Lcom/android/ims/internal/IImsCallSession$Stub;",
+      "target_method": "<init>(Landroid/telephony/ims/ImsCallProfile;Lcom/sec/ims/volte2/IImsCallSession;Landroid/telephony/ims/aidl/IImsCallSessionListener;Lcom/sec/internal/google/GoogleImsService;)V",
+      "target_access": ["public", "constructor"],
+      "anchor": "iput-object p3, p0, Lcom/sec/internal/google/ImsCallSessionImpl;->mListener:Landroid/telephony/ims/aidl/IImsCallSessionListener;",
+      "hook": "ModernCallRelay.constructionListener(Landroid/telephony/ims/aidl/IImsCallSessionListener;)Landroid/telephony/ims/aidl/IImsCallSessionListener;",
+      "expected_anchor": 1,
+      "expected_pre": 0,
+      "expected_post": 1
+    },
+    {
+      "path": "com/sec/internal/google/ImsNotifier.smali",
+      "class": "Lcom/sec/internal/google/ImsNotifier;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "target_method": "onIncomingCall(II)V",
+      "target_access": ["public"],
+      "anchor": "invoke-interface {v4, p2, v5}, Lcom/android/ims/internal/ISecImsMmTelEventListener;->onIncomingCall(ILandroid/os/Bundle;)V",
+      "hook": "ModernVoiceContext.onIncoming(IILandroid/os/Bundle;)Z",
+      "minimum_locals": 7,
+      "expected_anchor": 1,
+      "expected_pre": 0,
+      "expected_post": 1
+    }
+  ]
+}

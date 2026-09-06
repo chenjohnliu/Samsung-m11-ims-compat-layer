@@ -37,7 +37,8 @@
     "BG1-network-statistics-guard"
   ],
   "transformation_contracts": {
-    "BC1-modern-mmtel-discovery": "devices/m11q/bc1-manifest-contract.json"
+    "BC1-modern-mmtel-discovery": "devices/m11q/bc1-manifest-contract.json",
+    "BC2-modern-bridge-native-hooks": "devices/m11q/bc2-native-hooks-contract.json"
   },
   "allowed_entry_changes": {
     "removed_exact": [
