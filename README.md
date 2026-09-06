@@ -59,6 +59,10 @@ The historical patch material is being filtered through the conservative
   manifest transformation without embedding the surrounding stock XML; see
   [the BC1 manifest guide](docs/BC1_MANIFEST.md). The future outer orchestrator,
   not this XML tool, is responsible for stock APK and apktool hash pinning.
+- `tools/transform_bc2_native_hooks.py` validates three exact private smali
+  targets and emits a three-file overlay containing only the BC2 bridge hooks.
+  It never edits or copies the decoded tree; see
+  [the BC2 native-hook guide](docs/BC2_NATIVE_HOOKS.md).
 - Synthetic unit tests contain no Samsung code or binaries.
 
 Run the tests:
@@ -69,7 +73,8 @@ python -m unittest discover -s tests -v
 
 ## Work still required before a release
 
-- Consolidate the historical BC1, BC2 and BG1 transformations into one
+- Consolidate the implemented BC1 and BC2 transformations plus the historical
+  BG1 transformation into one
   relocatable clean-stock-to-final APK builder.
 - Verify the new ZIP-preserving package from a fresh firmware extraction.
 - Build and flash a ROM manually, then repeat the runtime acceptance tests.
