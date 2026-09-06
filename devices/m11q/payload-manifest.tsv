@@ -3,6 +3,7 @@ stock_path	destination	stock_sha256	stock_size	architecture	licensing_class	acti
 /system/bin/multiclientd	ims/proprietary/bin/multiclientd	4a7c0658ecaa9f9c4486f5c790d7905a69a37e125b4f1a15d73693d465e77b28	27792	arm32-elf	Samsung-proprietary	copy
 /system/framework/EpdgManager.jar	ims/proprietary/framework/EpdgManager.jar	1663083cf57c5a4c1f795319644087d3bfa9132e48413b1b0aedc8c21f56a60a	34282	java-dex	Samsung-proprietary	copy
 /system/framework/imsmanager.jar	ims/proprietary/framework/imsmanager.jar	ba88f7111ea5c678d597dcb0498ee9fc42611fd4f6af12b6312fad05495de78b	671422	java-dex	Samsung-proprietary	copy
+/system/framework/framework-res.apk	build-inputs/framework-res.apk	ff293c51486f56b2d3986090001568665ebf54e0614c77464a450ba45bf150c5	69575977	android-resource-apk	Samsung-proprietary	build-input
 /system/framework/rcsopenapi.jar	ims/proprietary/framework/rcsopenapi.jar	14283b6a81d4a12f948aa721ec59192128af0a842e02ce5760506c00bdfd8c8e	400474	java-dex	Samsung-proprietary	copy
 /system/framework/vsimmanager.jar	ims/proprietary/framework/vsimmanager.jar	a6e02b64382da93b240b79a7337ba78f170f5cb256f441201677b3aae1773c55	557228	java-dex	Samsung-proprietary	copy
 /system/lib/libaresdns.so	ims/proprietary/lib/arm/libaresdns.so	be52a5741a05097ecf0e262efb49a3d86787a6e3dea28f20cfbb6cd7b1c974fa	44000	arm32-elf	Samsung-proprietary	copy

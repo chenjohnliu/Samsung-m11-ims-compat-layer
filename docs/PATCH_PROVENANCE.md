@@ -87,9 +87,10 @@ Decoded directories must remain in a private temporary directory covered by
 `.gitignore`; do not point the tool at a directory intended for publication.
 Generated stubs and their report are disposable local build artifacts: never
 commit them, never add them to the bridge source set passed to D8, and never
-place their classes in candidate `classes.dex` or `classes2.dex`. The future
-orchestrator remains responsible for verifying the input artifact hash before
-decoding and for deleting all temporary inputs and generated stubs afterward.
+place their classes in candidate `classes.dex` or `classes2.dex`. The
+implemented `tools/build_imsservice.py` orchestrator verifies input hashes
+before decoding, excludes stub classes from its bridge JAR and candidate DEX,
+and deletes all temporary inputs and generated stubs afterward.
 
 Example (paths are deliberately placeholders):
 
