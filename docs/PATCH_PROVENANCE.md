@@ -125,6 +125,25 @@ The overlay still contains transformed Samsung smali and is a disposable local
 build artifact. It is gitignored and must not be published. See
 `docs/BC2_NATIVE_HOOKS.md` for the isolation and validation rules.
 
+### Implemented BG1 optional-statistics boundary
+
+`devices/m11q/bg1-stats-guard-contract.json` pins the exact two unchanged CWK3
+input classes by path, hash, class/superclass and required method identities.
+The contract contains no Samsung instructions or surrounding method bodies.
+
+`tools/transform_bg1_stats_guard.py` regenerates the previously validated
+optional video-statistics guard as an independent two-file private overlay. It
+checks the immutable stock hashes, identities, anchors, pre/post state and
+preservation of every unrelated method. The guard probes the complete
+start/stop/query ABI family, uses an internal negative unavailable sentinel,
+suppresses the usage callback when no measurement exists, and retains real
+zero-byte measurements. It is graceful degradation of optional accounting,
+not a bearer, signaling or audio fix.
+
+The generated overlay contains transformed Samsung smali and must remain an
+ignored local artifact. Its report contains only allowlisted relative paths,
+the public hook ID and input/output hashes. See `docs/BG1_STATS_GUARD.md`.
+
 ## Never publish
 
 - Stock, intermediate or patched APK/JAR/DEX/class files.

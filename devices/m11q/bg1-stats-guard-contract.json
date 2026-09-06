@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BG1-network-statistics-guard",
+  "targets": [
+    {
+      "path": "com/sec/internal/ims/servicemodules/volte2/NetworkStatsOnPortHandler.smali",
+      "class": "Lcom/sec/internal/ims/servicemodules/volte2/NetworkStatsOnPortHandler;",
+      "class_access": ["public"],
+      "super": "Landroid/os/Handler;",
+      "input_sha256": "e5b14d9633ec92d115e0402b62718a875192432a850ff195a1decdbd2c61c4f2",
+      "required_methods": [
+        "private start()V",
+        "private stop()V",
+        "private startNetworkStatsOnPorts(Ljava/lang/String;II)V",
+        "private stopNetworkStatsOnPorts(Ljava/lang/String;II)V",
+        "public declared-synchronized getNetworkStatsVideoCall()J"
+      ],
+      "expected_pre": 0,
+      "expected_post": 1
+    },
+    {
+      "path": "com/sec/internal/ims/servicemodules/volte2/CallStateMachine.smali",
+      "class": "Lcom/sec/internal/ims/servicemodules/volte2/CallStateMachine;",
+      "class_access": ["public"],
+      "super": "Lcom/sec/internal/helper/StateMachine;",
+      "input_sha256": "9b89a56452a37aa81cc53c7624e9f7527ff487d2148a67c5cb58b566b7a977aa",
+      "required_methods": [
+        "protected getNetworkStatsVideoCall()J",
+        "protected requestCallDataUsage()V",
+        "protected stopNetworkStatsOnPorts()V"
+      ],
+      "expected_pre": 0,
+      "expected_post": 1
+    }
+  ]
+}

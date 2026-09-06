@@ -63,6 +63,10 @@ The historical patch material is being filtered through the conservative
   targets and emits a three-file overlay containing only the BC2 bridge hooks.
   It never edits or copies the decoded tree; see
   [the BC2 native-hook guide](docs/BC2_NATIVE_HOOKS.md).
+- `tools/transform_bg1_stats_guard.py` validates the two exact CWK3 statistics
+  classes and emits a two-file overlay that degrades unavailable optional video
+  accounting without fabricating a zero-byte result; see
+  [the BG1 statistics guide](docs/BG1_STATS_GUARD.md).
 - Synthetic unit tests contain no Samsung code or binaries.
 
 Run the tests:
@@ -73,8 +77,7 @@ python -m unittest discover -s tests -v
 
 ## Work still required before a release
 
-- Consolidate the implemented BC1 and BC2 transformations plus the historical
-  BG1 transformation into one
+- Consolidate the implemented BC1, BC2 and BG1 transformations into one
   relocatable clean-stock-to-final APK builder.
 - Verify the new ZIP-preserving package from a fresh firmware extraction.
 - Build and flash a ROM manually, then repeat the runtime acceptance tests.
