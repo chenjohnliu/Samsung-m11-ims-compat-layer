@@ -1,9 +1,10 @@
 # Samsung M115F IMS compatibility layer — public release SOP (draft)
 
-Status: **reviewed release design, not yet a one-command public builder**.  This
-document records the safe publication model and the exact validated Stage 1
-artifact chain.  The final public scripts still need to be consolidated and run
-from a clean firmware extraction before release.
+Status: **local one-command builder implemented; public release and runtime
+validation still pending**. This document records the safe publication model
+and the exact validated Stage 1 artifact chain. The builder has passed two
+bit-identical local runs from the hash-verified research extraction, but still
+needs a separately fresh firmware extraction and on-device validation.
 
 This is not legal advice.  The conservative project policy is that Samsung APK,
 JAR, ELF and executable files are supplied by the user from firmware they are
@@ -177,6 +178,7 @@ python3 tools/extract_ext4.py \
   /system/bin/multiclientd \
   /system/framework/EpdgManager.jar \
   /system/framework/imsmanager.jar \
+  /system/framework/framework-res.apk \
   /system/framework/rcsopenapi.jar \
   /system/framework/vsimmanager.jar \
   /system/lib/libaresdns.so \
@@ -278,15 +280,19 @@ work/stage1bg_stats_guard/
   verify_candidate.py
 ```
 
-These scripts proved the individual stages locally, but they contain absolute
-paths and depend on historical intermediate artifacts.  **Do not publish them
-as a claimed one-command builder yet.**  First consolidate them into one tool:
+Those historical scripts proved the individual stages locally, but contain
+absolute paths and depend on intermediate artifacts. The repository now
+consolidates their behavior into `tools/build_imsservice.py`; see
+`docs/IMS_APK_BUILDER.md`. Its interface is:
 
 ```bash
-tools/patch-imsservice.sh \
+tools/build_imsservice.py \
   --stock-apk proprietary/system/priv-app/imsservice/imsservice.apk \
-  --android-tree /path/to/android \
-  --output out/imsservice.apk
+  --framework-res-apk build-inputs/framework-res.apk \
+  --imsmanager-jar proprietary/system/framework/imsmanager.jar \
+  ... \
+  --output out/imsservice.apk \
+  --report out/imsservice-report.json
 ```
 
 That command must reproduce the complete behavior from the clean stock hash in
@@ -397,9 +403,13 @@ Do not tag a public release until all of these are true:
 
 Confirmed:
 
-- The 13 current payload identities and the three-stage APK hash chain.
+- The 14 current payload identities and the historical three-stage APK hash
+  chain.
 - The final local source APK and successful phone runtime used the
   `23bff0e7...` candidate.
+- The clean-stock one-pass builder produced the same unsigned APK
+  (`8f3e111e...`) in two independent temporary directories and passed all
+  static gates. This new package is not yet runtime validated.
 - Device/framework source checkpoints exist locally without the proprietary
   payload being committed.
 
@@ -413,10 +423,13 @@ Recommended design:
 
 Pending before public release:
 
-- Refactor BC1 + BC2 + BG1 into one relocatable builder.
-- Exercise the current 13-file `verify_payload.py` against a fresh firmware
+- Exercise the current 14-file `verify_payload.py` against a fresh firmware
   extraction and keep stock-input hashes separate from patched-output hashes.
 - Re-run the complete pipeline from a fresh CWK3 extraction.
+- Runtime-test a manually built ROM containing the new ZIP-preserving
+  `8f3e111e...` candidate under SELinux Enforcing.
+- Finalize the licence/authorship record for the six bridge sources required by
+  a clean public checkout.
 - Decide how to handle the three stock-derived configuration files.
 - Select a licence for project-authored work after the remaining provenance
   boundary is finalized. The current GitHub repository remains a private

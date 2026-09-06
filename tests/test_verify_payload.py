@@ -57,7 +57,9 @@ class PayloadVerifierTests(unittest.TestCase):
     def test_copy_separates_stock_apk(self):
         rows = [self.row("/system/bin/a", "ims/proprietary/bin/a", "copy", b"alpha"),
                 self.row("/system/priv-app/x/x.apk", "ims/proprietary/priv-app/x/x.apk",
-                         "patch-to-stage1", b"stock-apk")]
+                         "patch-to-stage1", b"stock-apk"),
+                self.row("/system/framework/framework-res.apk", "build-inputs/framework-res.apk",
+                         "build-input", b"framework")]
         self.write_fixture(rows)
         destination = self.base / "destination"
         stock = self.base / "stock-input"
@@ -66,7 +68,8 @@ class PayloadVerifierTests(unittest.TestCase):
         self.assertEqual((destination / "ims/proprietary/bin/a").read_bytes(), b"alpha")
         self.assertFalse((destination / "ims/proprietary/priv-app/x/x.apk").exists())
         self.assertEqual((stock / "system/priv-app/x/x.apk").read_bytes(), b"stock-apk")
-        self.assertEqual(report["summary"]["copied"], 2)
+        self.assertEqual((stock / "build-inputs/framework-res.apk").read_bytes(), b"framework")
+        self.assertEqual(report["summary"]["copied"], 3)
 
     def test_hash_mismatch_is_reported_and_not_copied(self):
         row = self.row("/system/bin/a", "ims/a", "copy", b"expected")

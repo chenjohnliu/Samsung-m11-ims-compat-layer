@@ -18,7 +18,7 @@ REQUIRED_COLUMNS = {
     "stock_path", "destination", "stock_sha256", "stock_size",
     "architecture", "licensing_class", "action",
 }
-VALID_ACTIONS = {"copy", "patch-to-stage1"}
+VALID_ACTIONS = {"copy", "patch-to-stage1", "build-input"}
 DEFAULT_MANIFEST = (
     Path(__file__).resolve().parents[1] / "devices" / "m11q" / "payload-manifest.tsv"
 )
@@ -155,6 +155,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, object], int]:
                     target = contained_path(destination_root, row["destination_rel"])
                 elif row["action"] == "patch-to-stage1" and stock_input_root is not None:
                     target = contained_path(stock_input_root, row["source_rel"])
+                elif row["action"] == "build-input" and stock_input_root is not None:
+                    target = contained_path(stock_input_root, row["destination_rel"])
                 if target is not None:
                     if target.exists() and (not target.is_file() or sha256_file(target) != digest):
                         item["status"] = "destination-conflict"

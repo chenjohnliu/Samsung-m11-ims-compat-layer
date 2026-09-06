@@ -43,10 +43,10 @@ outputs default to non-overwrite; `--allow-identical` permits only an identical
 repeat. The overlay is Samsung-derived build material and must not be committed
 or published.
 
-The future outer builder will merge this overlay into its disposable decoded
-tree after applying BC1 and BC2, then rebuild only the primary DEX and preserve
-the BC2 bridge DEX byte-for-byte. APK assembly and ROM signing are outside this
-transformer's scope.
+The implemented outer builder merges this overlay into its disposable decoded
+tree after applying BC1 and BC2, then rebuilds only the primary DEX and
+preserves the BC2 bridge DEX byte-for-byte. APK assembly and ROM signing remain
+outside this transformer's scope.
 
 ## Validation scope
 
@@ -57,5 +57,6 @@ atomic rollback and report privacy.
 
 The tool has also been exercised privately against the exact CWK3 decoded
 classes used before BC1/BC2. Its two outputs match the historical BG1 generation
-after blank-line normalization. This source equivalence does not replace a
-fresh packaged-APK and on-device validation of the eventual one-command build.
+after blank-line normalization. The resulting one-command package is now
+statically reproducible, but that source equivalence and packaging validation
+do not replace on-device runtime validation.

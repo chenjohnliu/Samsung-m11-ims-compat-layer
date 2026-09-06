@@ -44,8 +44,12 @@ The historical patch material is being filtered through the conservative
 
 ## Tools currently available
 
-- `tools/verify_payload.py` verifies the 13 declared stock inputs and can stage
+- `tools/verify_payload.py` verifies the 14 declared stock inputs and can stage
   only the explicitly permitted payload categories.
+- `tools/build_imsservice.py` performs the complete local clean-stock BC1 →
+  BC2 → BG1 rebuild, generates private compile stubs, compiles the modern
+  bridge, preserves every unrelated stock ZIP entry, and emits an unsigned APK
+  plus a machine-readable report. See [the builder guide](docs/IMS_APK_BUILDER.md).
 - `tools/apk_entry_replace.py` rebuilds a ZIP/APK from a stock base while
   changing only explicitly allowed entries and removing only exact stale v1
   signature entries.
@@ -57,8 +61,8 @@ The historical patch material is being filtered through the conservative
   It never copies implementations, fields or debug metadata.
 - `tools/transform_bc1_manifest.py` performs the fail-closed, MMTEL-only BC1
   manifest transformation without embedding the surrounding stock XML; see
-  [the BC1 manifest guide](docs/BC1_MANIFEST.md). The future outer orchestrator,
-  not this XML tool, is responsible for stock APK and apktool hash pinning.
+  [the BC1 manifest guide](docs/BC1_MANIFEST.md). The outer builder is
+  responsible for stock APK, stock framework and apktool hash pinning.
 - `tools/transform_bc2_native_hooks.py` validates three exact private smali
   targets and emits a three-file overlay containing only the BC2 bridge hooks.
   It never edits or copies the decoded tree; see
@@ -77,10 +81,11 @@ python -m unittest discover -s tests -v
 
 ## Work still required before a release
 
-- Consolidate the implemented BC1, BC2 and BG1 transformations into one
-  relocatable clean-stock-to-final APK builder.
-- Verify the new ZIP-preserving package from a fresh firmware extraction.
+- Re-run the ZIP-preserving builder from a separately fresh firmware
+  extraction, rather than the current hash-verified research extraction.
 - Build and flash a ROM manually, then repeat the runtime acceptance tests.
+- Finalize authorship/licensing for the six project bridge sources so a clean
+  public checkout has every non-proprietary source required by the builder.
 - Review provenance of stock-derived text configuration and framework
   compatibility source before publication.
 - Add a licence for project-authored work after the provenance boundary is
