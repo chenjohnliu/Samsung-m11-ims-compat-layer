@@ -8,19 +8,20 @@ device operation.
 
 Confirmed locally from the exact CWK3 inputs:
 
-- two independent runs from new temporary directories produced the identical
-  unsigned APK SHA-256
-  `8f3e111e9ab93a27a3622c497f3d9e4926f98951b4e29f8af4fbe4579684b2d7`;
-- the clean primary DEX was identical in both runs:
-  `e2fc4bfa6bbe5c5d85993b11397d6d06eeb7ab4d6b6e8d740f26c1baa758f899`;
-- the bridge DEX reproduced the historical runtime identity:
-  `fec3ab32d03b929edf432fd810b824108eb02acd781d051c987ca3a1d8ad9c34`;
+- the current unsigned APK SHA-256 is
+  `453d228f77441e4e0df4b1d45ac055740f70ce1aa295c80d8c8d1a2e058ada87`;
+- the clean primary DEX SHA-256 is
+  `ab5b0fa1e3f244660d0ea6b287856409065381c78f9a682c4d03be5a15c8353c`;
+- the current bridge DEX SHA-256 is
+  `c47750fb400ed9a4dca45490c9f4f5937bf99fa2d9e47b167866f46b7025a738`;
 - each run passed manifest, native-hook, statistics-guard, class-inventory,
   compile-stub leakage, ZIP-entry preservation and alignment gates.
 
-The new APK has **not** been runtime validated. The confirmed phone call used
-the historical three-stage candidate. Its primary DEX hash was `f0b64b6f...`;
-that remains historical evidence, not the expected clean one-pass output.
+The current Stage 1BJ APK is runtime validated for SIM1 WWAN registration plus
+outgoing and incoming VoLTE under SELinux Enforcing. The incoming test reached
+Android ringing, answer, clear bidirectional speech and teardown without an IMS
+process restart or VoLTE-indicator loss. This does not validate SIM2/DSDS, IMS
+SMS, VoWiFi, emergency calling, ViLTE or extended regression behavior.
 
 The deterministic build invokes apktool with
 `-XX:ActiveProcessorCount=1`. Without that setting, apktool 2.9.3/smali 3.0.3

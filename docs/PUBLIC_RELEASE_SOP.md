@@ -1,10 +1,9 @@
 # Samsung M115F IMS compatibility layer — public release SOP (draft)
 
-Status: **local one-command builder implemented; public release and runtime
-validation still pending**. This document records the safe publication model
-and the exact validated Stage 1 artifact chain. The builder has passed two
-bit-identical local runs from the hash-verified research extraction, but still
-needs a separately fresh firmware extraction and on-device validation.
+Status: **local one-command builder and SIM1 Stage 1 runtime validation
+complete; public release still pending**. This document records the safe
+publication model and the exact validated Stage 1 artifact chain. A separately
+fresh firmware extraction remains required before a public release.
 
 This is not legal advice.  The conservative project policy is that Samsung APK,
 JAR, ELF and executable files are supplied by the user from firmware they are
@@ -22,12 +21,14 @@ Known-good device/firmware baseline:
 - Extracted `system.img` SHA-256:
   `9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d`.
 - Target validated so far: CherishOS 4.12 / Android 13.
-- Confirmed function: outgoing SIM1 WWAN VoLTE registration, establishment,
-  clear two-way speech and teardown under SELinux Enforcing.
+- Confirmed function: SIM1 WWAN VoLTE registration, outgoing and incoming call
+  establishment, incoming ringing/answer, clear two-way speech and teardown
+  under SELinux Enforcing.
 
-Do not describe incoming calls, SIM2/DSDS, VoWiFi, IMS emergency calling,
+Do not describe SIM2/DSDS, IMS SMS, VoWiFi, IMS emergency calling, ViLTE,
 handover, other Samsung devices, other stock builds or general carrier support
-as working until each is tested separately.
+as working until each is tested separately. SIM2 currently exposes no
+VoLTE/MMTEL support flag; this remains a SIM1-only claim.
 
 ## 2. What the public repository may contain
 
@@ -227,8 +228,8 @@ stock CWK3 APK
 Final validated DEX identities before ROM signing:
 
 ```text
-classes.dex  f0b64b6f2c9eae38b60fff9a3b1a27e3d84c101829188691aa030948aeee6b6e
-classes2.dex fec3ab32d03b929edf432fd810b824108eb02acd781d051c987ca3a1d8ad9c34
+classes.dex  ab5b0fa1e3f244660d0ea6b287856409065381c78f9a682c4d03be5a15c8353c
+classes2.dex c47750fb400ed9a4dca45490c9f4f5937bf99fa2d9e47b167866f46b7025a738
 ```
 
 The whole APK hash is a useful exact-toolchain checkpoint, but the final public
@@ -368,10 +369,9 @@ registration -> outgoing signaling -> bearer -> audio -> teardown
              -> incoming ringing/answer/audio/teardown
 ```
 
-For the current M11 Stage 1, only the first outgoing branch is complete.  The
-next test is one incoming call under stable RF conditions.  Carrier availability
-must not be presented as a universal hard-coded Taiwan setting; the current
-temporary gate was a controlled test mechanism and restored after testing.
+For the current M11 Stage 1, both outgoing and incoming branches are complete,
+including incoming ringing, answer, bidirectional speech and teardown. Carrier
+availability must not be presented as a universal hard-coded Taiwan setting.
 
 Required issue template fields for other testers:
 
@@ -393,11 +393,11 @@ Do not tag a public release until all of these are true:
 - a single command regenerates the final APK without historical binary inputs;
 - structural checks and source-extracted unit tests pass;
 - a manually built/flashed ROM made from those exact generated inputs repeats
-  the confirmed outgoing two-way call under Enforcing;
+  the confirmed outgoing and incoming two-way calls under Enforcing;
 - A full Git-history scan—not only `git status`—finds no Samsung binaries,
   firmware, decoded trees or keys;
-- README clearly limits support to the actually tested configuration;
-- incoming-call status is reported separately until validated.
+- README clearly limits the validated runtime claim to the actually tested
+  SIM1 WWAN configuration.
 
 ## 13. Confirmed, recommended and pending
 
@@ -405,11 +405,12 @@ Confirmed:
 
 - The 14 current payload identities and the historical three-stage APK hash
   chain.
-- The final local source APK and successful phone runtime used the
-  `23bff0e7...` candidate.
-- The clean-stock one-pass builder produced the same unsigned APK
-  (`8f3e111e...`) in two independent temporary directories and passed all
-  static gates. This new package is not yet runtime validated.
+- The current clean-stock Stage 1BJ candidate is unsigned APK `453d228f...`,
+  primary DEX `ab5b0fa1...` and bridge DEX `c47750fb...`; it passes the static
+  builder gates.
+- A manually built/flashed ROM from that candidate passed real-party outgoing
+  and incoming calls under Enforcing, including incoming ringing, answer,
+  bidirectional speech and teardown without IMS process restart.
 - Device/framework source checkpoints exist locally without the proprietary
   payload being committed.
 
@@ -426,8 +427,8 @@ Pending before public release:
 - Exercise the current 14-file `verify_payload.py` against a fresh firmware
   extraction and keep stock-input hashes separate from patched-output hashes.
 - Re-run the complete pipeline from a fresh CWK3 extraction.
-- Runtime-test a manually built ROM containing the new ZIP-preserving
-  `8f3e111e...` candidate under SELinux Enforcing.
+- Preserve the 2026-09-07 Stage 1BJ outgoing/incoming runtime captures as the
+  regression baseline for the exact `453d228f...` unsigned candidate.
 - Finalize the licence/authorship record for the six bridge sources required by
   a clean public checkout.
 - Decide how to handle the three stock-derived configuration files.

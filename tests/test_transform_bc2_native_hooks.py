@@ -58,7 +58,18 @@ NOTIFIER = """.class public Lcom/sec/internal/google/ImsNotifier;
 .method public onIncomingCall(II)V
     .locals 7
     const/4 v0, 0x0
+    :try_start_1
+    iget-object v4, p0, Lcom/sec/internal/google/ImsNotifier;->mGoogleImsService:Lcom/sec/internal/google/GoogleImsService;
+    iget-object v4, v4, Lcom/sec/internal/google/GoogleImsService;->mSecMmtelListener:Ljava/util/Map;
+    invoke-static {p1}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+    move-result-object v5
+    invoke-interface {v4, v5}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
+    move-result-object v4
+    check-cast v4, Lcom/android/ims/internal/ISecImsMmTelEventListener;
+    invoke-virtual {v3}, Landroid/content/Intent;->getExtras()Landroid/os/Bundle;
+    move-result-object v5
     invoke-interface {v4, p2, v5}, Lcom/android/ims/internal/ISecImsMmTelEventListener;->onIncomingCall(ILandroid/os/Bundle;)V
+    :try_end_1
     return-void
 .end method
 .method public untouched()V
@@ -102,6 +113,11 @@ class NativeHookTests(unittest.TestCase):
         self.assertNotIn(str(self.base), report_text)
         self.assertNotIn("const/4", report_text)
         self.assertNotIn(".method", report_text)
+        notifier = (self.overlay / NOTIFIER_PATH).read_text(encoding="utf-8")
+        method = MODULE._method_spans(notifier, "onIncomingCall(II)V")[0][2]
+        self.assertIn("ModernVoiceContext;->onIncoming", method)
+        self.assertNotIn("ISecImsMmTelEventListener", method)
+        self.assertNotIn("mSecMmtelListener", method)
 
     def test_unrelated_methods_and_bytes_are_preserved(self):
         originals = {name: (self.source / name).read_text(encoding="utf-8")
@@ -137,6 +153,13 @@ class NativeHookTests(unittest.TestCase):
                 with self.assertRaisesRegex(MODULE.TransformError, "register/local drift"):
                     self.run_transform()
                 self.assertFalse(self.overlay.exists())
+
+    def test_notifier_legacy_lookup_drift_fails_closed(self):
+        self.write(NOTIFIER_PATH, NOTIFIER.replace(
+            "mSecMmtelListener:Ljava/util/Map;", "renamedListener:Ljava/util/Map;"))
+        with self.assertRaisesRegex(MODULE.TransformError, "legacy lookup sequence drift"):
+            self.run_transform()
+        self.assertFalse(self.overlay.exists())
 
     def test_class_field_and_target_access_drift_fail(self):
         cases = [

@@ -51,7 +51,7 @@ def load_contract(path: Path) -> dict:
              "expected_anchor", "expected_pre", "expected_post"},
         "com/sec/internal/google/ImsNotifier.smali":
             {"path", "class", "class_access", "super", "target_method", "target_access", "anchor", "hook",
-             "minimum_locals", "expected_anchor", "expected_pre", "expected_post"},
+             "dispatch_mode", "minimum_locals", "expected_anchor", "expected_pre", "expected_post"},
     }
     for name, item in by_path.items():
         if set(item) != expected_keys[name]:
@@ -94,6 +94,7 @@ def load_contract(path: Path) -> dict:
         "target_access": ["public"],
         "anchor": "invoke-interface {v4, p2, v5}, Lcom/android/ims/internal/ISecImsMmTelEventListener;->onIncomingCall(ILandroid/os/Bundle;)V",
         "hook": "ModernVoiceContext.onIncoming(IILandroid/os/Bundle;)Z",
+        "dispatch_mode": "modern_only",
         "minimum_locals": 7, "expected_anchor": 1, "expected_pre": 0, "expected_post": 1}:
         raise TransformError("notifier hook contract drift")
     return raw
@@ -180,20 +181,39 @@ def _replace_in_method(text: str, spec: dict, kind: str) -> tuple[str, list[str]
             "invoke-static {p3}, Lcom/sec/internal/google/ModernCallRelay;->constructionListener(Landroid/telephony/ims/aidl/IImsCallSessionListener;)Landroid/telephony/ims/aidl/IImsCallSessionListener;",
             "    move-result-object p3", ""
         ])
+        new_body = body.replace(indent + anchor, indent + insertion + indent + anchor, 1)
     else:
         locals_hits = re.findall(r"(?m)^\s*\.locals\s+(\d+)\s*$", body)
         if len(locals_hits) != 1 or int(locals_hits[0]) < spec["minimum_locals"]:
             raise TransformError("notifier register/local drift")
-        if ":bc2_incoming_done" in text:
-            raise TransformError("notifier label collision or partial application")
-        insertion = nl.join([
+        # A late hook is insufficient on Android 13: ART resolves the stock
+        # private listener check-cast before reaching the inserted call. Remove
+        # the complete lookup/cast/invoke sequence from this modern-only path.
+        lookup_start = (
+            "    iget-object v4, p0, Lcom/sec/internal/google/ImsNotifier;->"
+            "mGoogleImsService:Lcom/sec/internal/google/GoogleImsService;"
+        )
+        anchor_pos = body.index(indent + anchor)
+        start_pos = body.rfind(lookup_start, 0, anchor_pos)
+        if start_pos < 0:
+            raise TransformError("notifier legacy lookup start drift")
+        legacy = body[start_pos:anchor_pos + len(indent + anchor)]
+        required = [
+            "mSecMmtelListener:Ljava/util/Map;",
+            "Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;",
+            "Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;",
+            "check-cast v4, Lcom/android/ims/internal/ISecImsMmTelEventListener;",
+            "Landroid/content/Intent;->getExtras()Landroid/os/Bundle;",
+        ]
+        if any(legacy.count(item) != 1 for item in required):
+            raise TransformError("notifier legacy lookup sequence drift")
+        insertion = indent + nl.join([
+            "invoke-virtual {v3}, Landroid/content/Intent;->getExtras()Landroid/os/Bundle;",
+            "    move-result-object v5", "",
             "invoke-static {p1, p2, v5}, Lcom/sec/internal/google/ModernVoiceContext;->onIncoming(IILandroid/os/Bundle;)Z",
-            "    move-result v6", "    if-nez v6, :bc2_incoming_done",
-            "    if-eqz v4, :bc2_incoming_done", ""
+            "    move-result v6"
         ])
-    new_body = body.replace(indent + anchor, indent + insertion + indent + anchor, 1)
-    if kind == "notifier":
-        new_body = new_body.replace(indent + anchor, indent + anchor + nl + "    :bc2_incoming_done", 1)
+        new_body = body[:start_pos] + insertion + body[anchor_pos + len(indent + anchor):]
     return text[:start] + new_body + text[end:], ["constructor_listener" if kind == "session" else "incoming_dispatch"]
 
 
@@ -211,7 +231,9 @@ def _post_validate(original: str, rendered: str, spec: dict, hooks: list[str]) -
         spans = _method_spans(rendered, spec["target_method"])
         body = spans[0][2] if len(spans) == 1 else ""
         if (body.count("Lcom/sec/internal/google/ModernVoiceContext;->onIncoming") != 1 or
-                body.count(":bc2_incoming_done") != 3 or body.count(spec["anchor"]) != 1):
+                body.count(spec["anchor"]) != 0 or
+                "Lcom/android/ims/internal/ISecImsMmTelEventListener;" in body or
+                "mSecMmtelListener:Ljava/util/Map;" in body):
             raise TransformError("notifier post-validation failed")
     if original == rendered:
         raise TransformError("transformation produced no change")

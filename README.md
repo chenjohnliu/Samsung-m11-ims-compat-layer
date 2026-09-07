@@ -12,12 +12,27 @@ Confirmed on one device with CherishOS 4.12 / Android 13:
 
 - SIM1 WWAN IMS registration;
 - outgoing VoLTE establishment;
-- clear two-way speech;
-- local and remote teardown;
+- incoming VoLTE ringing and answer;
+- clear two-way speech on outgoing and incoming calls;
+- outgoing and incoming teardown;
+- stable IMS service and registration across an incoming call;
 - SELinux Enforcing throughout the validated call.
 
-Not yet claimed: incoming calls, SIM2/DSDS, VoWiFi, IMS emergency calls,
-handover, other Samsung models, other stock builds, or general carrier support.
+Incoming SIP delivery has reached Samsung's userspace call-session path and the
+Android 13 `ImsPhoneCallTracker`. Runtime evidence then exposed a synchronous
+Binder deadlock in the first modern incoming bridge: it held the bridge owner
+monitor while Android synchronously re-entered the call-session facade. The
+current reproducible candidate releases that monitor before notifying Android.
+Runtime testing on 2026-09-07 confirmed ringing, answer, clear bidirectional
+speech and teardown without an IMS process restart or VoLTE-indicator loss.
+
+Not yet claimed: SIM2/DSDS, IMS SMS, VoWiFi, IMS emergency calls, ViLTE,
+handover, long-duration/repeated-call robustness, other Samsung models, other
+stock builds, or general carrier support. SIM2 currently exposes no
+VoLTE/MMTEL support flag, so the validated scope remains SIM1-only.
+
+See the [Stage 1 runtime baseline](docs/STAGE1_RUNTIME_BASELINE.md) for the
+acceptance matrix and regression boundary.
 
 ## Proprietary-file policy
 

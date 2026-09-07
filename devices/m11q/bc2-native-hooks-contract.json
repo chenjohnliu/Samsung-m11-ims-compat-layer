@@ -39,6 +39,7 @@
       "target_access": ["public"],
       "anchor": "invoke-interface {v4, p2, v5}, Lcom/android/ims/internal/ISecImsMmTelEventListener;->onIncomingCall(ILandroid/os/Bundle;)V",
       "hook": "ModernVoiceContext.onIncoming(IILandroid/os/Bundle;)Z",
+      "dispatch_mode": "modern_only",
       "minimum_locals": 7,
       "expected_anchor": 1,
       "expected_pre": 0,
