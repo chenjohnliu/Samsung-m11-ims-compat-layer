@@ -44,7 +44,7 @@ class BuildImsserviceTests(unittest.TestCase):
         self.assertEqual(config["toolchain"]["apktool"]["jvm_args"],
                          ["-XX:ActiveProcessorCount=1"])
         self.assertEqual(config["final_dex_invariants"]["unsigned_apk_sha256"],
-                         "8f3e111e9ab93a27a3622c497f3d9e4926f98951b4e29f8af4fbe4579684b2d7")
+                         "453d228f77441e4e0df4b1d45ac055740f70ce1aa295c80d8c8d1a2e058ada87")
         self.assertIn("javap_sha256", config["toolchain"]["jdk11"])
         self.assertEqual(MODULE.payload_identity(
             PAYLOAD, "/system/framework/imsmanager.jar"),

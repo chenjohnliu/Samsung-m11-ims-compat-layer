@@ -13,9 +13,11 @@ The machine-readable contract permits exactly these operations:
    incoming-call binder identity accessor;
 2. pass the constructor listener in `ImsCallSessionImpl` through
    `ModernCallRelay.constructionListener` before assigning it;
-3. offer an incoming callback in `ImsNotifier` to
-   `ModernVoiceContext.onIncoming`, falling back to the legacy listener when
-   the bridge does not consume it and skipping a null legacy listener.
+3. route the matching `ImsNotifier` incoming event directly to
+   `ModernVoiceContext.onIncoming`. The stock legacy listener lookup, cast and
+   invoke are removed from this Android 13 path because AOSP does not provide
+   Samsung's private `ISecImsMmTelEventListener`; resolving that cast crashes
+   the IMS process before a late hook can run.
 
 No BC1 discovery skeleton is required or deleted. The current one-shot design
 adds the BC1 service declaration at the manifest layer only.
@@ -58,7 +60,13 @@ service methods with the compile-stub contract, output conflicts, identical
 repeats, symlinks, rollback and report privacy.
 
 The transformer has also been exercised privately against the decoded CWK3
-BC1 tree. Its three hook effects match the historical runtime-validated BC2
-semantics. This source-level check does not validate a newly packaged APK: the
-future ZIP-preserving candidate still requires manual ROM build, flash and
-on-device acceptance testing.
+BC1 tree. Outgoing BC2 behavior is runtime-validated. The modern-only incoming
+dispatch also corrected the former late-hook crash: ART had resolved the absent
+private Samsung listener before the modern bridge could run. Its first runtime
+test then reached `ImsPhoneCallTracker.processIncomingCall()` and exposed a
+synchronous Binder deadlock caused by notifying Android while holding the
+`ModernVoiceContext` monitor. The current bridge publishes the session under
+that monitor but invokes `notifyIncomingCallSession()` only after releasing it.
+A manual ROM build and real-party test on 2026-09-07 confirmed Android ringing,
+answer, clear bidirectional speech and teardown while IMS stayed registered and
+the service PID remained stable.
