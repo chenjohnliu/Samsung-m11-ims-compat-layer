@@ -8,20 +8,51 @@ device operation.
 
 Confirmed locally from the exact CWK3 inputs:
 
-- the current unsigned APK SHA-256 is
-  `453d228f77441e4e0df4b1d45ac055740f70ce1aa295c80d8c8d1a2e058ada87`;
+- the current runtime-validated Stage 1BQ3 unsigned APK SHA-256 is
+  `a9de2549bad19b3aeae3815e689b111384b81cc9dd59944a37e40fe1cda72d67`;
 - the clean primary DEX SHA-256 is
-  `ab5b0fa1e3f244660d0ea6b287856409065381c78f9a682c4d03be5a15c8353c`;
+  `a16a42ed01d284dc20efa57c67c6f18b6ffb20132367228b7e8a8c90f5eb90c6`;
 - the current bridge DEX SHA-256 is
-  `c47750fb400ed9a4dca45490c9f4f5937bf99fa2d9e47b167866f46b7025a738`;
+  `5379c0688e2eaa48684d4d3ba7ff2cf570f7f28cca13d6d8934b0ebcad37d031`;
 - each run passed manifest, native-hook, statistics-guard, class-inventory,
   compile-stub leakage, ZIP-entry preservation and alignment gates.
 
-The current Stage 1BJ APK is runtime validated for SIM1 WWAN registration plus
+The preceding Stage 1BJ APK is runtime validated for SIM1 WWAN registration plus
 outgoing and incoming VoLTE under SELinux Enforcing. The incoming test reached
 Android ringing, answer, clear bidirectional speech and teardown without an IMS
-process restart or VoLTE-indicator loss. This does not validate SIM2/DSDS, IMS
-SMS, VoWiFi, emergency calling, ViLTE or extended regression behavior.
+process restart or VoLTE-indicator loss. Stage 1BK proved that the SIM1 IMS SMS
+bridge loaded but failed runtime validation because this Android 13 branch does
+not issue a `changeEnabledCapabilities` request for SMS, leaving SMS capability
+false. Stage 1BL then successfully exposed SMS capability and reached Samsung's
+`ImsSmsImpl`, but Android supplied a null SMSC and Samsung failed before network
+transmission. Stage 1BM retains the validated primary DEX, resolves the SMSC
+using the framework/SIM/Samsung-profile order used by the S20 compatibility
+  design, and forwards retry state before sending. Stage 1BO then reached SIP
+  `202 Accepted`, but optional HQM telemetry crashed on a null Android 13 SMS
+  role service before the true result could reach Android. Stage 1BP guards only
+  that telemetry lookup. It is runtime validated under Enforcing: carrier RP
+  cause 50 reached Android as fallback, Android retried through `SEND_SMS`, the
+  modem returned success, and the user confirmed delivery without an IMS
+  process restart. This validates outgoing SMS fallback, not final pure IMS-SMS
+  delivery. Stage 1BQ additionally restores Voice capability from the strict
+  normal Samsung `mmtel` registration snapshot when the legacy positive
+capability callback is not replayed after SIM hot-swap. Runtime testing showed
+that BQ1 alone was insufficient because a late legacy callback could clear
+Voice after typed registration. Stage 1BQ2 periodically reconciles that state
+only while typed registration and the strict normal cellular `mmtel` snapshot
+both remain true. BQ2 runtime testing then proved that the lost gate was
+Android's context-local Voice enablement rather than Samsung's native Voice
+state. Stage 1BQ3 retains only Android's last explicit enable/disable setting
+across an in-process SIM1 feature recreation. Clean-flash BQ3+BQ6 runtime
+validation on 2026-09-10 confirmed that SIM removal/reinsertion restores VoLTE
+availability and preserves outgoing calls, incoming ringing/answer/two-way
+speech/teardown, and SMS send/receive. BQ7 was excluded: the apparent
+call-failure regression that motivated it persisted after source rollback but
+disappeared after formatting `/data`, so it was not valid evidence for a code
+change.
+This does not validate
+SIM2/DSDS, VoWiFi, emergency
+calling, ViLTE or extended regression behavior.
 
 The deterministic build invokes apktool with
 `-XX:ActiveProcessorCount=1`. Without that setting, apktool 2.9.3/smali 3.0.3
@@ -37,7 +68,7 @@ All Samsung material remains outside Git:
 - exact CWK3 `framework-res.apk` (required for a private apktool framework
   directory; never rely on the user's global apktool cache);
 - exact CWK3 `imsmanager.jar`;
-- the six reviewed bridge Java files while their final licence record remains
+- the seven reviewed bridge Java files while their final licence record remains
   pending;
 - an Android 13 `framework-minus-apex.jar`;
 - the hash-pinned apktool 2.9.3, JDK 11, R8 and zipalign files.
@@ -84,7 +115,11 @@ re-decode verification succeeds.
 1. Verifies every private input and tool identity.
 2. Creates a disposable private apktool framework cache and decodes stock APK
    and JAR inputs.
-3. Applies BC1, BC2 and BG1 exactly once in the declared order.
+3. Applies BC1, BC2, BG1, BH1 and BP1 exactly once in the declared order. BH1
+   replaces Samsung's removed Android 12 `IccUtils.getIccType(int)` dependency
+   with an APK-local implementation that preserves the stock
+   `ril.ICC_TYPE0/1` lookup semantics. BP1 makes only the optional Samsung HQM
+   default-SMS-role lookup fail soft so the real acknowledgement can continue.
 4. Generates declaration-only compile stubs and verifies Android 13 framework
    ABI compatibility.
 5. Compiles only the allowlisted bridge sources and builds the pinned

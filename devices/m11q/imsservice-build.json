@@ -49,11 +49,12 @@
     "publication_status": "private-input-pending-final-licence-record",
     "files": {
       "com/sec/internal/google/GoogleModernImsService.java": "29d2f10d0c42f889f15ecaa9ef31b0200b12e6d9cdb30fc3217147add7b9e152",
-      "com/sec/internal/google/GoogleModernMmTelFeature.java": "b626fd75f05ef220ce317c7ede13b2cb81cc6f89a2c4432c8b87befe2ad9424b",
+      "com/sec/internal/google/GoogleModernMmTelFeature.java": "4a8831307b335f29e2dda0d0853a5ba07f329cb6f6d33af5cf6844b175f25390",
       "com/sec/internal/google/ModernCallRelay.java": "3f9a0e478346ae2a77e74bc0da4a65312cae82de76119d8923440a28fd152a2f",
       "com/sec/internal/google/ModernCallSession.java": "1720e929f4e1154142730146b9a844528918ebc6b56b7ee01dd459e1bf38a410",
       "com/sec/internal/google/ModernEventQueue.java": "7fec02e56ed5997a7f52341f3687e265b68aa4c705e4aff79844a6ae1e1e8339",
-      "com/sec/internal/google/ModernVoiceContext.java": "8950abe92015f19b5fc17bdd232ba93da1196411486cee1e780c91e00fa4188f"
+      "com/sec/internal/google/ModernSmsBridge.java": "fb50305bc9501552c8d8e6f5ba158fbe05ced16788feb5ac87a8d481f463d44b",
+      "com/sec/internal/google/ModernVoiceContext.java": "1ab736a98b45942f8fde89627a0567e2540f11db4690724d761deda3edb1d1c1"
     },
     "top_level_classes": [
       "GoogleModernImsService",
@@ -61,6 +62,7 @@
       "ModernCallRelay",
       "ModernCallSession",
       "ModernEventQueue",
+      "ModernSmsBridge",
       "ModernVoiceContext"
     ]
   },
@@ -72,12 +74,16 @@
   "ordered_patches": [
     "BC1-modern-mmtel-discovery",
     "BC2-modern-bridge-native-hooks",
-    "BG1-network-statistics-guard"
+    "BG1-network-statistics-guard",
+    "BH1-sms-icc-type-compat",
+    "BP1-sms-hqm-telemetry-guard"
   ],
   "transformation_contracts": {
     "BC1-modern-mmtel-discovery": "devices/m11q/bc1-manifest-contract.json",
     "BC2-modern-bridge-native-hooks": "devices/m11q/bc2-native-hooks-contract.json",
-    "BG1-network-statistics-guard": "devices/m11q/bg1-stats-guard-contract.json"
+    "BG1-network-statistics-guard": "devices/m11q/bg1-stats-guard-contract.json",
+    "BH1-sms-icc-type-compat": "devices/m11q/bh1-sms-icc-type-contract.json",
+    "BP1-sms-hqm-telemetry-guard": "devices/m11q/bp1-sms-hqm-telemetry-guard-contract.json"
   },
   "allowed_entry_changes": {
     "removed_exact": [
@@ -96,17 +102,25 @@
     "BG1-network-statistics-guard": {
       "replace_existing": ["classes.dex"],
       "add": []
+    },
+    "BH1-sms-icc-type-compat": {
+      "replace_existing": ["classes.dex"],
+      "add": []
+    },
+    "BP1-sms-hqm-telemetry-guard": {
+      "replace_existing": ["classes.dex"],
+      "add": []
     }
   },
   "final_dex_invariants": {
     "dex_count": 2,
-    "unsigned_apk_sha256": "453d228f77441e4e0df4b1d45ac055740f70ce1aa295c80d8c8d1a2e058ada87",
+    "unsigned_apk_sha256": "a9de2549bad19b3aeae3815e689b111384b81cc9dd59944a37e40fe1cda72d67",
     "entries": {
-      "classes.dex": "ab5b0fa1e3f244660d0ea6b287856409065381c78f9a682c4d03be5a15c8353c",
-      "classes2.dex": "c47750fb400ed9a4dca45490c9f4f5937bf99fa2d9e47b167866f46b7025a738"
+      "classes.dex": "a16a42ed01d284dc20efa57c67c6f18b6ffb20132367228b7e8a8c90f5eb90c6",
+      "classes2.dex": "5379c0688e2eaa48684d4d3ba7ff2cf570f7f28cca13d6d8934b0ebcad37d031"
     },
-    "classes2_policy": "BC2 bridge DEX must remain byte-for-byte unchanged through BG1",
-    "primary_policy": "Clean-stock one-pass apktool output; exact Stage 1BJ DEX pair runtime validated on SIM1 WWAN under Enforcing on 2026-09-07"
+    "classes2_policy": "Runtime-validated Stage 1BQ3 SIM1 bridge: retain Android's last explicit Voice/SMS enablement only across in-process feature recreation; registration, transport, emergency and CMC gates remain enforced",
+    "primary_policy": "Runtime-validated clean-stock one-pass apktool output with BH1 ICC-type compatibility and BP1 fail-soft optional SMS HQM role telemetry"
   },
   "historical_reference": {
     "hard_gate": false,

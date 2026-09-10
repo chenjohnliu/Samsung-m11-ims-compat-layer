@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BP1-sms-hqm-telemetry-guard",
+  "targets": [
+    {
+      "path": "com/sec/internal/ims/servicemodules/sms/SmsUtil.smali",
+      "class": "Lcom/sec/internal/ims/servicemodules/sms/SmsUtil;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "d01a780d6c27f99b1d3de7b7d8f6ba0994b95873b469c630cb8331c06ea077ca",
+      "required_method": "private static sendSMSInfoToHQM(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;ZI)V",
+      "legacy_lookup_count": 1,
+      "guarded_lookup_count": 1
+    }
+  ]
+}

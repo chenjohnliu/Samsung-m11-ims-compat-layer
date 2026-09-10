@@ -16,6 +16,7 @@ Confirmed on one device with CherishOS 4.12 / Android 13:
 - clear two-way speech on outgoing and incoming calls;
 - outgoing and incoming teardown;
 - stable IMS service and registration across an incoming call;
+- outgoing SMS delivery through validated IMS-to-SGs/CS fallback;
 - SELinux Enforcing throughout the validated call.
 
 Incoming SIP delivery has reached Samsung's userspace call-session path and the
@@ -26,9 +27,15 @@ current reproducible candidate releases that monitor before notifying Android.
 Runtime testing on 2026-09-07 confirmed ringing, answer, clear bidirectional
 speech and teardown without an IMS process restart or VoLTE-indicator loss.
 
-Not yet claimed: SIM2/DSDS, IMS SMS, VoWiFi, IMS emergency calls, ViLTE,
-handover, long-duration/repeated-call robustness, other Samsung models, other
-stock builds, or general carrier support. SIM2 currently exposes no
+Not yet claimed: final pure IMS-SMS delivery, SIM2/DSDS, VoWiFi, IMS emergency
+calls, ViLTE, inter-RAT handover, other Samsung models, other stock builds, or
+general carrier support. On 2026-09-10, the Stage 1BQ3 bridge plus the BQ6
+Telephony fallback passed a clean-flash SIM1 hot-swap regression: VoLTE
+availability returned after physical SIM removal/reinsertion, outgoing and
+incoming calls completed with clear bidirectional speech and teardown, and SMS
+send/receive remained functional. The previously suspected BQ7 call-failure
+regression was invalidated by a clean-flash control and BQ7 is not part of the
+validated candidate. SIM2 currently exposes no
 VoLTE/MMTEL support flag, so the validated scope remains SIM1-only.
 
 See the [Stage 1 runtime baseline](docs/STAGE1_RUNTIME_BASELINE.md) for the
@@ -62,7 +69,7 @@ The historical patch material is being filtered through the conservative
 - `tools/verify_payload.py` verifies the 14 declared stock inputs and can stage
   only the explicitly permitted payload categories.
 - `tools/build_imsservice.py` performs the complete local clean-stock BC1 →
-  BC2 → BG1 rebuild, generates private compile stubs, compiles the modern
+  BC2 → BG1 → BH1 → BP1 rebuild, generates private compile stubs, compiles the modern
   bridge, preserves every unrelated stock ZIP entry, and emits an unsigned APK
   plus a machine-readable report. See [the builder guide](docs/IMS_APK_BUILDER.md).
 - `tools/apk_entry_replace.py` rebuilds a ZIP/APK from a stock base while
@@ -78,6 +85,9 @@ The historical patch material is being filtered through the conservative
   manifest transformation without embedding the surrounding stock XML; see
   [the BC1 manifest guide](docs/BC1_MANIFEST.md). The outer builder is
   responsible for stock APK, stock framework and apktool hash pinning.
+- `tools/transform_bh1_sms_icc_type.py` replaces only the two Samsung SMS
+  fallback calls to the removed Android 12 `IccUtils.getIccType(int)` method
+  with a stock-equivalent APK-local property lookup.
 - `tools/transform_bc2_native_hooks.py` validates three exact private smali
   targets and emits a three-file overlay containing only the BC2 bridge hooks.
   It never edits or copies the decoded tree; see

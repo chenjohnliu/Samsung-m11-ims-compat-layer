@@ -13,6 +13,7 @@
       "stock_methods": [
         {"name": "getPhoneId", "descriptor": "()I", "access": ["public"], "throws": []},
         {"name": "hasVolteService", "descriptor": "()Z", "access": ["public"], "throws": []},
+        {"name": "hasService", "descriptor": "(Ljava/lang/String;)Z", "access": ["public"], "throws": []},
         {"name": "getCurrentRat", "descriptor": "()I", "access": ["public"], "throws": []},
         {"name": "getImsProfile", "descriptor": "()Lcom/sec/ims/settings/ImsProfile;", "access": ["public"], "throws": []}
       ],
@@ -27,7 +28,8 @@
       "java_kind": "class",
       "stock_methods": [
         {"name": "hasEmergencySupport", "descriptor": "()Z", "access": ["public"], "throws": []},
-        {"name": "getCmcType", "descriptor": "()I", "access": ["public"], "throws": []}
+        {"name": "getCmcType", "descriptor": "()I", "access": ["public"], "throws": []},
+        {"name": "getSmsPsi", "descriptor": "()Ljava/lang/String;", "access": ["public"], "throws": []}
       ],
       "project_hooks": []
     },
@@ -45,7 +47,13 @@
         {"name": "getRegistration", "descriptor": "(I)Landroid/telephony/ims/aidl/IImsRegistration;", "access": ["public"], "throws": []},
         {"name": "createCallProfile", "descriptor": "(III)Landroid/telephony/ims/ImsCallProfile;", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
         {"name": "createCallSession", "descriptor": "(ILandroid/telephony/ims/ImsCallProfile;Lcom/android/ims/internal/IImsCallSessionListener;)Lcom/android/ims/internal/IImsCallSession;", "access": ["public"], "throws": ["Landroid/os/RemoteException;", "Ljava/lang/UnsupportedOperationException;"]},
-        {"name": "getPendingCallSession", "descriptor": "(ILjava/lang/String;)Lcom/android/ims/internal/IImsCallSession;", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]}
+        {"name": "getPendingCallSession", "descriptor": "(ILjava/lang/String;)Lcom/android/ims/internal/IImsCallSession;", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "setSmsListener", "descriptor": "(ILandroid/telephony/ims/aidl/IImsSmsListener;)V", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "onSmsReady", "descriptor": "(I)V", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "sendSms", "descriptor": "(IIILjava/lang/String;Ljava/lang/String;Z[B)V", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "setRetryCount", "descriptor": "(III)V", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "acknowledgeSms", "descriptor": "(IIII)V", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]},
+        {"name": "acknowledgeSmsReport", "descriptor": "(IIII)V", "access": ["public"], "throws": ["Landroid/os/RemoteException;"]}
       ],
       "project_hooks": [
         {"name": "getInstanceIfReady", "descriptor": "()Lcom/sec/internal/google/GoogleImsService;", "access": ["public", "static", "declared-synchronized"], "throws": [], "provenance": "project-added BC2 hook", "verify_in_smali": true},

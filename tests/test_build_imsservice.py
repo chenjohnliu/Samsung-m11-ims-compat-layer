@@ -38,13 +38,16 @@ class BuildImsserviceTests(unittest.TestCase):
         config = MODULE.load_config(CONFIG)
         self.assertEqual(config["ordered_patches"], [
             "BC1-modern-mmtel-discovery", "BC2-modern-bridge-native-hooks",
-            "BG1-network-statistics-guard"])
-        self.assertEqual(len(config["bridge_source"]["files"]), 6)
+            "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
+            "BP1-sms-hqm-telemetry-guard"])
+        self.assertEqual(len(config["bridge_source"]["files"]), 7)
         self.assertEqual(config["stock_framework_res"]["size"], 69575977)
         self.assertEqual(config["toolchain"]["apktool"]["jvm_args"],
                          ["-XX:ActiveProcessorCount=1"])
-        self.assertEqual(config["final_dex_invariants"]["unsigned_apk_sha256"],
-                         "453d228f77441e4e0df4b1d45ac055740f70ce1aa295c80d8c8d1a2e058ada87")
+        self.assertEqual(config["final_dex_invariants"]["entries"]["classes.dex"],
+                         "a16a42ed01d284dc20efa57c67c6f18b6ffb20132367228b7e8a8c90f5eb90c6")
+        self.assertEqual(config["final_dex_invariants"]["entries"]["classes2.dex"],
+                         "5379c0688e2eaa48684d4d3ba7ff2cf570f7f28cca13d6d8934b0ebcad37d031")
         self.assertIn("javap_sha256", config["toolchain"]["jdk11"])
         self.assertEqual(MODULE.payload_identity(
             PAYLOAD, "/system/framework/imsmanager.jar"),
