@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BH1-sms-icc-type-compat",
+  "targets": [
+    {
+      "path": "com/sec/internal/google/ImsSmsImpl.smali",
+      "class": "Lcom/sec/internal/google/ImsSmsImpl;",
+      "class_access": ["public", "final"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "6c786f60693305b4ad5617a60c32de7b7ba5c1e3cd42ac0ee4e613f93b013523",
+      "required_methods": [
+        "private canFallback(I)Z",
+        "private canFallbackForTimeout()Z"
+      ],
+      "legacy_call_count": 2,
+      "compat_call_count": 2
+    }
+  ]
+}

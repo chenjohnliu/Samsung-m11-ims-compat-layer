@@ -92,13 +92,16 @@ def load_config(path: Path) -> dict:
             raise BuildError("device/build identity drift")
         if config["ordered_patches"] != [
             "BC1-modern-mmtel-discovery", "BC2-modern-bridge-native-hooks",
-            "BG1-network-statistics-guard",
+            "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
+            "BP1-sms-hqm-telemetry-guard",
         ]:
             raise BuildError("ordered transformation identity drift")
         expected_contracts = {
             "BC1-modern-mmtel-discovery": "devices/m11q/bc1-manifest-contract.json",
             "BC2-modern-bridge-native-hooks": "devices/m11q/bc2-native-hooks-contract.json",
             "BG1-network-statistics-guard": "devices/m11q/bg1-stats-guard-contract.json",
+            "BH1-sms-icc-type-compat": "devices/m11q/bh1-sms-icc-type-contract.json",
+            "BP1-sms-hqm-telemetry-guard": "devices/m11q/bp1-sms-hqm-telemetry-guard-contract.json",
         }
         if config["transformation_contracts"] != expected_contracts:
             raise BuildError("transformation contract mapping drift")
@@ -118,8 +121,8 @@ def load_config(path: Path) -> dict:
         bridge = config["bridge_source"]
         if bridge["publication_status"] != "private-input-pending-final-licence-record":
             raise BuildError("bridge publication boundary drift")
-        if not isinstance(bridge["files"], dict) or len(bridge["files"]) != 6:
-            raise BuildError("bridge source manifest must contain exactly six files")
+        if not isinstance(bridge["files"], dict) or len(bridge["files"]) != 7:
+            raise BuildError("bridge source manifest must contain exactly seven files")
         for relative, digest in bridge["files"].items():
             pure = PurePosixPath(relative)
             if pure.is_absolute() or ".." in pure.parts or pure.suffix != ".java":
@@ -353,6 +356,8 @@ def build(args: argparse.Namespace) -> dict:
         bc1 = _module("m11_bc1", "tools/transform_bc1_manifest.py")
         bc2 = _module("m11_bc2", "tools/transform_bc2_native_hooks.py")
         bg1 = _module("m11_bg1", "tools/transform_bg1_stats_guard.py")
+        bh1 = _module("m11_bh1", "tools/transform_bh1_sms_icc_type.py")
+        bp1 = _module("m11_bp1", "tools/transform_bp1_sms_hqm_guard.py")
         stubs = _module("m11_stubs", "tools/generate_compile_stubs.py")
         abi = _module("m11_abi", "tools/verify_framework_abi.py")
         packer = _module("m11_packer", "tools/apk_entry_replace.py")
@@ -375,6 +380,18 @@ def build(args: argparse.Namespace) -> dict:
             contracts["BG1-network-statistics-guard"], decoded / "smali",
             bg1_overlay, bg1_report)
         _copy_overlay(bg1_overlay, decoded / "smali", bg1.EXPECTED_PATHS)
+
+        bh1_overlay, bh1_report = stage / "bh1-overlay", stage / "bh1-report.json"
+        transform_reports["BH1-sms-icc-type-compat"] = bh1.transform(
+            contracts["BH1-sms-icc-type-compat"], decoded / "smali",
+            bh1_overlay, bh1_report)
+        _copy_overlay(bh1_overlay, decoded / "smali", bh1.EXPECTED_PATHS)
+
+        bp1_overlay, bp1_report = stage / "bp1-overlay", stage / "bp1-report.json"
+        transform_reports["BP1-sms-hqm-telemetry-guard"] = bp1.transform(
+            contracts["BP1-sms-hqm-telemetry-guard"], decoded / "smali",
+            bp1_overlay, bp1_report)
+        _copy_overlay(bp1_overlay, decoded / "smali", bp1.EXPECTED_PATHS)
 
         stub_dir, stub_report = stage / "compile-stubs", stage / "stub-report.json"
         stub_result = stubs.generate(ROOT / "devices/m11q/compile-stub-contract.json",
@@ -399,8 +416,10 @@ def build(args: argparse.Namespace) -> dict:
         if not bridge_dex.is_file() or set(x.name for x in dex_dir.iterdir()) != {"classes.dex"}:
             raise BuildError("D8 bridge output inventory drift")
         expected_bridge_dex = config["final_dex_invariants"]["entries"]["classes2.dex"]
-        if sha256_file(bridge_dex) != expected_bridge_dex:
-            raise BuildError("bridge classes2.dex hash mismatch")
+        actual_bridge_dex = sha256_file(bridge_dex)
+        if actual_bridge_dex != expected_bridge_dex:
+            raise BuildError("bridge classes2.dex hash mismatch: "
+                             f"expected={expected_bridge_dex} actual={actual_bridge_dex}")
 
         rebuilt = stage / "rebuilt.apk"
         _run(apktool + ["b", "-p", str(framework_dir), str(decoded), "-o", str(rebuilt)],
@@ -433,7 +452,9 @@ def build(args: argparse.Namespace) -> dict:
         tree = ET.parse(verified / "AndroidManifest.xml")
         bc1._validate_result(tree, bc1.load_contract(contracts["BC1-modern-mmtel-discovery"]))
         for marker in ("Lcom/sec/internal/google/ModernCallRelay;->constructionListener",
-                       "Lcom/sec/internal/google/ModernVoiceContext;->onIncoming"):
+                        "Lcom/sec/internal/google/ModernVoiceContext;->onIncoming",
+                        "Lcom/sec/internal/google/ImsSmsImpl;->getIccTypeCompat(I)I",
+                        "BP1: default SMS role unavailable; HQM CSDA omitted"):
             if not any(marker in item.read_text(encoding="utf-8")
                        for item in (verified / "smali").rglob("*.smali")):
                 raise BuildError(f"final primary DEX is missing hook: {marker}")
@@ -441,6 +462,12 @@ def build(args: argparse.Namespace) -> dict:
                        (verified / "smali_classes2/com/sec/internal/google").glob("*.smali")}
         if bridge_defs != set(config["bridge_source"]["top_level_classes"]):
             raise BuildError("final bridge class inventory drift or compile-stub leakage")
+        for marker in (
+                "BQ2: Voice capability reconciled from normal Samsung mmtel registration",
+                "BQ3: Voice enablement restored across feature recreation"):
+            if not any(marker in item.read_text(encoding="utf-8") for item in
+                       (verified / "smali_classes2/com/sec/internal/google").rglob("*.smali")):
+                raise BuildError(f"final bridge DEX is missing recovery marker: {marker}")
 
         payload = {
             "schema_version": 1,

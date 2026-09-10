@@ -214,6 +214,30 @@ class GeneratorTests(unittest.TestCase):
             ("Lcom/sec/internal/google/GoogleImsService;", "getInstanceIfReady"),
             ("Lcom/sec/internal/google/GoogleImsService;", "getModernIncomingIdentity"),
         ])
+        service = next(cls for cls in public_contract["classes"]
+                       if cls["descriptor"] == "Lcom/sec/internal/google/GoogleImsService;")
+        stock = {(method["name"], method["descriptor"])
+                 for group, method in service["methods"] if group == "stock_methods"}
+        self.assertTrue({
+            ("setSmsListener", "(ILandroid/telephony/ims/aidl/IImsSmsListener;)V"),
+            ("onSmsReady", "(I)V"),
+            ("sendSms", "(IIILjava/lang/String;Ljava/lang/String;Z[B)V"),
+            ("setRetryCount", "(III)V"),
+            ("acknowledgeSms", "(IIII)V"),
+            ("acknowledgeSmsReport", "(IIII)V"),
+        }.issubset(stock))
+        registration = next(cls for cls in public_contract["classes"]
+                            if cls["descriptor"] == "Lcom/sec/ims/ImsRegistration;")
+        registration_stock = {(method["name"], method["descriptor"])
+                              for group, method in registration["methods"]
+                              if group == "stock_methods"}
+        self.assertIn(("hasService", "(Ljava/lang/String;)Z"), registration_stock)
+        profile = next(cls for cls in public_contract["classes"]
+                       if cls["descriptor"] == "Lcom/sec/ims/settings/ImsProfile;")
+        profile_stock = {(method["name"], method["descriptor"])
+                         for group, method in profile["methods"]
+                         if group == "stock_methods"}
+        self.assertIn(("getSmsPsi", "()Ljava/lang/String;"), profile_stock)
         java_supers = {cls["descriptor"]: cls["java_super"]
                        for cls in public_contract["classes"]}
         self.assertIsNone(java_supers["Lcom/sec/internal/google/GoogleImsService;"])
