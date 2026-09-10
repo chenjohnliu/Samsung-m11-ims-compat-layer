@@ -46,7 +46,7 @@
     }
   },
   "bridge_source": {
-    "publication_status": "private-input-pending-final-licence-record",
+    "publication_status": "project-authored-apache-2.0",
     "files": {
       "com/sec/internal/google/GoogleModernImsService.java": "29d2f10d0c42f889f15ecaa9ef31b0200b12e6d9cdb30fc3217147add7b9e152",
       "com/sec/internal/google/GoogleModernMmTelFeature.java": "4a8831307b335f29e2dda0d0853a5ba07f329cb6f6d33af5cf6844b175f25390",

@@ -68,8 +68,7 @@ All Samsung material remains outside Git:
 - exact CWK3 `framework-res.apk` (required for a private apktool framework
   directory; never rely on the user's global apktool cache);
 - exact CWK3 `imsmanager.jar`;
-- the seven reviewed bridge Java files while their final licence record remains
-  pending;
+- the seven project-authored bridge Java files included in `bridge/java`;
 - an Android 13 `framework-minus-apex.jar`;
 - the hash-pinned apktool 2.9.3, JDK 11, R8 and zipalign files.
 
@@ -80,14 +79,15 @@ and the apktool framework input.
 ## Invocation
 
 Run from the repository root. Paths below are placeholders and must point to
-regular, non-symlink files on the local machine:
+regular, non-symlink files on the local machine. The builder uses the published
+`bridge/java` tree by default; `--bridge-source-root` remains available for an
+explicit hash-matching source tree:
 
 ```bash
 python3 tools/build_imsservice.py \
   --stock-apk PRIVATE/imsservice.apk \
   --framework-res-apk PRIVATE/framework-res.apk \
   --imsmanager-jar PRIVATE/imsmanager.jar \
-  --bridge-source-root PRIVATE/bridge-src \
   --framework-jar ANDROID_OUT/framework-minus-apex.jar \
   --framework-mode compatible \
   --apktool-jar TOOLS/apktool_2.9.3.jar \

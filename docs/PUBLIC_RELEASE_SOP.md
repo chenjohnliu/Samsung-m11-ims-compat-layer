@@ -1,11 +1,10 @@
 # Samsung M115F IMS compatibility layer — public release SOP
 
-Status: **source-only publication prepared; public visibility is still gated**.
-The Stage 1 runtime baseline is verified, but a clean public checkout cannot
-currently regenerate the complete APK because the seven bridge Java sources
-remain restricted inputs. A fresh firmware extraction has also not been run in
-this checkout. Do not represent the repository as fully reproducible until
-both gates are closed.
+Status: **source-complete publication candidate; public visibility is still
+gated on the final history audit and action-time confirmation**. The seven
+project-authored bridge Java sources are published under Apache-2.0. The fresh
+firmware extraction and complete non-ROM rebuild gate was rerun successfully on
+2026-09-10; see `docs/FRESH_EXTRACTION_VALIDATION.md`.
 
 This is not legal advice.  The conservative project policy is that Samsung APK,
 JAR, ELF and executable files are supplied by the user from firmware they are
@@ -63,26 +62,14 @@ Keep out of the public repository:
 - Runtime captures containing IMSI, MSISDN, SIP identities, IP addresses or
   other subscriber/carrier secrets unless reviewed and redacted.
 
-The current `config/cscfeature.xml`, `config/floating_feature.xml` and
-`config/customer_carrier_feature.json` are stock-derived inputs.  Before public
-release, either extract them locally as firmware inputs or replace them with a
-reviewed minimal project-authored configuration.  Do not assume that being text
-rather than an ELF makes redistribution automatically safe.
+Stock-derived configuration remains a local firmware input and is not included
+in this repository. Do not assume that text is automatically redistributable.
 
-Likewise, framework compatibility `.java` files need a provenance review. Only
-clean-room/project-authored implementations should be offered under the
-project's licence; a Java filename or source representation is not by itself
-proof of redistributability. The current public checkout deliberately omits
-all seven bridge Java implementations. Their names and hashes are an inventory
-and verification boundary, not a licence grant. A restricted local bridge
-bundle must be supplied separately and must match
-`devices/m11q/imsservice-build.json` before the builder may run.
-
-The public checkout can therefore reproduce the declaration-only ABI checks,
-fail-closed transformation logic and synthetic tests, but not the complete APK
-until that bridge bundle is lawfully publishable or a clean-room replacement is
-created and independently reviewed. Never substitute Samsung-decompiled code
-or a stock payload to make the public checkout appear complete.
+The seven bridge Java implementations are project-authored compatibility code,
+not decompiled Samsung sources. A technical audit found no Samsung implementation
+bodies or decompiler markers. Their package names and Samsung-private method
+signatures exist only for interoperability. Exact source hashes and provenance
+are recorded in `docs/BRIDGE_SOURCE_PROVENANCE.md` and enforced by the builder.
 
 ## 3. Proposed public repository layout
 
@@ -440,15 +427,8 @@ Recommended design:
 
 Pending before changing GitHub visibility to public:
 
-- Exercise the current 14-file `verify_payload.py` against a fresh firmware
-  extraction and keep stock-input hashes separate from patched-output hashes.
-- Re-run the complete pipeline from a fresh CWK3 extraction.
-- Finalize the provenance/licence record for all seven bridge sources, or
-  publish a reviewed clean-room replacement. Until then the bridge remains a
-  restricted input and the complete APK is not publicly reproducible.
-- Confirm that any stock-derived configuration is extracted locally rather than
-  redistributed, or replace it with reviewed project-authored configuration.
 - Confirm the full-history audit again immediately before visibility change.
+- Obtain action-time confirmation for the visibility change.
 
 The repository includes `LICENSE`, which covers only project-authored source,
 tooling, tests, contracts, ABI fixtures and documentation. It does not license

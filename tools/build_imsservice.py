@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the private M11 Stage-1 IMS APK from exact local inputs.
+"""Build the M11 Stage-1 IMS APK from exact local proprietary inputs.
 
 This orchestrator never downloads firmware, publishes decoded Samsung files,
 signs a ROM, or invokes an Android ROM build. All decoded/generated material is
@@ -28,6 +28,7 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "devices" / "m11q" / "imsservice-build.json"
 DEFAULT_PAYLOAD = ROOT / "devices" / "m11q" / "payload-manifest.tsv"
+DEFAULT_BRIDGE = ROOT / "bridge" / "java"
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 SIGNATURES = {"META-INF/CERT.RSA", "META-INF/CERT.SF", "META-INF/MANIFEST.MF"}
 
@@ -119,7 +120,7 @@ def load_config(path: Path) -> dict:
             elif key in {"r8", "zipalign"}:
                 _hash(value["sha256"], key)
         bridge = config["bridge_source"]
-        if bridge["publication_status"] != "private-input-pending-final-licence-record":
+        if bridge["publication_status"] != "project-authored-apache-2.0":
             raise BuildError("bridge publication boundary drift")
         if not isinstance(bridge["files"], dict) or len(bridge["files"]) != 7:
             raise BuildError("bridge source manifest must contain exactly seven files")
@@ -512,7 +513,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--stock-apk", required=True, type=Path)
     result.add_argument("--framework-res-apk", required=True, type=Path)
     result.add_argument("--imsmanager-jar", required=True, type=Path)
-    result.add_argument("--bridge-source-root", required=True, type=Path)
+    result.add_argument("--bridge-source-root", type=Path, default=DEFAULT_BRIDGE,
+                        help="bridge source tree (default: repository bridge/java)")
     result.add_argument("--framework-jar", required=True, type=Path)
     result.add_argument("--framework-mode", choices=("golden", "compatible"), default="golden")
     result.add_argument("--apktool-jar", required=True, type=Path)
