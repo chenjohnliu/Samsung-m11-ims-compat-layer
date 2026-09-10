@@ -1,119 +1,82 @@
 # Samsung Galaxy M11 IMS compatibility layer
 
-Reproducible tooling and documentation for bringing Samsung's stock IMS stack
-to Android 13 custom ROMs on the Galaxy M11 (`SM-M115F`, `m11q`).
-
-## Status
-
-This repository is an early **private engineering checkpoint**, not a release or
+Project-authored tooling and documentation for adapting Samsung's stock IMS
+stack to Android 13 custom ROMs on the Galaxy M11 (`SM-M115F`, `m11q`). This
+repository is source-only: it does not distribute Samsung firmware or a
 flashable package.
 
-Confirmed on one device with CherishOS 4.12 / Android 13:
+## Public-release status
 
-- SIM1 WWAN IMS registration;
-- outgoing VoLTE establishment;
-- incoming VoLTE ringing and answer;
-- clear two-way speech on outgoing and incoming calls;
-- outgoing and incoming teardown;
-- stable IMS service and registration across an incoming call;
-- outgoing SMS delivery through validated IMS-to-SGs/CS fallback;
-- SELinux Enforcing throughout the validated call.
+The Stage 1 runtime baseline is verified on one device with CherishOS 4.12 /
+Android 13, SELinux Enforcing, SIM1 WWAN and stock build `M115FXXS5CWK3`:
 
-Incoming SIP delivery has reached Samsung's userspace call-session path and the
-Android 13 `ImsPhoneCallTracker`. Runtime evidence then exposed a synchronous
-Binder deadlock in the first modern incoming bridge: it held the bridge owner
-monitor while Android synchronously re-entered the call-session facade. The
-current reproducible candidate releases that monitor before notifying Android.
-Runtime testing on 2026-09-07 confirmed ringing, answer, clear bidirectional
-speech and teardown without an IMS process restart or VoLTE-indicator loss.
+- IMS registration;
+- outgoing and incoming VoLTE, including ringing, answer, two-way speech and teardown;
+- SMS send/receive using the validated IMS-to-SGs/CS fallback path;
+- physical SIM1 hot-swap recovery followed by VoLTE and SMS operation.
 
-Not yet claimed: final pure IMS-SMS delivery, SIM2/DSDS, VoWiFi, IMS emergency
-calls, ViLTE, inter-RAT handover, other Samsung models, other stock builds, or
-general carrier support. On 2026-09-10, the Stage 1BQ3 bridge plus the BQ6
-Telephony fallback passed a clean-flash SIM1 hot-swap regression: VoLTE
-availability returned after physical SIM removal/reinsertion, outgoing and
-incoming calls completed with clear bidirectional speech and teardown, and SMS
-send/receive remained functional. The previously suspected BQ7 call-failure
-regression was invalidated by a clean-flash control and BQ7 is not part of the
-validated candidate. SIM2 currently exposes no
-VoLTE/MMTEL support flag, so the validated scope remains SIM1-only.
+The verified source checkpoints are compatibility layer `8a3dc34`, device tree
+`510d965`, and Telephony `afedb3add`. The verified ROM pre-release was
+`20260910-13-rc1`. BQ3 IMS bridge plus BQ6 generic Telephony fallback is the
+selected candidate; BQ7 is excluded. A prior cold-boot failure was attributed
+to dirty `/data` persistent-state contamination, not a source regression; the
+exact contaminating item was not isolated.
 
-See the [Stage 1 runtime baseline](docs/STAGE1_RUNTIME_BASELINE.md) for the
-acceptance matrix and regression boundary.
+This is not a claim of universal carrier or device support. SIM2/DSDS, VoWiFi,
+emergency calling, ViLTE, inter-RAT handover, other Samsung models/builds and
+general carrier support are unverified and intentionally out of scope.
 
-## Proprietary-file policy
+## Reproducibility boundary
 
-This repository intentionally contains no Samsung APK, JAR, shared library,
-daemon, firmware image, signing key, or decoded stock tree. Users must extract
-the exact inputs locally from firmware they are entitled to use. Hash-pinned
-tools then verify and transform those inputs.
-
-Current validated stock reference:
-
-```text
-Device:  Samsung Galaxy M11 SM-M115F
-CSC:     BRI
-Build:   M115FXXS5CWK3
-Android: 12
-```
-
-See [the public-release SOP](docs/PUBLIC_RELEASE_SOP.md) and the
-[M11 payload manifest](devices/m11q/payload-manifest.tsv). Reproducible APK and
-toolchain identities are centralized in
+The public checkout contains the fail-closed transformers, contracts, tests,
+ABI declaration fixtures and verification tooling. It does not contain the
+seven bridge Java implementation files or Samsung-derived compile inputs. The
+bridge inventory and expected hashes are recorded in
 [`devices/m11q/imsservice-build.json`](devices/m11q/imsservice-build.json).
-The historical patch material is being filtered through the conservative
-[`docs/PATCH_PROVENANCE.md`](docs/PATCH_PROVENANCE.md) publication boundary.
 
-## Tools currently available
+Therefore a fresh public checkout can reproduce and test the safe transformation
+logic, but cannot honestly regenerate the complete verified APK without a
+separately obtained bridge-source bundle and the user's legally obtained,
+hash-matching Samsung firmware inputs. The required restricted bundle is:
 
-- `tools/verify_payload.py` verifies the 14 declared stock inputs and can stage
-  only the explicitly permitted payload categories.
-- `tools/build_imsservice.py` performs the complete local clean-stock BC1 →
-  BC2 → BG1 → BH1 → BP1 rebuild, generates private compile stubs, compiles the modern
-  bridge, preserves every unrelated stock ZIP entry, and emits an unsigned APK
-  plus a machine-readable report. See [the builder guide](docs/IMS_APK_BUILDER.md).
-- `tools/apk_entry_replace.py` rebuilds a ZIP/APK from a stock base while
-  changing only explicitly allowed entries and removing only exact stale v1
-  signature entries.
-- `tools/verify_framework_abi.py` verifies the local Android 13
-  `framework-minus-apex.jar` in exact golden-hash or ABI-compatible mode; see
-  [the framework ABI guide](docs/FRAMEWORK_ABI.md).
-- `tools/generate_compile_stubs.py` verifies allowlisted declarations in
-  private local smali roots and emits disposable compile-only Java ABI stubs.
-  It never copies implementations, fields or debug metadata.
-- `tools/transform_bc1_manifest.py` performs the fail-closed, MMTEL-only BC1
-  manifest transformation without embedding the surrounding stock XML; see
-  [the BC1 manifest guide](docs/BC1_MANIFEST.md). The outer builder is
-  responsible for stock APK, stock framework and apktool hash pinning.
-- `tools/transform_bh1_sms_icc_type.py` replaces only the two Samsung SMS
-  fallback calls to the removed Android 12 `IccUtils.getIccType(int)` method
-  with a stock-equivalent APK-local property lookup.
-- `tools/transform_bc2_native_hooks.py` validates three exact private smali
-  targets and emits a three-file overlay containing only the BC2 bridge hooks.
-  It never edits or copies the decoded tree; see
-  [the BC2 native-hook guide](docs/BC2_NATIVE_HOOKS.md).
-- `tools/transform_bg1_stats_guard.py` validates the two exact CWK3 statistics
-  classes and emits a two-file overlay that degrades unavailable optional video
-  accounting without fabricating a zero-byte result; see
-  [the BG1 statistics guide](docs/BG1_STATS_GUARD.md).
-- Synthetic unit tests contain no Samsung code or binaries.
+1. the seven bridge Java files listed in `imsservice-build.json`, matching the
+   recorded hashes and with provenance/licence evidence;
+2. the exact stock files listed in
+   [`devices/m11q/payload-manifest.tsv`](devices/m11q/payload-manifest.tsv);
+3. the matching Android framework/APK decoding and build tools described in
+   [`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md).
 
-Run the tests:
+Until the bridge-source provenance is cleared, do not publish that bundle,
+Samsung-derived implementations, decoded trees, generated smali, or rebuilt
+APK/JAR/SO/ELF files. The builder must fail closed when the restricted bridge
+source is absent or its hashes do not match.
+
+## Repository contents
+
+- `tools/` — payload verification, bridge build orchestration, ABI checks and
+  narrow fail-closed transformations;
+- `devices/m11q/` — input manifest, transformation contracts and bridge
+  inventory; no proprietary payload;
+- `bridge/abi/` — declaration-only Android 13 ABI fixtures;
+- `tests/` — synthetic tests without Samsung binaries or implementations;
+- `docs/` — runtime baseline, provenance boundary and release SOP.
+
+Run the source-only validation suite:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-## Work still required before a release
+No Android ROM build is performed by this repository. Users build ROMs
+manually after preparing their own permitted inputs.
 
-- Re-run the ZIP-preserving builder from a separately fresh firmware
-  extraction, rather than the current hash-verified research extraction.
-- Build and flash a ROM manually, then repeat the runtime acceptance tests.
-- Finalize authorship/licensing for the six project bridge sources so a clean
-  public checkout has every non-proprietary source required by the builder.
-- Review provenance of stock-derived text configuration and framework
-  compatibility source before publication.
-- Add a licence for project-authored work after the provenance boundary is
-  finalized.
+## Licensing and proprietary inputs
 
-No ROM build is performed by the tools in this repository.
+See [`LICENSE`](LICENSE). The Apache-2.0 license covers only project-authored
+material in this repository. Samsung firmware, APKs, JARs, shared libraries,
+native executables, carrier data and other stock-derived inputs are excluded
+and remain governed by their own terms.
+
+See [`docs/PUBLIC_RELEASE_SOP.md`](docs/PUBLIC_RELEASE_SOP.md) for the
+restricted-input workflow and publication gates, and
+[`docs/PATCH_PROVENANCE.md`](docs/PATCH_PROVENANCE.md) for source boundaries.

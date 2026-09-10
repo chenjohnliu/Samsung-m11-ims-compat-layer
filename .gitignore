@@ -9,12 +9,23 @@ compile-stub-report.json
 # Firmware, partitions, Android packages and native/JVM payloads
 *.apk
 *.jar
+*.dex
 *.so
+*.elf
+*.class
 *.img
 *.bin
 *.tar
 *.tar.md5
 *.lz4
+*.7z
+
+# Runtime captures and local subscriber/carrier data
+/captures/
+/runtime/
+*.log
+*.pcap
+*.qxdm
 
 # Keys and certificates
 *.pk8
