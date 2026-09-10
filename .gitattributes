@@ -1,0 +1,5 @@
+# Hash-pinned bridge source must retain byte-identical LF line endings on every host.
+/bridge/java/**/*.java text eol=lf
+
+# Declaration fixtures are compared as text and should remain platform-neutral.
+/bridge/abi/*.txt text eol=lf

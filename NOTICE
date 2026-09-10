@@ -1,0 +1,15 @@
+Samsung Galaxy M11 IMS compatibility layer
+Copyright 2026 Chen-John Liu
+
+The Apache License 2.0 applies only to project-authored source, tooling, tests,
+contracts, ABI declaration fixtures, and documentation distributed in this
+repository.
+
+Samsung firmware, APKs, JARs, shared libraries, native executables, decoded
+stock material, carrier material, and other third-party inputs are not part of
+this work and are not licensed or distributed by this project. Product and
+company names may be trademarks of their respective owners and are used only
+to describe compatibility.
+
+The declaration-only Android ABI fixtures are derived from Android Open Source
+Project interfaces licensed under Apache License 2.0.

@@ -28,28 +28,24 @@ general carrier support are unverified and intentionally out of scope.
 
 ## Reproducibility boundary
 
-The public checkout contains the fail-closed transformers, contracts, tests,
-ABI declaration fixtures and verification tooling. It does not contain the
-seven bridge Java implementation files or Samsung-derived compile inputs. The
-bridge inventory and expected hashes are recorded in
+The public checkout contains the seven project-authored bridge Java sources,
+fail-closed transformers, contracts, tests, ABI declaration fixtures and
+verification tooling. The bridge inventory and expected hashes are recorded in
 [`devices/m11q/imsservice-build.json`](devices/m11q/imsservice-build.json).
 
-Therefore a fresh public checkout can reproduce and test the safe transformation
-logic, but cannot honestly regenerate the complete verified APK without a
-separately obtained bridge-source bundle and the user's legally obtained,
-hash-matching Samsung firmware inputs. The required restricted bundle is:
+Therefore a fresh public checkout can reproduce the complete project-authored
+logic and regenerate the verified APK when the user supplies legally obtained,
+hash-matching Samsung firmware inputs and the documented build toolchain. The
+required private inputs are:
 
-1. the seven bridge Java files listed in `imsservice-build.json`, matching the
-   recorded hashes and with provenance/licence evidence;
-2. the exact stock files listed in
+1. the exact stock files listed in
    [`devices/m11q/payload-manifest.tsv`](devices/m11q/payload-manifest.tsv);
-3. the matching Android framework/APK decoding and build tools described in
+2. the matching Android framework/APK decoding and build tools described in
    [`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md).
 
-Until the bridge-source provenance is cleared, do not publish that bundle,
-Samsung-derived implementations, decoded trees, generated smali, or rebuilt
-APK/JAR/SO/ELF files. The builder must fail closed when the restricted bridge
-source is absent or its hashes do not match.
+Do not publish Samsung-derived implementations, decoded trees, generated smali,
+or rebuilt APK/JAR/SO/ELF files. The builder fails closed if a bridge source is
+missing or differs from its reviewed hash.
 
 ## Repository contents
 
@@ -57,6 +53,7 @@ source is absent or its hashes do not match.
   narrow fail-closed transformations;
 - `devices/m11q/` — input manifest, transformation contracts and bridge
   inventory; no proprietary payload;
+- `bridge/java/` — project-authored Stage 1 bridge source;
 - `bridge/abi/` — declaration-only Android 13 ABI fixtures;
 - `tests/` — synthetic tests without Samsung binaries or implementations;
 - `docs/` — runtime baseline, provenance boundary and release SOP.
@@ -72,11 +69,13 @@ manually after preparing their own permitted inputs.
 
 ## Licensing and proprietary inputs
 
-See [`LICENSE`](LICENSE). The Apache-2.0 license covers only project-authored
+See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The Apache-2.0 license covers only project-authored
 material in this repository. Samsung firmware, APKs, JARs, shared libraries,
 native executables, carrier data and other stock-derived inputs are excluded
 and remain governed by their own terms.
 
 See [`docs/PUBLIC_RELEASE_SOP.md`](docs/PUBLIC_RELEASE_SOP.md) for the
-restricted-input workflow and publication gates, and
+private-stock-input workflow and publication gates, and
 [`docs/PATCH_PROVENANCE.md`](docs/PATCH_PROVENANCE.md) for source boundaries.
+The completed fresh extraction and non-ROM rebuild are recorded in
+[`docs/FRESH_EXTRACTION_VALIDATION.md`](docs/FRESH_EXTRACTION_VALIDATION.md).

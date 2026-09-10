@@ -41,6 +41,9 @@ class BuildImsserviceTests(unittest.TestCase):
             "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
             "BP1-sms-hqm-telemetry-guard"])
         self.assertEqual(len(config["bridge_source"]["files"]), 7)
+        self.assertEqual(config["bridge_source"]["publication_status"],
+                         "project-authored-apache-2.0")
+        self.assertEqual(MODULE.DEFAULT_BRIDGE, ROOT / "bridge" / "java")
         self.assertEqual(config["stock_framework_res"]["size"], 69575977)
         self.assertEqual(config["toolchain"]["apktool"]["jvm_args"],
                          ["-XX:ActiveProcessorCount=1"])
@@ -53,6 +56,13 @@ class BuildImsserviceTests(unittest.TestCase):
             PAYLOAD, "/system/framework/imsmanager.jar"),
             ("ba88f7111ea5c678d597dcb0498ee9fc42611fd4f6af12b6312fad05495de78b",
              671422))
+
+    def test_repository_bridge_sources_match_manifest(self):
+        config = MODULE.load_config(CONFIG)
+        sources = MODULE._bridge_sources(MODULE.DEFAULT_BRIDGE, config)
+        self.assertEqual(len(sources), 7)
+        self.assertTrue(all(MODULE.DEFAULT_BRIDGE.resolve() in source.parents
+                            for source in sources))
 
     def test_config_and_payload_drift_fail_closed(self):
         raw = json.loads(CONFIG.read_text(encoding="utf-8"))
