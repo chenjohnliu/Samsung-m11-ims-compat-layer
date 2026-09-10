@@ -1,9 +1,11 @@
-# Samsung M115F IMS compatibility layer — public release SOP (draft)
+# Samsung M115F IMS compatibility layer — public release SOP
 
-Status: **local one-command builder and SIM1 Stage 1 runtime validation
-complete; public release still pending**. This document records the safe
-publication model and the exact validated Stage 1 artifact chain. A separately
-fresh firmware extraction remains required before a public release.
+Status: **source-only publication prepared; public visibility is still gated**.
+The Stage 1 runtime baseline is verified, but a clean public checkout cannot
+currently regenerate the complete APK because the seven bridge Java sources
+remain restricted inputs. A fresh firmware extraction has also not been run in
+this checkout. Do not represent the repository as fully reproducible until
+both gates are closed.
 
 This is not legal advice.  The conservative project policy is that Samsung APK,
 JAR, ELF and executable files are supplied by the user from firmware they are
@@ -21,11 +23,18 @@ Known-good device/firmware baseline:
 - Extracted `system.img` SHA-256:
   `9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d`.
 - Target validated so far: CherishOS 4.12 / Android 13.
-- Confirmed function: SIM1 WWAN VoLTE registration, outgoing and incoming call
-  establishment, incoming ringing/answer, clear two-way speech and teardown
-  under SELinux Enforcing.
+- Confirmed function: SIM1 WWAN IMS registration, outgoing and incoming VoLTE
+  establishment, incoming ringing/answer, clear two-way speech and teardown,
+  SMS send/receive, and physical SIM1 hot-swap recovery followed by VoLTE and
+  SMS operation under SELinux Enforcing.
+- Verified source checkpoints: compatibility layer `8a3dc34`, device tree
+  `510d965`, Telephony `afedb3add`, and ROM pre-release `20260910-13-rc1`.
+- Selected candidate: BQ3 IMS bridge plus BQ6 generic Telephony fallback.
+  BQ7 is excluded. A prior cold-boot failure was attributed to dirty `/data`
+  persistent-state contamination; the exact contaminating item was not
+  isolated.
 
-Do not describe SIM2/DSDS, IMS SMS, VoWiFi, IMS emergency calling, ViLTE,
+Do not describe SIM2/DSDS, pure IMS-SMS delivery, VoWiFi, IMS emergency calling, ViLTE,
 handover, other Samsung devices, other stock builds or general carrier support
 as working until each is tested separately. SIM2 currently exposes no
 VoLTE/MMTEL support flag; this remains a SIM1-only claim.
@@ -60,10 +69,20 @@ release, either extract them locally as firmware inputs or replace them with a
 reviewed minimal project-authored configuration.  Do not assume that being text
 rather than an ELF makes redistribution automatically safe.
 
-Likewise, framework compatibility `.java` files need a provenance review.  Only
+Likewise, framework compatibility `.java` files need a provenance review. Only
 clean-room/project-authored implementations should be offered under the
 project's licence; a Java filename or source representation is not by itself
-proof of redistributability.
+proof of redistributability. The current public checkout deliberately omits
+all seven bridge Java implementations. Their names and hashes are an inventory
+and verification boundary, not a licence grant. A restricted local bridge
+bundle must be supplied separately and must match
+`devices/m11q/imsservice-build.json` before the builder may run.
+
+The public checkout can therefore reproduce the declaration-only ABI checks,
+fail-closed transformation logic and synthetic tests, but not the complete APK
+until that bridge bundle is lawfully publishable or a clean-room replacement is
+created and independently reviewed. Never substitute Samsung-decompiled code
+or a stock payload to make the public checkout appear complete.
 
 ## 3. Proposed public repository layout
 
@@ -405,12 +424,9 @@ Confirmed:
 
 - The 14 current payload identities and the historical three-stage APK hash
   chain.
-- The current clean-stock Stage 1BJ candidate is unsigned APK `453d228f...`,
-  primary DEX `ab5b0fa1...` and bridge DEX `c47750fb...`; it passes the static
-  builder gates.
-- A manually built/flashed ROM from that candidate passed real-party outgoing
-  and incoming calls under Enforcing, including incoming ringing, answer,
-  bidirectional speech and teardown without IMS process restart.
+- The Stage 1BQ3/BQ6 candidate passed real-party SIM1 outgoing and incoming
+  calls under Enforcing, including incoming ringing, answer, bidirectional
+  speech and teardown, plus SMS send/receive and post-hot-swap recovery.
 - Device/framework source checkpoints exist locally without the proprietary
   payload being committed.
 
@@ -422,16 +438,19 @@ Recommended design:
 - Be more conservative than the current S20 repository by not publishing the
   Samsung prebuilt payload itself.
 
-Pending before public release:
+Pending before changing GitHub visibility to public:
 
 - Exercise the current 14-file `verify_payload.py` against a fresh firmware
   extraction and keep stock-input hashes separate from patched-output hashes.
 - Re-run the complete pipeline from a fresh CWK3 extraction.
-- Preserve the 2026-09-07 Stage 1BJ outgoing/incoming runtime captures as the
-  regression baseline for the exact `453d228f...` unsigned candidate.
-- Finalize the licence/authorship record for the six bridge sources required by
-  a clean public checkout.
-- Decide how to handle the three stock-derived configuration files.
-- Select a licence for project-authored work after the remaining provenance
-  boundary is finalized. The current GitHub repository remains a private
-  engineering checkpoint, not a public release.
+- Finalize the provenance/licence record for all seven bridge sources, or
+  publish a reviewed clean-room replacement. Until then the bridge remains a
+  restricted input and the complete APK is not publicly reproducible.
+- Confirm that any stock-derived configuration is extracted locally rather than
+  redistributed, or replace it with reviewed project-authored configuration.
+- Confirm the full-history audit again immediately before visibility change.
+
+The repository includes `LICENSE`, which covers only project-authored source,
+tooling, tests, contracts, ABI fixtures and documentation. It does not license
+Samsung firmware, APK/JAR/SO/ELF files, decoded stock material, carrier inputs
+or any other third-party payload.

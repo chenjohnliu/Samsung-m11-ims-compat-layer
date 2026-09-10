@@ -1,0 +1,27 @@
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+Copyright 2026 Chen-John Liu
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+## Scope of this repository
+
+This license applies only to project-authored source, tooling, tests,
+contracts, ABI fixtures, and documentation that are present in this
+repository and identified as project-authored. It does not grant any right to
+Samsung firmware, APKs, JARs, shared libraries, native executables, decoded
+stock material, carrier material, or other third-party inputs that users may
+provide locally. Those inputs remain subject to their own terms and are not
+distributed by this project.
