@@ -203,7 +203,9 @@ any transformation.
 
 ## 7. Rebuild the IMS APK from stock
 
-The public design should follow the useful part of the S20 project:
+The public design follows the useful parts of
+[`myesxc/Samsung-s20-ims-compat-layer`](https://github.com/myesxc/Samsung-s20-ims-compat-layer),
+adapted and independently validated for the Galaxy M11:
 
 1. Pin the exact stock APK input.
 2. Decode into a private temporary directory.
@@ -421,8 +423,9 @@ Recommended design:
 
 - Use exact input hash gates, ordered patches, private temporary decode trees,
   structural verification and locally generated proprietary output, similar to
-  the staged design documented by the S20 project.
-- Be more conservative than the current S20 repository by not publishing the
+  the staged design documented by
+  [`myesxc/Samsung-s20-ims-compat-layer`](https://github.com/myesxc/Samsung-s20-ims-compat-layer).
+- Be more conservative than that reference repository by not publishing the
   Samsung prebuilt payload itself.
 
 Pending before changing GitHub visibility to public:
