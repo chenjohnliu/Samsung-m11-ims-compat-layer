@@ -5,6 +5,14 @@ stack to Android 13 custom ROMs on the Galaxy M11 (`SM-M115F`, `m11q`). This
 repository is source-only: it does not distribute Samsung firmware or a
 flashable package.
 
+## Reference and acknowledgement
+
+This project was developed with reference to
+[`myesxc/Samsung-s20-ims-compat-layer`](https://github.com/myesxc/Samsung-s20-ims-compat-layer).
+Its staged compatibility-layer and stock-APK adaptation approach informed this
+work, which was then modified and independently validated for the Galaxy M11,
+its pinned firmware inputs, and the runtime scope documented below.
+
 ## Public-release status
 
 The Stage 1 runtime baseline is verified on one device with CherishOS 4.12 /
