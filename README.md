@@ -42,9 +42,12 @@ verification tooling. The bridge inventory and expected hashes are recorded in
 [`devices/m11q/imsservice-build.json`](devices/m11q/imsservice-build.json).
 
 Therefore a fresh public checkout can reproduce the complete project-authored
-logic and regenerate the verified APK when the user supplies legally obtained,
-hash-matching Samsung firmware inputs and the documented build toolchain. The
-required private inputs are:
+logic when the user supplies legally obtained, hash-matching Samsung firmware
+inputs and the documented build toolchain. The current Stage 2 source was
+promoted only after two deterministic `PIN_DISCOVERY` runs produced identical
+DEX and unsigned-APK identities. The default strict mode can regenerate and
+publish that exactly pinned unsigned APK. This build reproducibility is not a
+SIM2 runtime-validation claim. The required private inputs are:
 
 1. the exact stock files listed in
    [`devices/m11q/payload-manifest.tsv`](devices/m11q/payload-manifest.tsv);
@@ -61,7 +64,8 @@ missing or differs from its reviewed hash.
   narrow fail-closed transformations;
 - `devices/m11q/` — input manifest, transformation contracts and bridge
   inventory; no proprietary payload;
-- `bridge/java/` — project-authored Stage 1 bridge source;
+- `bridge/java/` — project-authored Stage 1 baseline and Stage 2 slot-policy
+  bridge source;
 - `bridge/abi/` — declaration-only Android 13 ABI fixtures;
 - `tests/` — synthetic tests without Samsung binaries or implementations;
 - `docs/` — runtime baseline, provenance boundary and release SOP.

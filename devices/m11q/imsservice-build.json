@@ -48,13 +48,13 @@
   "bridge_source": {
     "publication_status": "project-authored-apache-2.0",
     "files": {
-      "com/sec/internal/google/GoogleModernImsService.java": "29d2f10d0c42f889f15ecaa9ef31b0200b12e6d9cdb30fc3217147add7b9e152",
+      "com/sec/internal/google/GoogleModernImsService.java": "6d23e4fdaad5bc6c3da57736dd74168009f23dd0286560663be120eb043344b2",
       "com/sec/internal/google/GoogleModernMmTelFeature.java": "4a8831307b335f29e2dda0d0853a5ba07f329cb6f6d33af5cf6844b175f25390",
       "com/sec/internal/google/ModernCallRelay.java": "3f9a0e478346ae2a77e74bc0da4a65312cae82de76119d8923440a28fd152a2f",
       "com/sec/internal/google/ModernCallSession.java": "1720e929f4e1154142730146b9a844528918ebc6b56b7ee01dd459e1bf38a410",
       "com/sec/internal/google/ModernEventQueue.java": "7fec02e56ed5997a7f52341f3687e265b68aa4c705e4aff79844a6ae1e1e8339",
-      "com/sec/internal/google/ModernSmsBridge.java": "fb50305bc9501552c8d8e6f5ba158fbe05ced16788feb5ac87a8d481f463d44b",
-      "com/sec/internal/google/ModernVoiceContext.java": "1ab736a98b45942f8fde89627a0567e2540f11db4690724d761deda3edb1d1c1"
+      "com/sec/internal/google/ModernSmsBridge.java": "5ad5bc4efe07c2589c61205f0ce30e50ce091e9b8c16fd1f6f2eef75c85b7e68",
+      "com/sec/internal/google/ModernVoiceContext.java": "ea4dfed411916974604a9e9cd5613a1a8521d9395e976d5985a9735a7bee0d69"
     },
     "top_level_classes": [
       "GoogleModernImsService",
@@ -113,13 +113,15 @@
     }
   },
   "final_dex_invariants": {
+    "pin_state": "pinned",
+    "pin_basis": "current-source-build",
     "dex_count": 2,
-    "unsigned_apk_sha256": "a9de2549bad19b3aeae3815e689b111384b81cc9dd59944a37e40fe1cda72d67",
+    "unsigned_apk_sha256": "607491254442757133bcf2034f43763d5629f31961b3d787b01fbde8437633d9",
     "entries": {
       "classes.dex": "a16a42ed01d284dc20efa57c67c6f18b6ffb20132367228b7e8a8c90f5eb90c6",
-      "classes2.dex": "5379c0688e2eaa48684d4d3ba7ff2cf570f7f28cca13d6d8934b0ebcad37d031"
+      "classes2.dex": "8c51137524e0adf37305f852ea28306ac44ee86b5a92963e9ff19b32c314756b"
     },
-    "classes2_policy": "Runtime-validated Stage 1BQ3 SIM1 bridge: retain Android's last explicit Voice/SMS enablement only across in-process feature recreation; registration, transport, emergency and CMC gates remain enforced",
+    "classes2_policy": "Stage 2 SMS candidate: allow one active subscription in slot 0 or slot 1 for MMTEL Voice and IMS SMS, bind every Samsung SMS operation and callback to the exact current phone/subscription pair, and fail closed for dual-active or stale mappings; registration, transport, emergency and CMC gates remain enforced",
     "primary_policy": "Runtime-validated clean-stock one-pass apktool output with BH1 ICC-type compatibility and BP1 fail-soft optional SMS HQM role telemetry"
   },
   "historical_reference": {

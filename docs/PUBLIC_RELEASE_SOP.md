@@ -294,6 +294,18 @@ absolute paths and depend on intermediate artifacts. The repository now
 consolidates their behavior into `tools/build_imsservice.py`; see
 `docs/IMS_APK_BUILDER.md`. Its interface is:
 
+When reviewed bridge source changes invalidate the final DEX/APK pins, mark the
+config `needs-promotion` and run the explicit `candidate-invariants` mode twice.
+That mode performs all non-pin gates and publishes only a `PIN_DISCOVERY` JSON
+report; it never publishes an APK or edits the config. After identical observed
+hashes are reviewed, manually promote all final hashes plus `pin_state` and
+`pin_basis`, then use the default strict mode to rebuild and atomically publish
+the exactly pinned unsigned APK. Only that strict artifact may proceed to the
+manual ROM build and runtime-validation stages. Strict `PASS` is a build and
+structure result, not evidence of device behavior.
+
+The strict interface is:
+
 ```bash
 tools/build_imsservice.py \
   --stock-apk proprietary/system/priv-app/imsservice/imsservice.apk \
