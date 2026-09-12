@@ -29,10 +29,13 @@ import java.util.LinkedHashMap;
 public final class ModernVoiceContext {
     static final String TAG = "M11ModernVoice";
     private static volatile ModernVoiceContext incomingTarget;
-    // Android does not reliably replay changeEnabledCapabilities() when the
-    // same SIM1 feature is removed and recreated inside one IMS process.
+    // Android does not reliably replay changeEnabledCapabilities() when the same
+    // feature is removed and recreated. Retention is restricted to one slot/sub pair.
+    private static int retainedPhoneId = -1;
+    private static int retainedSubscription = -1;
     private static volatile boolean retainedVoiceEnabled;
     private static volatile boolean retainedSmsEnabled = true;
+    final int phoneId;
     final int subscription;
     final ImsRegistrationImplBase registration = new ImsRegistrationImplBase();
     final ImsConfigImplBase config = new ImsConfigImplBase();
@@ -48,19 +51,25 @@ public final class ModernVoiceContext {
     private IImsRegistrationCallback registrationCallback;
     int serviceId = -1;
     long epoch;
-    boolean disposed, voiceEnabled = retainedVoiceEnabled,
-            smsEnabled = retainedSmsEnabled, registered, nativeVoice;
+    boolean disposed, voiceEnabled, smsEnabled, registered, nativeVoice;
     private boolean scheduled;
     private ImsRegistrationAttributes pendingRegistration;
     private final Runnable retry = () -> {
         synchronized (ModernVoiceContext.this) { scheduled = false; ensureBackend(); }
     };
 
-    ModernVoiceContext(Context app, int subscription) {
-        this.app = app; this.subscription = subscription;
+    ModernVoiceContext(Context app, int phoneId, int subscription) {
+        this.app = app; this.phoneId = phoneId; this.subscription = subscription;
+        synchronized (ModernVoiceContext.class) {
+            boolean samePair = retainedPhoneId == phoneId
+                    && retainedSubscription == subscription;
+            voiceEnabled = samePair && retainedVoiceEnabled;
+            smsEnabled = samePair ? retainedSmsEnabled : true;
+        }
         registration.onDeregistered(reason("Awaiting native backend"));
         if (voiceEnabled) {
-            Log.i(TAG, "BQ3: Voice enablement restored across feature recreation");
+            Log.i(TAG, "BQ3: Voice enablement restored across feature recreation; phoneId="
+                    + phoneId);
         }
     }
     synchronized GoogleModernMmTelFeature feature() {
@@ -76,12 +85,13 @@ public final class ModernVoiceContext {
             if (backend == null && current != null) {
                 backend = current;
                 final long generation = ++epoch;
-                PendingIntent unused = PendingIntent.getBroadcast(app, 0,
-                    new Intent("com.sec.internal.google.BC2_UNUSED").setPackage(app.getPackageName()),
+                PendingIntent unused = PendingIntent.getBroadcast(app, phoneId,
+                    new Intent("com.sec.internal.google.BC2_UNUSED." + phoneId)
+                            .setPackage(app.getPackageName()),
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-                serviceId = backend.open(0, 1, unused, new LegacyListener(generation));
+                serviceId = backend.open(phoneId, 1, unused, new LegacyListener(generation));
                 if (serviceId < 0) throw new IllegalStateException("Native open failed");
-                nativeRegistration = backend.getRegistration(0);
+                nativeRegistration = backend.getRegistration(phoneId);
                 if (nativeRegistration == null) throw new IllegalStateException("Native registration unavailable");
                 registrationCallback = new RegistrationListener(generation);
                 nativeRegistration.addRegistrationCallback(registrationCallback);
@@ -89,7 +99,8 @@ public final class ModernVoiceContext {
                 // ImsSmsImpl is owned by the Samsung backend and must be reattached
                 // after radio/backend recovery; onReady() is not called a second time.
                 handler.post(feature.sms::attach);
-                Log.i(TAG, "Native voice context opened; subscription=" + subscription + " epoch=" + epoch);
+                Log.i(TAG, "Native voice context opened; phoneId=" + phoneId
+                        + " subscription=" + subscription + " epoch=" + epoch);
             }
             if (!registered && pendingRegistration != null && hasNormalVoiceRegistration()) {
                 registered = true;
@@ -111,14 +122,25 @@ public final class ModernVoiceContext {
         if (!scheduled) { scheduled = true; handler.postDelayed(retry, 2000); }
     }
     boolean current(long generation) { return !disposed && backend != null && epoch == generation; }
+    boolean activePair() {
+        return GoogleModernImsService.isSingleActivePair(app, phoneId, subscription);
+    }
     void setVoiceEnabled(boolean enabled) {
         voiceEnabled = enabled;
-        retainedVoiceEnabled = enabled;
-        Log.i(TAG, "BQ3: Voice enablement remembered=" + enabled);
+        retainEnablement();
+        Log.i(TAG, "BQ3: Voice enablement remembered=" + enabled + " phoneId=" + phoneId);
     }
     void setSmsEnabled(boolean enabled) {
         smsEnabled = enabled;
-        retainedSmsEnabled = enabled;
+        retainEnablement();
+    }
+    private void retainEnablement() {
+        synchronized (ModernVoiceContext.class) {
+            retainedPhoneId = phoneId;
+            retainedSubscription = subscription;
+            retainedVoiceEnabled = voiceEnabled;
+            retainedSmsEnabled = smsEnabled;
+        }
     }
     void requireBackend() {
         ensureBackend();
@@ -136,7 +158,7 @@ public final class ModernVoiceContext {
     boolean hasNormalVoiceRegistration() {
         try {
             for (ImsRegistration r : ImsRegistry.getRegistrationManager().getRegistrationInfo()) {
-                if (r.getPhoneId() == 0 && r.hasVolteService() && r.getCurrentRat() != 18
+                if (r.getPhoneId() == phoneId && r.hasVolteService() && r.getCurrentRat() != 18
                         && !r.getImsProfile().hasEmergencySupport() && r.getImsProfile().getCmcType() == 0) return true;
             }
         } catch (RuntimeException e) { Log.e(TAG, "Registration snapshot unavailable", e); }
@@ -145,7 +167,7 @@ public final class ModernVoiceContext {
     boolean hasNormalSmsRegistration() {
         try {
             for (ImsRegistration r : ImsRegistry.getRegistrationManager().getRegistrationInfo()) {
-                if (r.getPhoneId() == 0 && r.hasService("smsip") && r.getCurrentRat() != 18
+                if (r.getPhoneId() == phoneId && r.hasService("smsip") && r.getCurrentRat() != 18
                         && !r.getImsProfile().hasEmergencySupport()
                         && r.getImsProfile().getCmcType() == 0) return true;
             }
@@ -193,7 +215,7 @@ public final class ModernVoiceContext {
     /** Called before Samsung's optional legacy callback; returns true only for our owned service ID. */
     public static boolean onIncoming(int phone, int callId, Bundle extras) {
         ModernVoiceContext target = incomingTarget;
-        if (target == null || phone != 0) return false;
+        if (target == null || phone != target.phoneId) return false;
         return target.incoming(callId, extras);
     }
     private boolean incoming(int callId, Bundle extras) {

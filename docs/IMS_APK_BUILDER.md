@@ -1,21 +1,28 @@
-# Local clean-stock IMS APK builder
+# Local clean-stock IMS APK builder and pin promotion
 
 `tools/build_imsservice.py` is the fail-closed outer orchestrator for the M11
-Stage 1 IMS APK. It performs no ROM build, no signing, no download and no
+IMS APK. It performs no ROM build, no signing, no download and no
 device operation.
 
 ## Evidence status
 
-Confirmed locally from the exact CWK3 inputs:
+The last deployed **Stage 2 Voice / SIM1-SMS** unsigned APK identity is
+`1e59f40fec8482e9edacf84d352ce2cebe4f9f599f2ec3311f2495563062c58e`.
+The current **Stage 2 SIM2-SMS build candidate** was promoted after two
+independent pin-discovery runs produced identical values:
 
-- the current runtime-validated Stage 1BQ3 unsigned APK SHA-256 is
-  `a9de2549bad19b3aeae3815e689b111384b81cc9dd59944a37e40fe1cda72d67`;
-- the clean primary DEX SHA-256 is
+- the pinned Stage 2 unsigned APK SHA-256 is
+  `607491254442757133bcf2034f43763d5629f31961b3d787b01fbde8437633d9`;
+- the pinned clean primary DEX SHA-256 is
   `a16a42ed01d284dc20efa57c67c6f18b6ffb20132367228b7e8a8c90f5eb90c6`;
-- the current bridge DEX SHA-256 is
-  `5379c0688e2eaa48684d4d3ba7ff2cf570f7f28cca13d6d8934b0ebcad37d031`;
+- the pinned Stage 2 bridge DEX SHA-256 is
+  `8c51137524e0adf37305f852ea28306ac44ee86b5a92963e9ff19b32c314756b`;
 - each run passed manifest, native-hook, statistics-guard, class-inventory,
   compile-stub leakage, ZIP-entry preservation and alignment gates.
+
+These current identities are build- and structure-verified only. SIM2 SMS
+runtime behavior remains unverified until the separately built ROM is manually
+tested.
 
 The preceding Stage 1BJ APK is runtime validated for SIM1 WWAN registration plus
 outgoing and incoming VoLTE under SELinux Enforcing. The incoming test reached
@@ -76,15 +83,17 @@ Use `tools/verify_payload.py` to verify and privately stage stock inputs first.
 The command accepts an explicit `--stock-input-dir` for both the source IMS APK
 and the apktool framework input.
 
-## Invocation
+## Two-stage invocation
 
-Run from the repository root. Paths below are placeholders and must point to
-regular, non-symlink files on the local machine. The builder uses the published
-`bridge/java` tree by default; `--bridge-source-root` remains available for an
-explicit hash-matching source tree:
+The default mode is strict and never accepts unpromoted pins. When
+`final_dex_invariants.pin_state` is `needs-promotion`, first run the explicit
+pin-discovery mode. It executes the complete compile, transform, packaging,
+alignment and final re-decode checks, but does not gate either DEX or APK bytes
+on the stale Stage 1 final pins:
 
 ```bash
 python3 tools/build_imsservice.py \
+  --mode candidate-invariants \
   --stock-apk PRIVATE/imsservice.apk \
   --framework-res-apk PRIVATE/framework-res.apk \
   --imsmanager-jar PRIVATE/imsmanager.jar \
@@ -96,8 +105,46 @@ python3 tools/build_imsservice.py \
   --javap ANDROID_TREE/prebuilts/jdk/jdk11/linux-x86/bin/javap \
   --r8-jar ANDROID_TREE/prebuilts/r8/r8.jar \
   --zipalign ANDROID_TREE/prebuilts/sdk/tools/linux/bin/zipalign \
-  --output out/imsservice-stage1-unsigned.apk \
-  --report out/imsservice-stage1-report.json \
+  --report out/imsservice-stage2-pin-discovery.json \
+  --work-dir /tmp
+```
+
+Candidate-invariants mode rejects `--output`. It publishes only an atomic,
+privacy-safe report with status `PIN_DISCOVERY`, the observed primary DEX,
+bridge DEX and aligned unsigned APK hashes, and explicit false values for
+strict-pin verification, artifact publication, release eligibility and runtime
+validation. The temporary APK is deleted with the private staging tree.
+
+Run discovery twice into distinct empty report paths and require identical
+observed invariants. Review the source and report, then manually update the two
+DEX hashes, unsigned APK hash, `pin_state` to `pinned`, and `pin_basis` to
+`current-source-build`. The tool never edits its config. Finally run the strict
+command below; it independently rebuilds the candidate and publishes the APK
+only after every observed value exactly matches the promoted pins.
+
+### Strict build
+
+Run from the repository root. Paths below are placeholders and must point to
+regular, non-symlink files on the local machine. The builder uses the published
+`bridge/java` tree by default; `--bridge-source-root` remains available for an
+explicit hash-matching source tree:
+
+```bash
+python3 tools/build_imsservice.py \
+  --mode strict \
+  --stock-apk PRIVATE/imsservice.apk \
+  --framework-res-apk PRIVATE/framework-res.apk \
+  --imsmanager-jar PRIVATE/imsmanager.jar \
+  --framework-jar ANDROID_OUT/framework-minus-apex.jar \
+  --framework-mode compatible \
+  --apktool-jar TOOLS/apktool_2.9.3.jar \
+  --java ANDROID_TREE/prebuilts/jdk/jdk11/linux-x86/bin/java \
+  --javac ANDROID_TREE/prebuilts/jdk/jdk11/linux-x86/bin/javac \
+  --javap ANDROID_TREE/prebuilts/jdk/jdk11/linux-x86/bin/javap \
+  --r8-jar ANDROID_TREE/prebuilts/r8/r8.jar \
+  --zipalign ANDROID_TREE/prebuilts/sdk/tools/linux/bin/zipalign \
+  --output out/imsservice-strict-unsigned.apk \
+  --report out/imsservice-strict-report.json \
   --work-dir /tmp
 ```
 
@@ -109,6 +156,11 @@ The output and report parents must already exist. Existing outputs, symlinks,
 input/hash drift, partially applied transformations and undeclared APK changes
 all fail closed. Output/report publication occurs only after the full final
 re-decode verification succeeds.
+
+A strict report status of `PASS` means only that the pinned deterministic build
+and structural checks passed. Its `runtime_validated` and `release_eligible`
+fields remain false until separate manual ROM integration and device testing;
+the builder never makes a runtime claim.
 
 ## What the command does
 
@@ -128,8 +180,9 @@ re-decode verification succeeds.
    DEX entries into the stock ZIP while removing the three stale v1 signature
    entries.
 7. Aligns, re-decodes and structurally verifies the final candidate.
-8. Atomically publishes an unsigned APK and privacy-safe JSON report, then
-   deletes temporary decoded trees and generated stubs.
+8. In candidate-invariants mode, atomically publishes only the pin-discovery
+   report. In strict mode, atomically publishes the unsigned APK and strict
+   report. Both modes then delete temporary decoded trees and generated stubs.
 
 The Android ROM build must apply its own platform signature. Never put a
 platform private key in this repository or pass one to this tool.

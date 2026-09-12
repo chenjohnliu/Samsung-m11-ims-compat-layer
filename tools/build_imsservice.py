@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the M11 Stage-1 IMS APK from exact local proprietary inputs.
+"""Build or discover strict pins for the M11 IMS APK from exact local inputs.
 
 This orchestrator never downloads firmware, publishes decoded Samsung files,
 signs a ROM, or invokes an Android ROM build. All decoded/generated material is
@@ -131,10 +131,19 @@ def load_config(path: Path) -> dict:
             _hash(digest, f"bridge source {relative}")
         if sorted(bridge["top_level_classes"]) != sorted(Path(x).stem for x in bridge["files"]):
             raise BuildError("bridge class/source identity drift")
-        for value in config["final_dex_invariants"]["entries"].values():
+        final = config["final_dex_invariants"]
+        if final["pin_state"] not in {"needs-promotion", "pinned"}:
+            raise BuildError("unsupported final invariant pin state")
+        expected_basis = ("stale-runtime-reference"
+                          if final["pin_state"] == "needs-promotion"
+                          else "current-source-build")
+        if final["pin_basis"] != expected_basis:
+            raise BuildError("final invariant pin basis/state mismatch")
+        if set(final["entries"]) != {"classes.dex", "classes2.dex"}:
+            raise BuildError("final DEX invariant inventory drift")
+        for value in final["entries"].values():
             _hash(value, "final DEX")
-        _hash(config["final_dex_invariants"]["unsigned_apk_sha256"],
-              "final unsigned APK")
+        _hash(final["unsigned_apk_sha256"], "final unsigned APK")
     except (KeyError, TypeError, json.JSONDecodeError, OSError) as exc:
         raise BuildError(f"malformed build config: {exc}") from exc
     return config
@@ -235,7 +244,7 @@ def _zip_data(path: Path) -> dict[str, bytes]:
         raise BuildError("invalid output APK") from exc
 
 
-def _verify_zip(stock: Path, candidate: Path, config: dict) -> dict:
+def _inspect_zip(stock: Path, candidate: Path) -> dict:
     before, after = _zip_data(stock), _zip_data(candidate)
     expected_names = (set(before) - SIGNATURES) | {"classes2.dex"}
     if set(after) != expected_names:
@@ -247,18 +256,28 @@ def _verify_zip(stock: Path, candidate: Path, config: dict) -> dict:
     allowed = SIGNATURES | {"AndroidManifest.xml", "classes.dex", "classes2.dex"}
     if set(changed) - allowed:
         raise BuildError(f"undeclared final APK entry changes: {sorted(set(changed) - allowed)}")
-    expected_dex = config["final_dex_invariants"]["entries"]
-    for name, digest in expected_dex.items():
-        if hashlib.sha256(after[name]).hexdigest() != digest:
-            raise BuildError(f"final {name} hash mismatch")
-    apk_digest = sha256_file(candidate)
-    if apk_digest != config["final_dex_invariants"]["unsigned_apk_sha256"]:
-        raise BuildError("final unsigned APK hash mismatch: "
-                         f"expected={config['final_dex_invariants']['unsigned_apk_sha256']} "
-                         f"actual={apk_digest}")
     return {"entry_count": len(after), "changed_entries": changed,
+            "manifest_sha256": hashlib.sha256(after["AndroidManifest.xml"]).hexdigest(),
             "dex_sha256": {name: hashlib.sha256(after[name]).hexdigest()
-                           for name in sorted(expected_dex)}}
+                           for name in ("classes.dex", "classes2.dex")},
+            "apk_sha256": sha256_file(candidate)}
+
+
+def _verify_pinned_invariants(observed: dict, config: dict) -> None:
+    expected = config["final_dex_invariants"]
+    for name, digest in expected["entries"].items():
+        if observed["dex_sha256"][name] != digest:
+            raise BuildError(f"final {name} hash mismatch")
+    if observed["apk_sha256"] != expected["unsigned_apk_sha256"]:
+        raise BuildError("final unsigned APK hash mismatch: "
+                         f"expected={expected['unsigned_apk_sha256']} "
+                         f"actual={observed['apk_sha256']}")
+
+
+def _verify_zip(stock: Path, candidate: Path, config: dict) -> dict:
+    observed = _inspect_zip(stock, candidate)
+    _verify_pinned_invariants(observed, config)
+    return observed
 
 
 def _publish_pair(candidate: Path, output: Path, report: Path, payload: dict) -> None:
@@ -303,10 +322,73 @@ def _publish_pair(candidate: Path, output: Path, report: Path, payload: dict) ->
         except FileNotFoundError: pass
 
 
+def _publish_report(report: Path, payload: dict) -> None:
+    if report.exists() or report.is_symlink():
+        raise BuildError("refusing to overwrite report")
+    if report.parent.is_symlink() or not report.parent.is_dir():
+        raise BuildError("report parent must be an existing non-symlink directory")
+    report_abs = report.parent.resolve(strict=True) / report.name
+    fd, temporary_name = tempfile.mkstemp(
+        prefix=f".{report.name}.", suffix=".tmp", dir=report.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            fd = -1
+            stream.write((json.dumps(payload, indent=2, sort_keys=True) + "\n").encode())
+            stream.flush(); os.fsync(stream.fileno())
+        os.link(temporary, report_abs)
+    finally:
+        if fd >= 0:
+            os.close(fd)
+        try: temporary.unlink()
+        except FileNotFoundError: pass
+
+
+def _validate_mode(args: argparse.Namespace, config: dict) -> str:
+    mode = args.mode
+    state = config["final_dex_invariants"]["pin_state"]
+    if mode == "strict":
+        if state != "pinned":
+            raise BuildError("strict mode requires promoted final invariant pins")
+        if args.output is None:
+            raise BuildError("strict mode requires --output")
+    elif mode == "candidate-invariants":
+        if state != "needs-promotion":
+            raise BuildError("candidate-invariants mode requires needs-promotion pins")
+        if args.output is not None:
+            raise BuildError("candidate-invariants mode does not publish an APK; omit --output")
+    else:
+        raise BuildError("unsupported build mode")
+    return mode
+
+
+def _candidate_payload(common: dict, observed_zip: dict, expected: dict) -> dict:
+    observed = {"entries": observed_zip["dex_sha256"],
+                "unsigned_apk_sha256": observed_zip["apk_sha256"]}
+    matches = {name: observed["entries"][name] == expected["entries"][name]
+               for name in observed["entries"]}
+    matches["unsigned_apk_sha256"] = (
+        observed["unsigned_apk_sha256"] == expected["unsigned_apk_sha256"])
+    return {**common, "status": "PIN_DISCOVERY",
+        "strict_pins_verified": False, "artifact_published": False,
+        "release_eligible": False, "runtime_validated": False,
+        "configured_final_invariants": {
+            "pin_state": expected["pin_state"], "pin_basis": expected["pin_basis"],
+            "entries": expected["entries"],
+            "unsigned_apk_sha256": expected["unsigned_apk_sha256"]},
+        "observed_final_invariants": observed, "pin_matches": matches,
+        "output": {"entry_count": observed_zip["entry_count"],
+            "changed_entries": observed_zip["changed_entries"],
+            "manifest_sha256": observed_zip["manifest_sha256"],
+            "zip_alignment_verified": True, "final_redecode_verified": True,
+            "signed": False}}
+
+
 def build(args: argparse.Namespace) -> dict:
     config_path = _regular(args.config, "build config")
     payload_path = _regular(args.payload_manifest, "payload manifest")
     config = load_config(config_path)
+    mode = _validate_mode(args, config)
     stock = _expected_file(args.stock_apk, "stock IMS APK",
                            config["stock_apk"]["sha256"], config["stock_apk"]["size"])
     framework_res = _expected_file(args.framework_res_apk, "stock framework-res APK",
@@ -330,11 +412,13 @@ def build(args: argparse.Namespace) -> dict:
 
     output = args.output
     report = args.report
-    if output.exists() or report.exists():
+    if report.exists() or (output is not None and output.exists()):
         raise BuildError("refusing to overwrite output or report")
-    if output.parent.is_symlink() or report.parent.is_symlink() or not output.parent.is_dir() or not report.parent.is_dir():
+    if (report.parent.is_symlink() or not report.parent.is_dir()
+            or (output is not None
+                and (output.parent.is_symlink() or not output.parent.is_dir()))):
         raise BuildError("output parents must be existing non-symlink directories")
-    work_parent = args.work_dir if args.work_dir is not None else output.parent
+    work_parent = args.work_dir if args.work_dir is not None else report.parent
     if work_parent.is_symlink() or not work_parent.is_dir():
         raise BuildError("work directory must be an existing non-symlink directory")
     stage = Path(tempfile.mkdtemp(prefix=".m11-ims-build-", dir=work_parent))
@@ -418,7 +502,7 @@ def build(args: argparse.Namespace) -> dict:
             raise BuildError("D8 bridge output inventory drift")
         expected_bridge_dex = config["final_dex_invariants"]["entries"]["classes2.dex"]
         actual_bridge_dex = sha256_file(bridge_dex)
-        if actual_bridge_dex != expected_bridge_dex:
+        if mode == "strict" and actual_bridge_dex != expected_bridge_dex:
             raise BuildError("bridge classes2.dex hash mismatch: "
                              f"expected={expected_bridge_dex} actual={actual_bridge_dex}")
 
@@ -432,7 +516,7 @@ def build(args: argparse.Namespace) -> dict:
             (stage / name).write_bytes(rebuilt_data[name])
         expected_primary = config["final_dex_invariants"]["entries"]["classes.dex"]
         actual_primary = hashlib.sha256(rebuilt_data["classes.dex"]).hexdigest()
-        if actual_primary != expected_primary:
+        if mode == "strict" and actual_primary != expected_primary:
             raise BuildError("primary classes.dex hash mismatch: "
                              f"expected={expected_primary} actual={actual_primary}")
 
@@ -445,7 +529,8 @@ def build(args: argparse.Namespace) -> dict:
         _run([str(tools["zipalign"]), "-p", "-f", "4", str(unaligned), str(aligned)],
              "zipalign candidate")
         _run([str(tools["zipalign"]), "-c", "4", str(aligned)], "verify zip alignment")
-        zip_result = _verify_zip(stock, aligned, config)
+        zip_result = (_verify_zip(stock, aligned, config) if mode == "strict"
+                      else _inspect_zip(stock, aligned))
 
         verified = stage / "verified"
         _run(apktool + ["d", "-f", "-p", str(framework_dir), str(aligned), "-o", str(verified)],
@@ -470,9 +555,9 @@ def build(args: argparse.Namespace) -> dict:
                        (verified / "smali_classes2/com/sec/internal/google").rglob("*.smali")):
                 raise BuildError(f"final bridge DEX is missing recovery marker: {marker}")
 
-        payload = {
+        common = {
             "schema_version": 1,
-            "status": "PASS",
+            "mode": mode,
             "device": config["device"],
             "inputs": {
                 "stock_apk_sha256": sha256_file(stock),
@@ -497,12 +582,20 @@ def build(args: argparse.Namespace) -> dict:
                               "method_provenance_counts": stub_result["method_provenance_counts"],
                               "candidate_dex_eligible": False},
             "bridge": bridge_info,
-            "output": {**zip_result, "apk_sha256": sha256_file(aligned),
-                       "signed": False, "runtime_validated": False},
             "safety": {"stock_tree_published": False, "generated_stubs_packaged": False,
                        "platform_key_used": False, "rom_build_run": False},
         }
-        _publish_pair(aligned, output, report, payload)
+        if mode == "candidate-invariants":
+            payload = _candidate_payload(common, zip_result,
+                                         config["final_dex_invariants"])
+            _publish_report(report, payload)
+        else:
+            payload = {**common, "status": "PASS",
+                "strict_pins_verified": True, "artifact_published": True,
+                "release_eligible": False, "runtime_validated": False,
+                "output": {**zip_result, "signed": False,
+                           "runtime_validated": False}}
+            _publish_pair(aligned, output, report, payload)
         return payload
     finally:
         shutil.rmtree(stage, ignore_errors=True)
@@ -523,7 +616,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--javap", required=True, type=Path)
     result.add_argument("--r8-jar", required=True, type=Path)
     result.add_argument("--zipalign", required=True, type=Path)
-    result.add_argument("--output", required=True, type=Path)
+    result.add_argument("--mode", choices=("strict", "candidate-invariants"),
+                        default="strict")
+    result.add_argument("--output", type=Path,
+                        help="strict-mode unsigned APK output; forbidden in candidate mode")
     result.add_argument("--report", required=True, type=Path)
     result.add_argument("--work-dir", type=Path,
                         help="private temporary parent; use a native filesystem for speed")
@@ -539,8 +635,12 @@ def main(argv=None) -> int:
     except (BuildError, OSError, ValueError, ET.ParseError, zipfile.BadZipFile) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    print(json.dumps({"status": payload["status"],
-                      "apk_sha256": payload["output"]["apk_sha256"]}, sort_keys=True))
+    summary = {"status": payload["status"], "mode": payload["mode"]}
+    if payload["mode"] == "strict":
+        summary["apk_sha256"] = payload["output"]["apk_sha256"]
+    else:
+        summary["observed_final_invariants"] = payload["observed_final_invariants"]
+    print(json.dumps(summary, sort_keys=True))
     return 0
 
 

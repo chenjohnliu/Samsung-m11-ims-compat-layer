@@ -9,9 +9,8 @@ import android.util.Log;
 import com.sec.ims.ImsRegistration;
 import com.sec.internal.ims.registry.ImsRegistry;
 
-/** SIM1-only adapter from Android 13 ImsSmsImplBase to Samsung's stock SMS backend. */
+/** Single-active-SIM adapter from Android 13 ImsSmsImplBase to Samsung's stock SMS backend. */
 public final class ModernSmsBridge extends ImsSmsImplBase {
-    private static final int PHONE_ID = 0;
     private final ModernVoiceContext owner;
     private volatile boolean ready;
     private volatile boolean disposed;
@@ -48,22 +47,27 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
 
     ModernSmsBridge(ModernVoiceContext owner) { this.owner = owner; }
 
+    private boolean supportsPhone() {
+        return (owner.phoneId == 0 || owner.phoneId == 1) && owner.activePair();
+    }
+
     boolean available() {
-        return ready && !disposed && attachedBackend != null
+        return supportsPhone() && ready && !disposed && attachedBackend != null
                 && owner.smsEnabled && owner.smsAvailable();
     }
 
     private boolean callbackCurrent() {
         synchronized (owner) {
             return ready && !disposed && attachedBackend != null
-                    && attachedBackend == owner.backend;
+                    && attachedBackend == owner.backend && supportsPhone();
         }
     }
 
     private GoogleImsService requireSmsBackend() {
         synchronized (owner) {
             owner.requireBackend();
-            if (!available()) throw new IllegalStateException("SIM1 IMS SMS unavailable");
+            if (!available()) throw new IllegalStateException("IMS SMS unavailable for phoneId="
+                    + owner.phoneId);
             return attachedBackend;
         }
     }
@@ -72,6 +76,10 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
         synchronized (owner) {
             if (disposed) return;
             ready = true;
+            if (!supportsPhone()) {
+                owner.publish();
+                return;
+            }
             owner.ensureBackend();
         }
         attach();
@@ -80,7 +88,7 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
     void attach() {
         GoogleImsService backend;
         synchronized (owner) {
-            if (!ready || disposed || owner.backend == null) return;
+            if (!supportsPhone() || !ready || disposed || owner.backend == null) return;
             backend = owner.backend;
             if (attachedBackend == backend) {
                 owner.publish();
@@ -88,13 +96,14 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
             }
         }
         try {
-            backend.setSmsListener(PHONE_ID, samsungListener);
-            backend.onSmsReady(PHONE_ID);
+            backend.setSmsListener(owner.phoneId, samsungListener);
+            backend.onSmsReady(owner.phoneId);
             synchronized (owner) {
                 if (!disposed && owner.backend == backend) attachedBackend = backend;
                 owner.publish();
             }
-            Log.i(ModernVoiceContext.TAG, "Samsung IMS SMS backend attached for SIM1");
+            Log.i(ModernVoiceContext.TAG, "Samsung IMS SMS backend attached; phoneId="
+                    + owner.phoneId);
         } catch (RemoteException | RuntimeException e) {
             Log.e(ModernVoiceContext.TAG, "Samsung IMS SMS backend unavailable", e);
             synchronized (owner) {
@@ -119,7 +128,7 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
             attachedBackend = null;
         }
         if (backend != null) {
-            try { backend.setSmsListener(PHONE_ID, null); }
+            try { backend.setSmsListener(owner.phoneId, null); }
             catch (Exception e) { Log.w(ModernVoiceContext.TAG, "SMS listener detach failed", e); }
         }
     }
@@ -167,10 +176,12 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
         try {
             String encoded = scaHex(SmsManager.getSmsManagerForSubscriptionId(
                     owner.subscription).getSmscAddress());
-            if (encoded != null) Log.i(ModernVoiceContext.TAG, "SMSC resolved from SIM1");
+            if (encoded != null) Log.i(ModernVoiceContext.TAG,
+                    "SMSC resolved from active subscription; phoneId=" + owner.phoneId);
             return encoded;
         } catch (RuntimeException e) {
-            Log.w(ModernVoiceContext.TAG, "SIM1 SMSC lookup failed", e);
+            Log.w(ModernVoiceContext.TAG, "Active-subscription SMSC lookup failed; phoneId="
+                    + owner.phoneId, e);
             return null;
         }
     }
@@ -179,7 +190,8 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
         try {
             for (ImsRegistration registration
                     : ImsRegistry.getRegistrationManager().getRegistrationInfo()) {
-                if (registration.getPhoneId() != PHONE_ID || !registration.hasService("smsip")
+                if (registration.getPhoneId() != owner.phoneId
+                        || !registration.hasService("smsip")
                         || registration.getCurrentRat() == 18
                         || registration.getImsProfile().hasEmergencySupport()
                         || registration.getImsProfile().getCmcType() != 0) continue;
@@ -202,7 +214,8 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
         }
         String encoded = simSmsc();
         if (encoded == null) encoded = profileSmsc();
-        if (encoded == null) Log.e(ModernVoiceContext.TAG, "SIM1 SMSC unavailable");
+        if (encoded == null) Log.e(ModernVoiceContext.TAG,
+                "Active-subscription SMSC unavailable; phoneId=" + owner.phoneId);
         return encoded;
     }
 
@@ -221,8 +234,8 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
                         SmsManager.RESULT_INVALID_SMSC_ADDRESS, RESULT_NO_NETWORK_ERROR);
                 return;
             }
-            backend.setRetryCount(PHONE_ID, token, isRetry ? 1 : 0);
-            backend.sendSms(PHONE_ID, token, messageRef, format, samsungSmsc, isRetry, pdu);
+            backend.setRetryCount(owner.phoneId, token, isRetry ? 1 : 0);
+            backend.sendSms(owner.phoneId, token, messageRef, format, samsungSmsc, isRetry, pdu);
             Log.i(ModernVoiceContext.TAG, "Samsung IMS SMS delegated; token=" + token
                     + " retry=" + isRetry + " bytes=" + pdu.length);
         } catch (RemoteException | RuntimeException e) {
@@ -233,14 +246,16 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
     }
 
     @Override public void acknowledgeSms(int token, int messageRef, int result) {
-        try { requireSmsBackend().acknowledgeSms(PHONE_ID, token, messageRef, result); }
+        try { requireSmsBackend().acknowledgeSms(
+                owner.phoneId, token, messageRef, result); }
         catch (RemoteException | RuntimeException e) {
             Log.e(ModernVoiceContext.TAG, "Samsung IMS SMS acknowledge failed", e);
         }
     }
 
     @Override public void acknowledgeSmsReport(int token, int messageRef, int result) {
-        try { requireSmsBackend().acknowledgeSmsReport(PHONE_ID, token, messageRef, result); }
+        try { requireSmsBackend().acknowledgeSmsReport(
+                owner.phoneId, token, messageRef, result); }
         catch (RemoteException | RuntimeException e) {
             Log.e(ModernVoiceContext.TAG, "Samsung IMS SMS report acknowledge failed", e);
         }
