@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.telephony.TelephonyManager;
 import android.telephony.ims.ImsCallProfile;
 import android.telephony.ims.ImsReasonInfo;
 import android.telephony.ims.ImsRegistrationAttributes;
@@ -24,6 +25,7 @@ import com.sec.internal.ims.registry.ImsRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 /** All ownership/state mutations serialize here; native callbacks carry a backend epoch. */
 public final class ModernVoiceContext {
@@ -71,6 +73,24 @@ public final class ModernVoiceContext {
             Log.i(TAG, "BQ3: Voice enablement restored across feature recreation; phoneId="
                     + phoneId);
         }
+    }
+
+    String simCountryIso() {
+        try {
+            TelephonyManager telephony = app.getSystemService(TelephonyManager.class);
+            if (telephony == null) return null;
+            String iso = telephony.createForSubscriptionId(subscription).getSimCountryIso();
+            if (iso == null || iso.length() != 2
+                    || !asciiLetter(iso.charAt(0)) || !asciiLetter(iso.charAt(1))) return null;
+            return iso.toUpperCase(Locale.ROOT);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Active-subscription SIM country unavailable", e);
+            return null;
+        }
+    }
+
+    private static boolean asciiLetter(char value) {
+        return (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
     }
     synchronized GoogleModernMmTelFeature feature() {
         if (feature == null) feature = new GoogleModernMmTelFeature(this);

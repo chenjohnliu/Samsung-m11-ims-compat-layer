@@ -6,23 +6,24 @@ device operation.
 
 ## Evidence status
 
-The last deployed **Stage 2 Voice / SIM1-SMS** unsigned APK identity is
-`1e59f40fec8482e9edacf84d352ce2cebe4f9f599f2ec3311f2495563062c58e`.
-The current **Stage 2 SIM2-SMS build candidate** was promoted after two
+The last runtime-tested **Stage 2 BR1 IMS-SMS** unsigned APK identity is
+`db2caaa254f017a3f79b0cbb0fd549f97a79fdf8278e7a208412426a77476954`.
+The current **Stage 2 SMSC E.164 build candidate** was promoted after two
 independent pin-discovery runs produced identical values:
 
 - the pinned Stage 2 unsigned APK SHA-256 is
-  `607491254442757133bcf2034f43763d5629f31961b3d787b01fbde8437633d9`;
+  `3df8042a57f6359887e68b1e285d68290376801305bc153268c7d512827a75e8`;
 - the pinned clean primary DEX SHA-256 is
-  `a16a42ed01d284dc20efa57c67c6f18b6ffb20132367228b7e8a8c90f5eb90c6`;
+  `0f5bc4f2cf36af2b43c15c9c9d0f1d445b4e68afe49f6230d329fcee542f8774`;
 - the pinned Stage 2 bridge DEX SHA-256 is
-  `8c51137524e0adf37305f852ea28306ac44ee86b5a92963e9ff19b32c314756b`;
+  `58142f4656bc867b2325bf7b4ddd3c6b52b2e4012d699ab087cfd824824ebe80`;
 - each run passed manifest, native-hook, statistics-guard, class-inventory,
   compile-stub leakage, ZIP-entry preservation and alignment gates.
 
-These current identities are build- and structure-verified only. SIM2 SMS
-runtime behavior remains unverified until the separately built ROM is manually
-tested.
+These current identities are build- and structure-verified only. The earlier
+BR1 build is runtime validated for MT IMS acknowledgement and preserved MO
+fallback. The new SMSC normalization remains runtime-unverified until the
+separately built ROM is manually tested.
 
 The preceding Stage 1BJ APK is runtime validated for SIM1 WWAN registration plus
 outgoing and incoming VoLTE under SELinux Enforcing. The incoming test reached
