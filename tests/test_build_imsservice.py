@@ -39,7 +39,7 @@ class BuildImsserviceTests(unittest.TestCase):
         self.assertEqual(config["ordered_patches"], [
             "BC1-modern-mmtel-discovery", "BC2-modern-bridge-native-hooks",
             "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
-            "BP1-sms-hqm-telemetry-guard"])
+            "BP1-sms-hqm-telemetry-guard", "BR1-sms-delivery-ack-abi-guard"])
         self.assertEqual(len(config["bridge_source"]["files"]), 7)
         self.assertEqual(config["bridge_source"]["publication_status"],
                          "project-authored-apache-2.0")
@@ -48,11 +48,11 @@ class BuildImsserviceTests(unittest.TestCase):
         self.assertEqual(config["toolchain"]["apktool"]["jvm_args"],
                          ["-XX:ActiveProcessorCount=1"])
         self.assertEqual(config["final_dex_invariants"]["entries"]["classes.dex"],
-                         "a16a42ed01d284dc20efa57c67c6f18b6ffb20132367228b7e8a8c90f5eb90c6")
+                         "0f5bc4f2cf36af2b43c15c9c9d0f1d445b4e68afe49f6230d329fcee542f8774")
         self.assertEqual(config["final_dex_invariants"]["entries"]["classes2.dex"],
-                         "8c51137524e0adf37305f852ea28306ac44ee86b5a92963e9ff19b32c314756b")
+                         "58142f4656bc867b2325bf7b4ddd3c6b52b2e4012d699ab087cfd824824ebe80")
         self.assertEqual(config["final_dex_invariants"]["unsigned_apk_sha256"],
-                         "607491254442757133bcf2034f43763d5629f31961b3d787b01fbde8437633d9")
+                         "3df8042a57f6359887e68b1e285d68290376801305bc153268c7d512827a75e8")
         self.assertEqual(config["final_dex_invariants"]["pin_state"], "pinned")
         self.assertEqual(config["final_dex_invariants"]["pin_basis"],
                          "current-source-build")

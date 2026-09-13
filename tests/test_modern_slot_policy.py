@@ -103,6 +103,29 @@ class ModernSlotPolicyTests(unittest.TestCase):
         self.assertIn("boolean activePair()", context)
         self.assertIn("isSingleActivePair(app, phoneId, subscription)", context)
 
+    def test_sim_smsc_normalization_is_active_subscription_scoped_and_fail_closed(self):
+        text = source("ModernSmsBridge.java")
+        self.assertIn("PhoneNumberUtils.formatNumberToE164(raw, iso)", text)
+        self.assertIn('e164 != null && e164.startsWith("+")', text)
+        self.assertIn("if (normalized != null)", text)
+        self.assertNotIn('"+" + raw', text)
+        self.assertLess(text.index("String encoded = scaHex(address)"),
+                        text.index("PhoneNumberUtils.formatNumberToE164(raw, iso)"))
+        context = source("ModernVoiceContext.java")
+        self.assertIn("createForSubscriptionId(subscription).getSimCountryIso()", context)
+        self.assertIn("iso.length() != 2", context)
+        self.assertIn("iso.toUpperCase(Locale.ROOT)", context)
+
+    def test_incoming_sms_ack_uses_samsung_message_id_token(self):
+        text = source("ModernSmsBridge.java")
+        start = text.index("void acknowledgeSms(int token")
+        end = text.index("void acknowledgeSmsReport", start)
+        acknowledge = text[start:end]
+        self.assertIn(
+            "acknowledgeSms(owner.phoneId, token, token, result)", acknowledge)
+        self.assertNotIn(
+            "acknowledgeSms(owner.phoneId, token, messageRef, result)", acknowledge)
+
     def test_registration_safety_gates_remain(self):
         text = source("ModernVoiceContext.java")
         self.assertGreaterEqual(text.count("getCurrentRat() != 18"), 2)

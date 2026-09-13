@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BR1-sms-delivery-ack-abi-guard",
+  "targets": [
+    {
+      "path": "com/sec/internal/google/ImsSmsImpl$SmsEventListener.smali",
+      "class": "Lcom/sec/internal/google/ImsSmsImpl$SmsEventListener;",
+      "class_access": [],
+      "super": "Lcom/sec/ims/sms/ISmsServiceEventListener$Stub;",
+      "input_sha256": "baf2f922d340d4af0df73e9ccc531a9c0c7ba2ee69454ddef1839234ea72b658",
+      "required_method": "public onReceiveSMSDeliveryReportAck(III)V",
+      "legacy_callback_count": 1,
+      "suppressed_callback_count": 1,
+      "kddi_retry_anchor_count": 1
+    }
+  ]
+}

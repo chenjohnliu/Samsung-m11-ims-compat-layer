@@ -94,7 +94,7 @@ def load_config(path: Path) -> dict:
         if config["ordered_patches"] != [
             "BC1-modern-mmtel-discovery", "BC2-modern-bridge-native-hooks",
             "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
-            "BP1-sms-hqm-telemetry-guard",
+            "BP1-sms-hqm-telemetry-guard", "BR1-sms-delivery-ack-abi-guard",
         ]:
             raise BuildError("ordered transformation identity drift")
         expected_contracts = {
@@ -103,6 +103,7 @@ def load_config(path: Path) -> dict:
             "BG1-network-statistics-guard": "devices/m11q/bg1-stats-guard-contract.json",
             "BH1-sms-icc-type-compat": "devices/m11q/bh1-sms-icc-type-contract.json",
             "BP1-sms-hqm-telemetry-guard": "devices/m11q/bp1-sms-hqm-telemetry-guard-contract.json",
+            "BR1-sms-delivery-ack-abi-guard": "devices/m11q/br1-sms-delivery-ack-abi-guard-contract.json",
         }
         if config["transformation_contracts"] != expected_contracts:
             raise BuildError("transformation contract mapping drift")
@@ -443,6 +444,7 @@ def build(args: argparse.Namespace) -> dict:
         bg1 = _module("m11_bg1", "tools/transform_bg1_stats_guard.py")
         bh1 = _module("m11_bh1", "tools/transform_bh1_sms_icc_type.py")
         bp1 = _module("m11_bp1", "tools/transform_bp1_sms_hqm_guard.py")
+        br1 = _module("m11_br1", "tools/transform_br1_sms_delivery_ack_abi.py")
         stubs = _module("m11_stubs", "tools/generate_compile_stubs.py")
         abi = _module("m11_abi", "tools/verify_framework_abi.py")
         packer = _module("m11_packer", "tools/apk_entry_replace.py")
@@ -477,6 +479,12 @@ def build(args: argparse.Namespace) -> dict:
             contracts["BP1-sms-hqm-telemetry-guard"], decoded / "smali",
             bp1_overlay, bp1_report)
         _copy_overlay(bp1_overlay, decoded / "smali", bp1.EXPECTED_PATHS)
+
+        br1_overlay, br1_report = stage / "br1-overlay", stage / "br1-report.json"
+        transform_reports["BR1-sms-delivery-ack-abi-guard"] = br1.transform(
+            contracts["BR1-sms-delivery-ack-abi-guard"], decoded / "smali",
+            br1_overlay, br1_report)
+        _copy_overlay(br1_overlay, decoded / "smali", br1.EXPECTED_PATHS)
 
         stub_dir, stub_report = stage / "compile-stubs", stage / "stub-report.json"
         stub_result = stubs.generate(ROOT / "devices/m11q/compile-stub-contract.json",
@@ -544,6 +552,18 @@ def build(args: argparse.Namespace) -> dict:
             if not any(marker in item.read_text(encoding="utf-8")
                        for item in (verified / "smali").rglob("*.smali")):
                 raise BuildError(f"final primary DEX is missing hook: {marker}")
+        delivery_ack_path = (verified / "smali").joinpath(
+            *PurePosixPath(br1.TARGET_PATH).parts)
+        delivery_ack_text = delivery_ack_path.read_text(encoding="utf-8")
+        delivery_ack_methods = br1._methods(delivery_ack_text, br1.METHOD)
+        if len(delivery_ack_methods) != 1:
+            raise BuildError("final primary DEX is missing the SMS delivery-ACK handler")
+        delivery_ack_body = delivery_ack_methods[0]
+        if br1.CALLBACK in delivery_ack_body:
+            raise BuildError("final primary DEX retains the unsupported SMS delivery-ACK callback")
+        for anchor in (br1.KDDI_ANCHOR, br1.RETRY_ANCHOR, br1.READY_ANCHOR):
+            if delivery_ack_body.count(anchor) != 1:
+                raise BuildError("final primary DEX lost preserved SMS delivery-ACK behavior")
         bridge_defs = {item.stem.split("$", 1)[0] for item in
                        (verified / "smali_classes2/com/sec/internal/google").glob("*.smali")}
         if bridge_defs != set(config["bridge_source"]["top_level_classes"]):

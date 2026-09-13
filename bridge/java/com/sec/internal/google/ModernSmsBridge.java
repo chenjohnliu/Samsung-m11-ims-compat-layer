@@ -3,6 +3,7 @@ package com.sec.internal.google;
 import android.os.RemoteException;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
+import android.telephony.PhoneNumberUtils;
 import android.telephony.ims.aidl.IImsSmsListener;
 import android.telephony.ims.stub.ImsSmsImplBase;
 import android.util.Log;
@@ -135,7 +136,7 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
 
     @Override public String getSmsFormat() { return SmsMessage.FORMAT_3GPP; }
 
-    private static String scaHex(String address) {
+    private static String smscValue(String address) {
         if (address == null) return null;
         String raw = address.trim();
         int scheme = raw.indexOf(':');
@@ -154,6 +155,12 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
                 || (raw.charAt(0) == '\'' && raw.charAt(raw.length() - 1) == '\''))) {
             raw = raw.substring(1, raw.length() - 1).trim();
         }
+        return raw;
+    }
+
+    private static String scaHex(String address) {
+        String raw = smscValue(address);
+        if (raw == null) return null;
         boolean international = raw.startsWith("+");
         StringBuilder digits = new StringBuilder();
         for (int i = 0; i < raw.length(); i++) {
@@ -174,8 +181,24 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
 
     private String simSmsc() {
         try {
-            String encoded = scaHex(SmsManager.getSmsManagerForSubscriptionId(
-                    owner.subscription).getSmscAddress());
+            String address = SmsManager.getSmsManagerForSubscriptionId(
+                    owner.subscription).getSmscAddress();
+            String encoded = scaHex(address);
+            String raw = smscValue(address);
+            if (encoded != null && raw != null && !raw.startsWith("+")) {
+                String iso = owner.simCountryIso();
+                if (iso != null) {
+                    String e164 = PhoneNumberUtils.formatNumberToE164(raw, iso);
+                    if (e164 != null && e164.startsWith("+")) {
+                        String normalized = scaHex(e164);
+                        if (normalized != null) {
+                            encoded = normalized;
+                            Log.i(ModernVoiceContext.TAG,
+                                    "Active-subscription SMSC normalized to E.164");
+                        }
+                    }
+                }
+            }
             if (encoded != null) Log.i(ModernVoiceContext.TAG,
                     "SMSC resolved from active subscription; phoneId=" + owner.phoneId);
             return encoded;
@@ -246,8 +269,13 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
     }
 
     @Override public void acknowledgeSms(int token, int messageRef, int result) {
-        try { requireSmsBackend().acknowledgeSms(
-                owner.phoneId, token, messageRef, result); }
+        try {
+            // Samsung keys an incoming 3GPP SMS in SmsServiceModule by the
+            // message ID exposed to Android as the IMS token. AOSP's
+            // messageRef is parsed from the SMS-DELIVER TPDU (normally zero)
+            // and cannot identify that pending Samsung transaction.
+            requireSmsBackend().acknowledgeSms(owner.phoneId, token, token, result);
+        }
         catch (RemoteException | RuntimeException e) {
             Log.e(ModernVoiceContext.TAG, "Samsung IMS SMS acknowledge failed", e);
         }

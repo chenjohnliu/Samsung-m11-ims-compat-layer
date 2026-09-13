@@ -15,8 +15,8 @@ third-party-source audit below before publication.
 | `ModernCallRelay.java` | `3f9a0e478346ae2a77e74bc0da4a65312cae82de76119d8923440a28fd152a2f` | Generated from AOSP Binder declarations plus a project-authored relay template |
 | `ModernCallSession.java` | `1720e929f4e1154142730146b9a844528918ebc6b56b7ee01dd459e1bf38a410` | Generated from AOSP Binder declarations plus a project-authored delegation template |
 | `ModernEventQueue.java` | `7fec02e56ed5997a7f52341f3687e265b68aa4c705e4aff79844a6ae1e1e8339` | Project-authored queue state machine |
-| `ModernSmsBridge.java` | `fb50305bc9501552c8d8e6f5ba158fbe05ced16788feb5ac87a8d481f463d44b` | Project-specific SMS adapter |
-| `ModernVoiceContext.java` | `1ab736a98b45942f8fde89627a0567e2540f11db4690724d761deda3edb1d1c1` | Project-specific voice and registration state machine |
+| `ModernSmsBridge.java` | `eba1c5003c79ba1d7cf4a98d7128bfd15fd2c0cc8282baeff4703d433a20803d` | Project-specific SMS adapter |
+| `ModernVoiceContext.java` | `52e3f7428f68e32460fc1d3a0ea661d3311a48d46bff2f66283ea0625e5ca71a` | Project-specific voice and registration state machine |
 
 ## Technical audit result
 
