@@ -84,6 +84,10 @@ itself, establish additional VoWiFi runtime behavior. The required private input
 2. the matching Android framework/APK decoding and build tools described in
    [`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md).
 
+Stage 3 stock inputs and locally derived outputs have different handling; see
+[`docs/STAGE3_PAYLOAD_INPUTS.md`](docs/STAGE3_PAYLOAD_INPUTS.md). The public
+checkout does not yet automate every Stage 3 private-output transformation.
+
 Do not publish Samsung-derived implementations, decoded trees, generated smali,
 or rebuilt APK/JAR/SO/ELF files. The builder fails closed if a bridge source is
 missing or differs from its reviewed hash.

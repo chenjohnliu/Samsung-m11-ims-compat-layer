@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools.verify_payload import load_manifest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools" / "verify_payload.py"
@@ -58,6 +60,9 @@ class PayloadVerifierTests(unittest.TestCase):
         rows = [self.row("/system/bin/a", "ims/proprietary/bin/a", "copy", b"alpha"),
                 self.row("/system/priv-app/x/x.apk", "ims/proprietary/priv-app/x/x.apk",
                          "patch-to-stage1", b"stock-apk"),
+                self.row("/system/app/sveservice/sveservice.apk",
+                         "ims/proprietary/app/sveservice/sveservice.apk",
+                         "transform-input", b"stock-sve-apk"),
                 self.row("/system/framework/framework-res.apk", "build-inputs/framework-res.apk",
                          "build-input", b"framework")]
         self.write_fixture(rows)
@@ -68,8 +73,11 @@ class PayloadVerifierTests(unittest.TestCase):
         self.assertEqual((destination / "ims/proprietary/bin/a").read_bytes(), b"alpha")
         self.assertFalse((destination / "ims/proprietary/priv-app/x/x.apk").exists())
         self.assertEqual((stock / "system/priv-app/x/x.apk").read_bytes(), b"stock-apk")
+        self.assertFalse((destination / "ims/proprietary/app/sveservice/sveservice.apk").exists())
+        self.assertEqual((stock / "system/app/sveservice/sveservice.apk").read_bytes(),
+                         b"stock-sve-apk")
         self.assertEqual((stock / "build-inputs/framework-res.apk").read_bytes(), b"framework")
-        self.assertEqual(report["summary"]["copied"], 3)
+        self.assertEqual(report["summary"]["copied"], 4)
 
     def test_hash_mismatch_is_reported_and_not_copied(self):
         row = self.row("/system/bin/a", "ims/a", "copy", b"expected")
@@ -105,6 +113,21 @@ class PayloadVerifierTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 1)
         self.assertEqual(target.read_bytes(), b"keep-me")
         self.assertEqual(report["files"][0]["status"], "destination-conflict")
+
+    def test_stage3_manifest_tracks_stock_inputs_not_generated_outputs(self):
+        rows = load_manifest(ROOT / "devices" / "m11q" / "payload-manifest.tsv")
+        by_source = {row["stock_path"]: row for row in rows}
+        self.assertEqual(by_source["/system/priv-app/EpdgService/EpdgService.apk"]["action"],
+                         "transform-input")
+        self.assertEqual(by_source["/system/app/sveservice/sveservice.apk"]["action"],
+                         "transform-input")
+        self.assertEqual(by_source["/system/lib/libAudioFWInterface.so"]["action"],
+                         "transform-input")
+        self.assertEqual(by_source["/system/bin/eris"]["action"], "copy")
+        self.assertNotIn("/system/etc/mnomap.json", by_source)
+        destinations = {row["destination"] for row in rows}
+        self.assertNotIn("ims/proprietary/app/sveservice/lib/arm/libm11q_sve_compat.so",
+                         destinations)
 
 
 if __name__ == "__main__":
