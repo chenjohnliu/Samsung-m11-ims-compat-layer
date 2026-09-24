@@ -11,12 +11,12 @@ third-party-source audit below before publication.
 | File | SHA-256 | Technical classification |
 | --- | --- | --- |
 | `GoogleModernImsService.java` | `29d2f10d0c42f889f15ecaa9ef31b0200b12e6d9cdb30fc3217147add7b9e152` | Project-specific Android 13 service adapter |
-| `GoogleModernMmTelFeature.java` | `4a8831307b335f29e2dda0d0853a5ba07f329cb6f6d33af5cf6844b175f25390` | Project-specific MmTel adapter |
+| `GoogleModernMmTelFeature.java` | `0415caddfb5ac978fa8fafdfcdd7519d4f792abb4da307087ad2cb3cd0a276a5` | Project-specific MmTel adapter |
 | `ModernCallRelay.java` | `3f9a0e478346ae2a77e74bc0da4a65312cae82de76119d8923440a28fd152a2f` | Generated from AOSP Binder declarations plus a project-authored relay template |
 | `ModernCallSession.java` | `1720e929f4e1154142730146b9a844528918ebc6b56b7ee01dd459e1bf38a410` | Generated from AOSP Binder declarations plus a project-authored delegation template |
 | `ModernEventQueue.java` | `7fec02e56ed5997a7f52341f3687e265b68aa4c705e4aff79844a6ae1e1e8339` | Project-authored queue state machine |
 | `ModernSmsBridge.java` | `eba1c5003c79ba1d7cf4a98d7128bfd15fd2c0cc8282baeff4703d433a20803d` | Project-specific SMS adapter |
-| `ModernVoiceContext.java` | `52e3f7428f68e32460fc1d3a0ea661d3311a48d46bff2f66283ea0625e5ca71a` | Project-specific voice and registration state machine |
+| `ModernVoiceContext.java` | `e712a655a1ccaea14217f8ac14e0daa5ee2f68338a8cfb1e1f46ef4c3d8baa02` | Project-specific voice and registration state machine |
 
 ## Technical audit result
 

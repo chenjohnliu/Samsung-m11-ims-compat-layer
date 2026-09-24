@@ -36,6 +36,7 @@ public final class ModernVoiceContext {
     private static int retainedPhoneId = -1;
     private static int retainedSubscription = -1;
     private static volatile boolean retainedVoiceEnabled;
+    private static volatile boolean retainedWfcVoiceEnabled;
     private static volatile boolean retainedSmsEnabled = true;
     final int phoneId;
     final int subscription;
@@ -53,8 +54,10 @@ public final class ModernVoiceContext {
     private IImsRegistrationCallback registrationCallback;
     int serviceId = -1;
     long epoch;
-    boolean disposed, voiceEnabled, smsEnabled, registered, nativeVoice;
+    boolean disposed, voiceEnabled, wfcVoiceEnabled, smsEnabled, registered, nativeVoice;
+    private int registrationTech = -1;
     private boolean scheduled;
+    private long publishSequence;
     private ImsRegistrationAttributes pendingRegistration;
     private final Runnable retry = () -> {
         synchronized (ModernVoiceContext.this) { scheduled = false; ensureBackend(); }
@@ -66,12 +69,13 @@ public final class ModernVoiceContext {
             boolean samePair = retainedPhoneId == phoneId
                     && retainedSubscription == subscription;
             voiceEnabled = samePair && retainedVoiceEnabled;
+            wfcVoiceEnabled = samePair && retainedWfcVoiceEnabled;
             smsEnabled = samePair ? retainedSmsEnabled : true;
         }
         registration.onDeregistered(reason("Awaiting native backend"));
-        if (voiceEnabled) {
+        if (voiceEnabled || wfcVoiceEnabled) {
             Log.i(TAG, "BQ3: Voice enablement restored across feature recreation; phoneId="
-                    + phoneId);
+                    + phoneId + " lte=" + voiceEnabled + " iwlan=" + wfcVoiceEnabled);
         }
     }
 
@@ -96,6 +100,27 @@ public final class ModernVoiceContext {
         if (feature == null) feature = new GoogleModernMmTelFeature(this);
         ensureBackend();
         return feature;
+    }
+    void featureReady(GoogleModernMmTelFeature readyFeature) {
+        // MmTelFeature.setListener() invokes onFeatureReady() while holding the
+        // framework ImsFeature lock. Defer acquiring our monitor until that
+        // callback returns, otherwise publish() can form an AB/BA lock cycle.
+        handler.post(() -> {
+            synchronized (ModernVoiceContext.this) {
+                if (disposed || feature != readyFeature) return;
+                readyFeature.listenerReady = true;
+                ensureBackend();
+            }
+        });
+    }
+    void featureRemoved(GoogleModernMmTelFeature removedFeature) {
+        // Removal can also originate from framework-owned lifecycle code. Keep
+        // Samsung teardown and the owner monitor outside that callback stack.
+        removedFeature.listenerReady = false;
+        handler.post(() -> {
+            removedFeature.sms.dispose();
+            removeFeature(removedFeature);
+        });
     }
     synchronized void ensureBackend() {
         if (disposed || feature == null) return;
@@ -122,8 +147,10 @@ public final class ModernVoiceContext {
                 Log.i(TAG, "Native voice context opened; phoneId=" + phoneId
                         + " subscription=" + subscription + " epoch=" + epoch);
             }
-            if (!registered && pendingRegistration != null && hasNormalVoiceRegistration()) {
+            if (!registered && pendingRegistration != null
+                    && hasVoiceRegistration(pendingRegistration.getRegistrationTechnology())) {
                 registered = true;
+                registrationTech = pendingRegistration.getRegistrationTechnology();
                 restoreNativeVoiceFromRegistration();
                 registration.onRegistered(pendingRegistration);
                 pendingRegistration = null;
@@ -132,7 +159,7 @@ public final class ModernVoiceContext {
             // onRegistered callback during SIM hot-swap and clear nativeVoice.
             // Reconcile it from Samsung's current strict normal-mmtel snapshot;
             // deregistration still clears registered before this can qualify.
-            if (registered && !nativeVoice && hasNormalVoiceRegistration()) {
+            if (registered && !nativeVoice && hasVoiceRegistration(registrationTech)) {
                 restoreNativeVoiceFromRegistration();
             }
             publish();
@@ -145,10 +172,17 @@ public final class ModernVoiceContext {
     boolean activePair() {
         return GoogleModernImsService.isSingleActivePair(app, phoneId, subscription);
     }
-    void setVoiceEnabled(boolean enabled) {
-        voiceEnabled = enabled;
+    void setVoiceEnabled(int tech, boolean enabled) {
+        if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) {
+            voiceEnabled = enabled;
+        } else if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) {
+            wfcVoiceEnabled = enabled;
+        } else {
+            return;
+        }
         retainEnablement();
-        Log.i(TAG, "BQ3: Voice enablement remembered=" + enabled + " phoneId=" + phoneId);
+        Log.i(TAG, "Voice enablement remembered=" + enabled + " phoneId=" + phoneId
+                + " tech=" + tech);
     }
     void setSmsEnabled(boolean enabled) {
         smsEnabled = enabled;
@@ -159,6 +193,7 @@ public final class ModernVoiceContext {
             retainedPhoneId = phoneId;
             retainedSubscription = subscription;
             retainedVoiceEnabled = voiceEnabled;
+            retainedWfcVoiceEnabled = wfcVoiceEnabled;
             retainedSmsEnabled = smsEnabled;
         }
     }
@@ -166,19 +201,60 @@ public final class ModernVoiceContext {
         ensureBackend();
         if (backend == null || serviceId < 0 || disposed) throw new IllegalStateException("Native voice backend unavailable");
     }
-    boolean voiceAvailable() { return !disposed && backend != null && serviceId >= 0 && registered && nativeVoice && voiceEnabled; }
+    boolean voiceEnabledForTech(int tech) {
+        if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) return voiceEnabled;
+        if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) return wfcVoiceEnabled;
+        return false;
+    }
+    boolean voiceAvailable() {
+        return !disposed && backend != null && serviceId >= 0 && registered && nativeVoice
+                && voiceEnabledForTech(registrationTech);
+    }
     boolean smsAvailable() {
         return !disposed && backend != null && serviceId >= 0 && registered
                 && hasNormalSmsRegistration();
     }
-    void publish() { if (feature != null) feature.publish(!disposed && backend != null && serviceId >= 0, voiceAvailable()); }
+    void publish() {
+        final GoogleModernMmTelFeature target;
+        final boolean ready;
+        final boolean voice;
+        final boolean sms;
+        final long sequence;
+        synchronized (this) {
+            target = feature;
+            if (target == null) return;
+            ready = !disposed && backend != null && serviceId >= 0;
+            voice = voiceAvailable();
+            sms = target.sms.available();
+            sequence = ++publishSequence;
+        }
+        // setFeatureState() and notifyCapabilitiesStatusChanged() acquire the
+        // framework ImsFeature lock. Always execute them after the owner monitor
+        // has been released, and discard snapshots superseded before dispatch.
+        handler.post(() -> {
+            synchronized (ModernVoiceContext.this) {
+                if (sequence != publishSequence) return;
+            }
+            target.publish(ready, voice, sms);
+        });
+    }
     static ImsReasonInfo reason(String message) { return new ImsReasonInfo(106, 0, message); }
 
-    // The notifier may carry RCS/CMC registrations. Only a real normal cellular VoLTE profile qualifies.
-    boolean hasNormalVoiceRegistration() {
+    // The notifier may carry RCS/CMC/emergency registrations. Require a normal
+    // Samsung MMTEL profile whose RAT matches the Android registration transport.
+    boolean hasVoiceRegistration(int tech) {
+        final boolean iwlan;
+        if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) {
+            iwlan = false;
+        } else if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) {
+            iwlan = true;
+        } else {
+            return false;
+        }
         try {
             for (ImsRegistration r : ImsRegistry.getRegistrationManager().getRegistrationInfo()) {
-                if (r.getPhoneId() == phoneId && r.hasVolteService() && r.getCurrentRat() != 18
+                if (r.getPhoneId() == phoneId && r.hasVolteService()
+                        && (iwlan ? r.getCurrentRat() == 18 : r.getCurrentRat() != 18)
                         && !r.getImsProfile().hasEmergencySupport() && r.getImsProfile().getCmcType() == 0) return true;
             }
         } catch (RuntimeException e) { Log.e(TAG, "Registration snapshot unavailable", e); }
@@ -202,7 +278,7 @@ public final class ModernVoiceContext {
     synchronized IImsCallSession outgoing(ImsCallProfile profile) throws RemoteException {
         requireBackend();
         if (!voiceAvailable() || profile == null || profile.mServiceType != 1 || profile.mCallType != 2)
-            throw new RemoteException("BC2 normal cellular voice unavailable or unsupported profile");
+            throw new RemoteException("BC2 MMTEL voice unavailable or unsupported profile");
         ModernCallRelay relay = new ModernCallRelay();
         IImsCallSession nativeSession;
         ModernCallRelay.CONSTRUCTION.set(relay);
@@ -312,14 +388,14 @@ public final class ModernVoiceContext {
     synchronized void dispose() {
         if (disposed) return;
         reset("Subscription/service removed"); disposed = true;
-        if (feature != null) feature.publish(false, false);
+        publish();
         feature = null; handler.removeCallbacks(retry); scheduled = false;
     }
     private void reset(String cause) {
         ++epoch;
         if (incomingTarget == this) incomingTarget = null;
         if (feature != null) feature.sms.backendInvalidated(backend);
-        registered = nativeVoice = false; pendingRegistration = null;
+        registered = nativeVoice = false; pendingRegistration = null; registrationTech = -1;
         publish();
         registration.onDeregistered(reason(cause));
         registration.onSubscriberAssociatedUriChanged(new Uri[0]);
@@ -342,12 +418,15 @@ public final class ModernVoiceContext {
             handler.post(() -> {
             synchronized (ModernVoiceContext.this) {
                 if (!current(generation)) return;
-                pendingRegistration = a.getRegistrationTechnology() == 0 ? a : null;
-                registered = pendingRegistration != null && hasNormalVoiceRegistration();
+                final int tech = a.getRegistrationTechnology();
+                pendingRegistration = (tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE
+                        || tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) ? a : null;
+                registrationTech = pendingRegistration == null ? -1 : tech;
+                registered = pendingRegistration != null && hasVoiceRegistration(tech);
                 if (registered) restoreNativeVoiceFromRegistration();
                 publish();
                 if (registered) registration.onRegistered(a);
-                else registration.onDeregistered(reason("No normal cellular VoLTE registration"));
+                else registration.onDeregistered(reason("No normal MMTEL registration for transport"));
                 publish();
             }
             });
@@ -356,8 +435,12 @@ public final class ModernVoiceContext {
             handler.post(() -> {
             synchronized (ModernVoiceContext.this) {
                 if (!current(generation)) return;
-                registered = nativeVoice = false; pendingRegistration = null; publish();
-                if (a.getRegistrationTechnology() == 0) registration.onRegistering(a);
+                final int tech = a.getRegistrationTechnology();
+                registered = nativeVoice = false; pendingRegistration = null;
+                registrationTech = (tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE
+                        || tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) ? tech : -1;
+                publish();
+                if (registrationTech != -1) registration.onRegistering(a);
                 else registration.onDeregistered(reason("Unsupported registration transport"));
             }
             });
@@ -366,7 +449,8 @@ public final class ModernVoiceContext {
             handler.post(() -> {
             synchronized (ModernVoiceContext.this) {
                 if (!current(generation)) return;
-                registered = nativeVoice = false; pendingRegistration = null; publish(); registration.onDeregistered(reason);
+                registered = nativeVoice = false; pendingRegistration = null; registrationTech = -1;
+                publish(); registration.onDeregistered(reason);
                 registration.onSubscriberAssociatedUriChanged(new Uri[0]);
             }
             });
@@ -399,7 +483,12 @@ public final class ModernVoiceContext {
         }
         public void voiceMessageCountUpdate(int count) {
             handler.post(() -> {
-            synchronized (ModernVoiceContext.this) { if (current(generation) && feature != null && feature.listenerReady) feature.notifyVoiceMessageCountUpdate(count); }
+                GoogleModernMmTelFeature target;
+                synchronized (ModernVoiceContext.this) {
+                    target = current(generation) && feature != null && feature.listenerReady
+                            ? feature : null;
+                }
+                if (target != null) target.notifyVoiceMessageCountUpdate(count);
             });
         }
         // Registration state is exclusively owned by the typed notifier adapter above.
