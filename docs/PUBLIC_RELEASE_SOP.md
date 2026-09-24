@@ -197,9 +197,13 @@ python3 tools/extract_ext4.py \
   /system/priv-app/imsservice/imsservice.apk
 ```
 
-The release wrapper should then copy each file into the device-tree destination
-specified by the manifest.  It must verify every stock SHA-256 before applying
-any transformation.
+The file list above is the original Stage 1 subset; the manifest now also pins
+Stage 3 stock inputs. The release wrapper must verify every stock SHA-256 before
+any transformation. Only `copy` rows go unchanged to the device-tree
+destination. `patch-to-stage1` and `transform-input` rows are private stock
+inputs, not finished APK/ELF outputs; `build-input` rows remain build inputs.
+See [`STAGE3_PAYLOAD_INPUTS.md`](STAGE3_PAYLOAD_INPUTS.md) for the Stage 3
+provenance boundary.
 
 ## 7. Rebuild the IMS APK from stock
 
@@ -342,7 +346,8 @@ its DEX and manifest contents independently after signing.
 
 ## 9. Place payload into the Android tree
 
-The preparation script should copy verified local inputs into:
+The preparation script should copy verified `copy` inputs and separately
+prepared private outputs into:
 
 ```text
 device/samsung/m11q/ims/proprietary/
