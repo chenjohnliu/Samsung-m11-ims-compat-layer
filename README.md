@@ -13,26 +13,56 @@ Its staged compatibility-layer and stock-APK adaptation approach informed this
 work, which was then modified and independently validated for the Galaxy M11,
 its pinned firmware inputs, and the runtime scope documented below.
 
-## Public-release status
+## Current project status
 
-The Stage 1 runtime baseline is verified on one device with CherishOS 4.12 /
-Android 13, SELinux Enforcing, SIM1 WWAN and stock build `M115FXXS5CWK3`:
+Stage 3 is the current VoWiFi investigation. It builds on Stage 2, which
+extended the original SIM1 voice bring-up to a **single active subscription on
+either physical slot** and added an Android 13 IMS SMS bridge. Runtime
+validation was performed on one M11 with
+CherishOS 4.12 / Android 13, SELinux Enforcing, Taiwan Mobile and stock input
+build `M115FXXS5CWK3`.
 
-- IMS registration;
-- outgoing and incoming VoLTE, including ringing, answer, two-way speech and teardown;
-- SMS send/receive using the validated IMS-to-SGs/CS fallback path;
+The following behavior has been validated with one active SIM at a time:
+
+- IMS registration on SIM1 and SIM2;
+- outgoing and incoming VoLTE, including ringing, answer, two-way speech and
+  teardown;
+- SMS send and receive on SIM1 and SIM2;
+- incoming SMS delivery from Samsung IMS into Android, including the corrected
+  Samsung message-ID acknowledgement path;
 - physical SIM1 hot-swap recovery followed by VoLTE and SMS operation.
 
-The verified source checkpoints are compatibility layer `8a3dc34`, device tree
-`510d965`, and Telephony `afedb3add`. The verified ROM pre-release was
-`20260910-13-rc1`. BQ3 IMS bridge plus BQ6 generic Telephony fallback is the
-selected candidate; BQ7 is excluded. A prior cold-boot failure was attributed
-to dirty `/data` persistent-state contamination, not a source regression; the
-exact contaminating item was not isolated.
+Outgoing SMS is functionally validated, but the transport result must be stated
+precisely. In the captured Taiwan Mobile transaction, Samsung IMS sent a SIP
+`MESSAGE` and received SIP `202 Accepted`, followed by RP cause 50. Android then
+completed the message through the modem fallback path. The newer active-SIM
+SMSC E.164 normalization candidate is deterministic and structure-verified but
+has not yet been validated on-device as a successful end-to-end outgoing IMS
+SMS transaction. Therefore this project does **not** currently claim pure IMS
+transport for outgoing SMS.
 
-This is not a claim of universal carrier or device support. SIM2/DSDS, VoWiFi,
-emergency calling, ViLTE, inter-RAT handover, other Samsung models/builds and
-general carrier support are unverified and intentionally out of scope.
+The selected Stage 1 recovery baseline remains BQ3 IMS bridge plus BQ6 generic
+Telephony fallback; BQ7 is excluded. Stage 2 adds the single-active slot policy
+and IMS SMS compatibility changes. See
+[`docs/STAGE1_RUNTIME_BASELINE.md`](docs/STAGE1_RUNTIME_BASELINE.md) and
+[`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md) for the evidence and build
+boundaries.
+
+Concurrent dual-SIM / DSDS operation is intentionally unsupported and
+unvalidated; SIM2 support here means SIM2 works as the one active subscription,
+not that two subscriptions can remain active together. Emergency calling,
+ViLTE, inter-RAT handover, other Samsung models/builds and general carrier
+support also remain unverified.
+
+Stage 3 VoWiFi is under active validation on the M11/Taiwan Mobile combination.
+On the current custom-ROM build, an outgoing Wi-Fi call to 188 stayed connected, the
+automated voice was audible, and the user ended the call normally. This is a
+scoped device test, not a claim of complete VoWiFi support: microphone uplink,
+incoming Wi-Fi calls, calls to another person, other carriers, emergency calls,
+and handover remain unverified. Earlier LTE-only/WFC-disabled captures describe
+the initial investigation state, not the current build. Historical handoff and
+validation gates are documented in
+[`docs/STAGE2_VOWIFI_HANDOFF.md`](docs/STAGE2_VOWIFI_HANDOFF.md).
 
 ## Reproducibility boundary
 
@@ -43,11 +73,11 @@ verification tooling. The bridge inventory and expected hashes are recorded in
 
 Therefore a fresh public checkout can reproduce the complete project-authored
 logic when the user supplies legally obtained, hash-matching Samsung firmware
-inputs and the documented build toolchain. The current Stage 2 source was
+inputs and the documented build toolchain. The pinned IMS bridge source was
 promoted only after two deterministic `PIN_DISCOVERY` runs produced identical
 DEX and unsigned-APK identities. The default strict mode can regenerate and
-publish that exactly pinned unsigned APK. This build reproducibility is not a
-SIM2 runtime-validation claim. The required private inputs are:
+publish that exactly pinned unsigned APK. Build reproducibility does not, by
+itself, establish additional VoWiFi runtime behavior. The required private inputs are:
 
 1. the exact stock files listed in
    [`devices/m11q/payload-manifest.tsv`](devices/m11q/payload-manifest.tsv);
@@ -64,8 +94,8 @@ missing or differs from its reviewed hash.
   narrow fail-closed transformations;
 - `devices/m11q/` — input manifest, transformation contracts and bridge
   inventory; no proprietary payload;
-- `bridge/java/` — project-authored Stage 1 baseline and Stage 2 slot-policy
-  bridge source;
+- `bridge/java/` — project-authored Stage 1 voice baseline, Stage 2
+  single-active-slot and IMS SMS bridge, and Stage 3 VoWiFi lifecycle fixes;
 - `bridge/abi/` — declaration-only Android 13 ABI fixtures;
 - `tests/` — synthetic tests without Samsung binaries or implementations;
 - `docs/` — runtime baseline, provenance boundary and release SOP.
