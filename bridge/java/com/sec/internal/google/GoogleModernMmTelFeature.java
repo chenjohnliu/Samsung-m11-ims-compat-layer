@@ -5,57 +5,72 @@ import android.telephony.ims.ImsCallProfile;
 import android.telephony.ims.feature.CapabilityChangeRequest;
 import android.telephony.ims.feature.MmTelFeature;
 import android.telephony.ims.stub.ImsSmsImplBase;
+import android.telephony.ims.stub.ImsRegistrationImplBase;
 import com.android.ims.internal.IImsCallSession;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class GoogleModernMmTelFeature extends MmTelFeature {
     final ModernVoiceContext owner;
     final ModernSmsBridge sms;
-    boolean listenerReady;
+    volatile boolean listenerReady;
     GoogleModernMmTelFeature(ModernVoiceContext owner) {
         this.owner = owner;
         this.sms = new ModernSmsBridge(owner);
     }
-    void publish(boolean ready, boolean voice) {
+    void publish(boolean ready, boolean voice, boolean smsReady) {
         setFeatureState(ready ? STATE_READY : STATE_UNAVAILABLE);
         MmTelCapabilities c = new MmTelCapabilities();
         if (voice) c.addCapabilities(MmTelCapabilities.CAPABILITY_TYPE_VOICE);
-        if (sms.available()) c.addCapabilities(MmTelCapabilities.CAPABILITY_TYPE_SMS);
+        if (smsReady) c.addCapabilities(MmTelCapabilities.CAPABILITY_TYPE_SMS);
         notifyCapabilitiesStatusChanged(c);
     }
     @Override public void onFeatureReady() {
-        synchronized (owner) { listenerReady = true; owner.ensureBackend(); }
+        owner.featureReady(this);
     }
     @Override public void onFeatureRemoved() {
-        sms.dispose();
-        owner.removeFeature(this);
+        owner.featureRemoved(this);
     }
     @Override public boolean queryCapabilityConfiguration(int capability, int tech) {
         synchronized (owner) {
-            if (tech != 0) return false;
-            if (capability == MmTelCapabilities.CAPABILITY_TYPE_VOICE) return owner.voiceEnabled;
-            if (capability == MmTelCapabilities.CAPABILITY_TYPE_SMS) return owner.smsEnabled;
+            if (capability == MmTelCapabilities.CAPABILITY_TYPE_VOICE)
+                return owner.voiceEnabledForTech(tech);
+            if (capability == MmTelCapabilities.CAPABILITY_TYPE_SMS
+                    && tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE)
+                return owner.smsEnabled;
             return false;
         }
     }
     @Override public void changeEnabledCapabilities(CapabilityChangeRequest request,
             CapabilityCallbackProxy callback) {
+        List<CapabilityChangeRequest.CapabilityPair> unsupported = new ArrayList<>();
         synchronized (owner) {
             for (CapabilityChangeRequest.CapabilityPair pair : request.getCapabilitiesToDisable()) {
-                change(pair, false, callback);
+                if (!change(pair, false)) unsupported.add(pair);
             }
             for (CapabilityChangeRequest.CapabilityPair pair : request.getCapabilitiesToEnable()) {
-                change(pair, true, callback);
+                if (!change(pair, true)) unsupported.add(pair);
             }
             owner.publish();
         }
+        for (CapabilityChangeRequest.CapabilityPair pair : unsupported) {
+            callback.onChangeCapabilityConfigurationError(
+                    pair.getCapability(), pair.getRadioTech(), -1);
+        }
     }
-    private void change(CapabilityChangeRequest.CapabilityPair pair, boolean enabled,
-            CapabilityCallbackProxy callback) {
+    private boolean change(CapabilityChangeRequest.CapabilityPair pair, boolean enabled) {
         if (pair.getCapability() == MmTelCapabilities.CAPABILITY_TYPE_VOICE
-                && pair.getRadioTech() == 0) owner.setVoiceEnabled(enabled);
-        else if (pair.getCapability() == MmTelCapabilities.CAPABILITY_TYPE_SMS
-                && pair.getRadioTech() == 0) owner.setSmsEnabled(enabled);
-        else callback.onChangeCapabilityConfigurationError(pair.getCapability(), pair.getRadioTech(), -1);
+                && (pair.getRadioTech() == ImsRegistrationImplBase.REGISTRATION_TECH_LTE
+                || pair.getRadioTech() == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN)) {
+            owner.setVoiceEnabled(pair.getRadioTech(), enabled);
+            return true;
+        }
+        if (pair.getCapability() == MmTelCapabilities.CAPABILITY_TYPE_SMS
+                && pair.getRadioTech() == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) {
+            owner.setSmsEnabled(enabled);
+            return true;
+        }
+        return false;
     }
     @Override public ImsSmsImplBase getSmsImplementation() { return sms; }
     @Override public int shouldProcessCall(String[] numbers) {

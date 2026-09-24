@@ -49,12 +49,12 @@
     "publication_status": "project-authored-apache-2.0",
     "files": {
       "com/sec/internal/google/GoogleModernImsService.java": "6d23e4fdaad5bc6c3da57736dd74168009f23dd0286560663be120eb043344b2",
-      "com/sec/internal/google/GoogleModernMmTelFeature.java": "4a8831307b335f29e2dda0d0853a5ba07f329cb6f6d33af5cf6844b175f25390",
+      "com/sec/internal/google/GoogleModernMmTelFeature.java": "0415caddfb5ac978fa8fafdfcdd7519d4f792abb4da307087ad2cb3cd0a276a5",
       "com/sec/internal/google/ModernCallRelay.java": "3f9a0e478346ae2a77e74bc0da4a65312cae82de76119d8923440a28fd152a2f",
       "com/sec/internal/google/ModernCallSession.java": "1720e929f4e1154142730146b9a844528918ebc6b56b7ee01dd459e1bf38a410",
       "com/sec/internal/google/ModernEventQueue.java": "7fec02e56ed5997a7f52341f3687e265b68aa4c705e4aff79844a6ae1e1e8339",
       "com/sec/internal/google/ModernSmsBridge.java": "eba1c5003c79ba1d7cf4a98d7128bfd15fd2c0cc8282baeff4703d433a20803d",
-      "com/sec/internal/google/ModernVoiceContext.java": "52e3f7428f68e32460fc1d3a0ea661d3311a48d46bff2f66283ea0625e5ca71a"
+      "com/sec/internal/google/ModernVoiceContext.java": "e712a655a1ccaea14217f8ac14e0daa5ee2f68338a8cfb1e1f46ef4c3d8baa02"
     },
     "top_level_classes": [
       "GoogleModernImsService",
@@ -122,12 +122,12 @@
     "pin_state": "pinned",
     "pin_basis": "current-source-build",
     "dex_count": 2,
-    "unsigned_apk_sha256": "3df8042a57f6359887e68b1e285d68290376801305bc153268c7d512827a75e8",
+    "unsigned_apk_sha256": "b9d3069500f824335d598339d54382bbe8b1d218519b7a676056e32ee226f5dc",
     "entries": {
       "classes.dex": "0f5bc4f2cf36af2b43c15c9c9d0f1d445b4e68afe49f6230d329fcee542f8774",
-      "classes2.dex": "58142f4656bc867b2325bf7b4ddd3c6b52b2e4012d699ab087cfd824824ebe80"
+      "classes2.dex": "b9d57c1a1aab37fd88a5443bde177c710897b1603481350e8037cf332ce0d325"
     },
-    "classes2_policy": "Stage 2 SMS candidate: allow one active subscription in slot 0 or slot 1 for MMTEL Voice and IMS SMS, bind every Samsung SMS operation and callback to the exact current phone/subscription pair, translate the AOSP incoming-SMS token back to Samsung's pending message ID for delivery acknowledgement, normalize an active-subscription SIM SMSC to E.164 only when the platform formatter succeeds and otherwise preserve its original TON, and fail closed for dual-active or stale mappings; registration, transport, emergency and CMC gates remain enforced",
+    "classes2_policy": "Stage 2 candidate: allow one active subscription in slot 0 or slot 1 for MMTEL Voice and IMS SMS, publish normal Samsung MMTEL voice on matching LTE or IWLAN transport with independent Android enablement state, bind every Samsung SMS operation and callback to the exact current phone/subscription pair, translate the AOSP incoming-SMS token back to Samsung's pending message ID for delivery acknowledgement, normalize an active-subscription SIM SMSC to E.164 only when the platform formatter succeeds and otherwise preserve its original TON, dispatch Android ImsFeature lifecycle and capability publication without a ModernVoiceContext-to-ImsFeature lock inversion, and fail closed for dual-active, stale, unsupported-transport, emergency, or CMC mappings",
     "primary_policy": "Runtime-targeted clean-stock one-pass apktool output with BH1 ICC-type compatibility, BP1 fail-soft optional SMS HQM role telemetry, and BR1 suppression of the Samsung-only SMS delivery-ACK completion callback absent from Android 13"
   },
   "historical_reference": {

@@ -50,9 +50,9 @@ class BuildImsserviceTests(unittest.TestCase):
         self.assertEqual(config["final_dex_invariants"]["entries"]["classes.dex"],
                          "0f5bc4f2cf36af2b43c15c9c9d0f1d445b4e68afe49f6230d329fcee542f8774")
         self.assertEqual(config["final_dex_invariants"]["entries"]["classes2.dex"],
-                         "58142f4656bc867b2325bf7b4ddd3c6b52b2e4012d699ab087cfd824824ebe80")
+                         "b9d57c1a1aab37fd88a5443bde177c710897b1603481350e8037cf332ce0d325")
         self.assertEqual(config["final_dex_invariants"]["unsigned_apk_sha256"],
-                         "3df8042a57f6359887e68b1e285d68290376801305bc153268c7d512827a75e8")
+                         "b9d3069500f824335d598339d54382bbe8b1d218519b7a676056e32ee226f5dc")
         self.assertEqual(config["final_dex_invariants"]["pin_state"], "pinned")
         self.assertEqual(config["final_dex_invariants"]["pin_basis"],
                          "current-source-build")

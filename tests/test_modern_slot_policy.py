@@ -78,6 +78,7 @@ class ModernSlotPolicyTests(unittest.TestCase):
         self.assertIn("retainedPhoneId = phoneId", text)
         self.assertIn("retainedSubscription = subscription", text)
         self.assertIn("voiceEnabled = samePair && retainedVoiceEnabled", text)
+        self.assertIn("wfcVoiceEnabled = samePair && retainedWfcVoiceEnabled", text)
         self.assertIn("smsEnabled = samePair ? retainedSmsEnabled : true", text)
 
     def test_sms_delegates_all_native_operations_to_owner_phone(self):
@@ -126,14 +127,17 @@ class ModernSlotPolicyTests(unittest.TestCase):
         self.assertNotIn(
             "acknowledgeSms(owner.phoneId, token, messageRef, result)", acknowledge)
 
-    def test_registration_safety_gates_remain(self):
+    def test_registration_safety_gates_and_iwlan_transport_support_remain(self):
         text = source("ModernVoiceContext.java")
-        self.assertGreaterEqual(text.count("getCurrentRat() != 18"), 2)
+        self.assertIn("hasVoiceRegistration(int tech)", text)
+        self.assertIn("iwlan ? r.getCurrentRat() == 18 : r.getCurrentRat() != 18", text)
         self.assertGreaterEqual(text.count("!r.getImsProfile().hasEmergencySupport()"), 2)
         self.assertGreaterEqual(text.count("r.getImsProfile().getCmcType() == 0"), 2)
+        self.assertIn("voiceEnabledForTech(registrationTech)", text)
+        self.assertIn("REGISTRATION_TECH_IWLAN", text)
         feature = source("GoogleModernMmTelFeature.java")
-        self.assertIn("if (tech != 0) return false;", feature)
-        self.assertIn("pair.getRadioTech() == 0", feature)
+        self.assertIn("owner.voiceEnabledForTech(tech)", feature)
+        self.assertIn("REGISTRATION_TECH_IWLAN", feature)
 
 
 if __name__ == "__main__":
