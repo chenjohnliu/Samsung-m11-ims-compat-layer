@@ -15,7 +15,7 @@ its pinned firmware inputs, and the runtime scope documented below.
 
 ## Current project status
 
-Stage 3 is the current VoWiFi investigation. It builds on Stage 2, which
+Stage 3 is the current VoWiFi compatibility and validation stage. It builds on Stage 2, which
 extended the original SIM1 voice bring-up to a **single active subscription on
 either physical slot** and added an Android 13 IMS SMS bridge. Runtime
 validation was performed on one M11 with

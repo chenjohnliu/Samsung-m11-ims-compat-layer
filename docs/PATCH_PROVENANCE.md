@@ -145,6 +145,25 @@ The generated overlay contains transformed Samsung smali and must remain an
 ignored local artifact. Its report contains only allowlisted relative paths,
 the public hook ID and input/output hashes. See `docs/BG1_STATS_GUARD.md`.
 
+### Implemented BT1 incoming-VoWiFi media boundary
+
+`devices/m11q/bt1-mt-vowifi-post-est-media-contract.json` pins one exact
+post-BR1 `ImsInCall.smali` input by path, SHA-256, class/superclass identity,
+method and unique ESTABLISHED anchor. It contains no Samsung method body.
+
+`tools/transform_bt1_mt_vowifi_media.py` inserts one project-authored,
+fail-closed hook after Samsung reports the call ESTABLISHED. The hook selects
+SAE only for an incoming, registered, ordinary non-CMC voice call on IWLAN
+(RAT 18). The transformer rejects partial/repeated application and verifies
+that every unrelated method remains byte-identical. Synthetic tests exercise
+the ordering, gates, hash drift and non-overwrite behavior without embedding
+Samsung implementation.
+
+The generated smali overlay and APK remain private build artifacts. The
+behavioral result—bidirectional incoming VoWiFi audio without the prior
+15–17-second disconnect—was validated separately on-device. See
+`docs/STAGE3_MT_VOWIFI_MEDIA.md` for scope and output identities.
+
 ## Never publish
 
 - Stock, intermediate or patched APK/JAR/DEX/class files.
