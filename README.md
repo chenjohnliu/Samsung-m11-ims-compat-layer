@@ -98,8 +98,11 @@ itself, establish additional VoWiFi runtime behavior. The required private input
 Stage 3 stock inputs and locally derived outputs have different handling; see
 [`docs/STAGE3_PAYLOAD_INPUTS.md`](docs/STAGE3_PAYLOAD_INPUTS.md). The public
 checkout automates the BT1 Samsung IMS transformation without publishing its
-private input or generated output. Other private Stage 3 payload adaptations
-remain governed by their documented source/provenance boundaries.
+private input or generated output. It also provides UW1 for the pinned
+`UnifiedWFC.apk` method and ER1 for the three-file ERIS private crypto closure.
+`sveservice.apk` and `EpdgService.apk` remain explicitly blocked pending a
+complete retained stock-to-final procedure. See
+[`docs/STAGE3_REMAINING_PAYLOAD_STATUS.md`](docs/STAGE3_REMAINING_PAYLOAD_STATUS.md).
 
 Do not publish Samsung-derived implementations, decoded trees, generated smali,
 or rebuilt APK/JAR/SO/ELF files. The builder fails closed if a bridge source is

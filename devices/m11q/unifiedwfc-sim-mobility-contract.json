@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "transformation_id": "UW1-disable-sim-mobility-extension",
+  "stock_apk_sha256": "f75fb6ae72bab70aeec85e6b2db30d804cbddb026bd022761cbfd22e5e3889c7",
+  "entry": "classes.dex",
+  "entry_input_sha256": "afbbbd4f7eeca73bd1584e2fce7091ba1c4d61243d8d5312aac069b0b1b25e0e",
+  "entry_output_sha256": "baecec81eb0eb32422071b4f52abce9af6c71a8e06aae208aa5f6ded735632d0",
+  "output_apk_sha256": "99f89de78d5ef798b47a444027dd29c65962a00c1adece9975027f0d00e35c1a",
+  "method": {
+    "class": "Lcom/sec/unifiedwfc/util/w;",
+    "name": "M0",
+    "prototype": "(Landroid/content/Context;I)Z",
+    "occurrences": 1,
+    "registers": 5,
+    "ins": 2,
+    "outs": 4,
+    "tries": 0,
+    "debug_info_offset": 0,
+    "code_units": 42,
+    "code_input_sha256": "a6dfe64942131647d212c86a02c28a9d4a318bbfc2dbacdf8c931eb76a02edcb",
+    "code_output_sha256": "d289b3cb947df41e102d62c689421e6e416d8250506facc5593cdb91272505b6"
+  },
+  "replacement": "return-false-and-zero-fill"
+}
