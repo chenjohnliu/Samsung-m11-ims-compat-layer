@@ -54,15 +54,20 @@ not that two subscriptions can remain active together. Emergency calling,
 ViLTE, inter-RAT handover, other Samsung models/builds and general carrier
 support also remain unverified.
 
-Stage 3 VoWiFi is under active validation on the M11/Taiwan Mobile combination.
-On the current custom-ROM build, an outgoing Wi-Fi call to 188 stayed connected, the
-automated voice was audible, and the user ended the call normally. This is a
-scoped device test, not a claim of complete VoWiFi support: microphone uplink,
-incoming Wi-Fi calls, calls to another person, other carriers, emergency calls,
-and handover remain unverified. Earlier LTE-only/WFC-disabled captures describe
-the initial investigation state, not the current build. Historical handoff and
-validation gates are documented in
-[`docs/STAGE2_VOWIFI_HANDOFF.md`](docs/STAGE2_VOWIFI_HANDOFF.md).
+Stage 3 VoWiFi is runtime-validated on the tested M11/Taiwan Mobile combination
+for an outgoing call to 188 and an incoming call from another handset. The 188
+call stayed connected, played audible service audio and ended normally. After
+BT1 moved the incoming-call SAE audio-interface update to the post-ESTABLISHED
+state, the incoming call had bidirectional audio and no longer disconnected at
+about 16 seconds. This remains a scoped result: emergency calling, inter-RAT
+handover, alternate audio devices, concurrent dual-SIM operation, other
+carriers and other stock builds/models remain unverified. Earlier
+LTE-only/WFC-disabled and pre-BT1 captures describe investigation states, not
+the current build. See
+[`docs/STAGE3_MT_VOWIFI_MEDIA.md`](docs/STAGE3_MT_VOWIFI_MEDIA.md) for the fix
+boundary and evidence, and
+[`docs/STAGE2_VOWIFI_HANDOFF.md`](docs/STAGE2_VOWIFI_HANDOFF.md) for the
+historical handoff.
 
 ## Reproducibility boundary
 
@@ -86,7 +91,9 @@ itself, establish additional VoWiFi runtime behavior. The required private input
 
 Stage 3 stock inputs and locally derived outputs have different handling; see
 [`docs/STAGE3_PAYLOAD_INPUTS.md`](docs/STAGE3_PAYLOAD_INPUTS.md). The public
-checkout does not yet automate every Stage 3 private-output transformation.
+checkout automates the BT1 Samsung IMS transformation without publishing its
+private input or generated output. Other private Stage 3 payload adaptations
+remain governed by their documented source/provenance boundaries.
 
 Do not publish Samsung-derived implementations, decoded trees, generated smali,
 or rebuilt APK/JAR/SO/ELF files. The builder fails closed if a bridge source is

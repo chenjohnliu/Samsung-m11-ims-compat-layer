@@ -6,6 +6,24 @@ device operation.
 
 ## Evidence status
 
+The current deterministic output includes Stage 3 BT1, which selects Samsung's
+SAE audio interface for an ordinary incoming IWLAN voice call only after the
+call reaches ESTABLISHED. Two independent pin-discovery runs produced:
+
+- unsigned APK SHA-256
+  `832ad6fca643791a19776be14cb11ad6d1395bfe3d128e058dc4442e703990a9`;
+- primary DEX SHA-256
+  `cd8be33628bfabeafe77e78c58bf13ba8207e0eba41718845dcf116a8594cfe2`;
+- unchanged bridge DEX SHA-256
+  `b9d57c1a1aab37fd88a5443bde177c710897b1603481350e8037cf332ce0d325`.
+
+The BT1 behavior was independently runtime-validated in the locally integrated
+ROM: the previously silent incoming VoWiFi call no longer disconnected after
+about 16 seconds and instead sustained bidirectional audio. The deterministic
+public-builder APK above is structure-verified against the same narrowly
+specified transformation; its bytes are not claimed to be identical to the
+separately packaged and signed ROM input.
+
 The last runtime-tested **Stage 2 BR1 IMS-SMS** unsigned APK identity is
 `db2caaa254f017a3f79b0cbb0fd549f97a79fdf8278e7a208412426a77476954`.
 The current **Stage 2 SMSC E.164 build candidate** was promoted after two
