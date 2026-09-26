@@ -54,6 +54,12 @@ not that two subscriptions can remain active together. Emergency calling,
 ViLTE, inter-RAT handover, other Samsung models/builds and general carrier
 support also remain unverified.
 
+> **Release warning:** Emergency calling is not validated; do not rely on this
+> ROM for emergency communications. See
+> [`docs/EMERGENCY_CALLING_AUDIT.md`](docs/EMERGENCY_CALLING_AUDIT.md) for the
+> source audit, framework routing correction and strictly no-dial validation
+> boundary.
+
 Stage 3 VoWiFi is runtime-validated on the tested M11/Taiwan Mobile combination
 for an outgoing call to 188 and an incoming call from another handset. The 188
 call stayed connected, played audible service audio and ended normally. After
@@ -109,6 +115,8 @@ missing or differs from its reviewed hash.
   single-active-slot and IMS SMS bridge, and Stage 3 VoWiFi lifecycle fixes;
 - `bridge/abi/` — declaration-only Android 13 ABI fixtures;
 - `tests/` — synthetic tests without Samsung binaries or implementations;
+- `patches/` — project-authored Android source corrections kept separate from
+  proprietary payloads;
 - `docs/` — runtime baseline, provenance boundary and release SOP.
 
 Run the source-only validation suite:
