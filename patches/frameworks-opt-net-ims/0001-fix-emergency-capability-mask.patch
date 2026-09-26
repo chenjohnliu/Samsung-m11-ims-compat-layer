@@ -1,0 +1,44 @@
+diff --git a/src/java/com/android/ims/MmTelFeatureConnection.java b/src/java/com/android/ims/MmTelFeatureConnection.java
+--- a/src/java/com/android/ims/MmTelFeatureConnection.java
++++ b/src/java/com/android/ims/MmTelFeatureConnection.java
+@@ -572,7 +572,7 @@ public class MmTelFeatureConnection extends FeatureConnection {
+     {
+         synchronized (mLock) {
+             mSupportsEmergencyCalling =
+-                    ((capabilities | ImsService.CAPABILITY_EMERGENCY_OVER_MMTEL) > 0);
++                    ((capabilities & ImsService.CAPABILITY_EMERGENCY_OVER_MMTEL) > 0);
+         }
+     }
+ 
+diff --git a/tests/src/com/android/ims/MmTelFeatureConnectionTest.java b/tests/src/com/android/ims/MmTelFeatureConnectionTest.java
+--- a/tests/src/com/android/ims/MmTelFeatureConnectionTest.java
++++ b/tests/src/com/android/ims/MmTelFeatureConnectionTest.java
+@@ -23,5 +23,6 @@ import android.os.Binder;
+ import android.os.IBinder;
+ import android.os.IInterface;
++import android.telephony.ims.ImsService;
+ import android.telephony.ims.feature.ImsFeature;
+ 
+ import androidx.test.ext.junit.runners.AndroidJUnit4;
+@@ -236,4 +237,21 @@ public class MmTelFeatureConnectionTest extends ImsTestBase {
+         mCallbackManagerUT.addCallback(testCallback1);
+         assertFalse(mCallbackManagerUT.doesCallbackExist(testCallback1));
+     }
++
++    @Test
++    @SmallTest
++    public void testEmergencyCapabilityUsesBitMask() {
++        MmTelFeatureConnection connection = new MmTelFeatureConnection(
++                mContext, SLOT_ID, SUB_ID, null, null, null, null);
++
++        connection.onFeatureCapabilitiesUpdated(0);
++        assertFalse(connection.isEmergencyMmTelAvailable());
++
++        connection.onFeatureCapabilitiesUpdated(ImsService.CAPABILITY_SIP_DELEGATE_CREATION);
++        assertFalse(connection.isEmergencyMmTelAvailable());
++
++        connection.onFeatureCapabilitiesUpdated(
++                ImsService.CAPABILITY_EMERGENCY_OVER_MMTEL);
++        assertTrue(connection.isEmergencyMmTelAvailable());
++    }
+ }
