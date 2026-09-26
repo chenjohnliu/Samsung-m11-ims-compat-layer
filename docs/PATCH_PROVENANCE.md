@@ -164,6 +164,27 @@ behavioral result—bidirectional incoming VoWiFi audio without the prior
 15–17-second disconnect—was validated separately on-device. See
 `docs/STAGE3_MT_VOWIFI_MEDIA.md` for scope and output identities.
 
+### Implemented UW1 UnifiedWFC boundary
+
+`devices/m11q/unifiedwfc-sim-mobility-contract.json` pins the complete stock
+APK and DEX, one class/method/prototype occurrence, the complete code-item
+shape, and pre/post instruction hashes. It contains no decoded method body.
+
+`tools/transform_unifiedwfc_sim_mobility.py` resolves the method directly from
+DEX tables, replaces it with a fixed `false` result, zero-fills the remaining
+code units, and recalculates the DEX checksum/signature. APK assembly preserves
+unrelated entries and metadata and removes only APK v1 signatures. See
+`docs/UW1_UNIFIEDWFC_SIM_MOBILITY.md`.
+
+### Implemented ER1 ERIS private-crypto boundary
+
+`devices/m11q/eris-private-crypto-contract.json` pins three ELF32/ARM inputs
+and outputs, their SONAME and ordered dependencies, and exact replacement
+occurrences. `tools/transform_eris_private_crypto.py` changes only the dynamic
+string table, preserves file sizes, validates the post-transform ELF graph,
+and emits only hashes and public change counts in its report. See
+`docs/ER1_ERIS_PRIVATE_CRYPTO.md`.
+
 ## Never publish
 
 - Stock, intermediate or patched APK/JAR/DEX/class files.

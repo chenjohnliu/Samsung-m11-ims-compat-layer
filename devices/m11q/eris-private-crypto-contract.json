@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "transformation_id": "ER1-private-crypto-namespace",
+  "targets": [
+    {
+      "input_name": "libcrypto.so",
+      "input_sha256": "cf6dfdaf8a57730364e2be816c45d4fbdf1d3b196f5467e340e8c998d2631040",
+      "output_name": "liberc.so",
+      "output_sha256": "a6c7409533f4e5b2a2a0219f97643ddfefd9c8ffdad2bb26a73be8eff6973ad2",
+      "elf_class": 1,
+      "elf_machine": 40,
+      "soname_before": "libcrypto.so",
+      "soname_after": "liberc.so",
+      "needed_before": ["libc.so", "libm.so", "libdl.so"],
+      "needed_after": ["libc.so", "libm.so", "libdl.so"],
+      "replacements": [
+        {"old": "libcrypto.so", "new": "liberc.so", "occurrences": 1}
+      ]
+    },
+    {
+      "input_name": "libssl.so",
+      "input_sha256": "d8eef149d87bab37c66ade6d39c3ff93d6f922dc0dd4a126a3d4cca08a3dc478",
+      "output_name": "libers.so",
+      "output_sha256": "b381f0f9a49c48bc74d6c7e50967fb1b146d786c240b7eb78e8608ed91af3aa9",
+      "elf_class": 1,
+      "elf_machine": 40,
+      "soname_before": "libssl.so",
+      "soname_after": "libers.so",
+      "needed_before": ["libcrypto.so", "libc.so", "libm.so", "libdl.so"],
+      "needed_after": ["liberc.so", "libc.so", "libm.so", "libdl.so"],
+      "replacements": [
+        {"old": "libcrypto.so", "new": "liberc.so", "occurrences": 1},
+        {"old": "libssl.so", "new": "libers.so", "occurrences": 1}
+      ]
+    },
+    {
+      "input_name": "liberis_strongswan.so",
+      "input_sha256": "38aecec124684f02afd5bea9a98f538913af7b3311d5eb7e62f34429b27bbe49",
+      "output_name": "liberis_strongswan.so",
+      "output_sha256": "61601e70a15056cb563cdb2cc8651303ffc2b8a1cd9c2fb1ca83fd64fea55dc3",
+      "elf_class": 1,
+      "elf_machine": 40,
+      "soname_before": "liberis_strongswan.so",
+      "soname_after": "liberis_strongswan.so",
+      "needed_before": ["libz.so", "libssl.so", "libcrypto.so", "libdl.so", "libc++.so", "libc.so", "libm.so"],
+      "needed_after": ["libz.so", "libers.so", "liberc.so", "libdl.so", "libc++.so", "libc.so", "libm.so"],
+      "replacements": [
+        {"old": "libcrypto.so", "new": "liberc.so", "occurrences": 1},
+        {"old": "libssl.so", "new": "libers.so", "occurrences": 1}
+      ]
+    }
+  ]
+}
