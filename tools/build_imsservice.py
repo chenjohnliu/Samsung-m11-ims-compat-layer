@@ -95,6 +95,7 @@ def load_config(path: Path) -> dict:
             "BC1-modern-mmtel-discovery", "BC2-modern-bridge-native-hooks",
             "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
             "BP1-sms-hqm-telemetry-guard", "BR1-sms-delivery-ack-abi-guard",
+            "BT1-mt-vowifi-post-est-media",
         ]:
             raise BuildError("ordered transformation identity drift")
         expected_contracts = {
@@ -104,6 +105,7 @@ def load_config(path: Path) -> dict:
             "BH1-sms-icc-type-compat": "devices/m11q/bh1-sms-icc-type-contract.json",
             "BP1-sms-hqm-telemetry-guard": "devices/m11q/bp1-sms-hqm-telemetry-guard-contract.json",
             "BR1-sms-delivery-ack-abi-guard": "devices/m11q/br1-sms-delivery-ack-abi-guard-contract.json",
+            "BT1-mt-vowifi-post-est-media": "devices/m11q/bt1-mt-vowifi-post-est-media-contract.json",
         }
         if config["transformation_contracts"] != expected_contracts:
             raise BuildError("transformation contract mapping drift")
@@ -445,6 +447,7 @@ def build(args: argparse.Namespace) -> dict:
         bh1 = _module("m11_bh1", "tools/transform_bh1_sms_icc_type.py")
         bp1 = _module("m11_bp1", "tools/transform_bp1_sms_hqm_guard.py")
         br1 = _module("m11_br1", "tools/transform_br1_sms_delivery_ack_abi.py")
+        bt1 = _module("m11_bt1", "tools/transform_bt1_mt_vowifi_media.py")
         stubs = _module("m11_stubs", "tools/generate_compile_stubs.py")
         abi = _module("m11_abi", "tools/verify_framework_abi.py")
         packer = _module("m11_packer", "tools/apk_entry_replace.py")
@@ -485,6 +488,12 @@ def build(args: argparse.Namespace) -> dict:
             contracts["BR1-sms-delivery-ack-abi-guard"], decoded / "smali",
             br1_overlay, br1_report)
         _copy_overlay(br1_overlay, decoded / "smali", br1.EXPECTED_PATHS)
+
+        bt1_overlay, bt1_report = stage / "bt1-overlay", stage / "bt1-report.json"
+        transform_reports["BT1-mt-vowifi-post-est-media"] = bt1.transform(
+            contracts["BT1-mt-vowifi-post-est-media"], decoded / "smali",
+            bt1_overlay, bt1_report)
+        _copy_overlay(bt1_overlay, decoded / "smali", bt1.EXPECTED_PATHS)
 
         stub_dir, stub_report = stage / "compile-stubs", stage / "stub-report.json"
         stub_result = stubs.generate(ROOT / "devices/m11q/compile-stub-contract.json",
@@ -564,6 +573,16 @@ def build(args: argparse.Namespace) -> dict:
         for anchor in (br1.KDDI_ANCHOR, br1.RETRY_ANCHOR, br1.READY_ANCHOR):
             if delivery_ack_body.count(anchor) != 1:
                 raise BuildError("final primary DEX lost preserved SMS delivery-ACK behavior")
+        bt1_path = (verified / "smali").joinpath(*PurePosixPath(bt1.TARGET_PATH).parts)
+        bt1_text = bt1_path.read_text(encoding="utf-8")
+        bt1_methods = bt1._methods(bt1_text, bt1.METHOD)
+        if len(bt1_methods) != 1:
+            raise BuildError("final primary DEX is missing the VoWiFi InCall handler")
+        bt1_body = bt1_methods[0]
+        if bt1_body.count(bt1.MARKER) != 1 or bt1_body.count(bt1.UPDATE_CALL) != 1:
+            raise BuildError("final primary DEX is missing the post-established MT VoWiFi hook")
+        if bt1_body.index(bt1.ESTABLISHED_ANCHOR) >= bt1_body.index(bt1.UPDATE_CALL):
+            raise BuildError("final MT VoWiFi audio update is not post-ESTABLISHED")
         bridge_defs = {item.stem.split("$", 1)[0] for item in
                        (verified / "smali_classes2/com/sec/internal/google").glob("*.smali")}
         if bridge_defs != set(config["bridge_source"]["top_level_classes"]):
