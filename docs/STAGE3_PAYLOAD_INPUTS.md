@@ -33,6 +33,13 @@ The `libAudioFWInterface.so` stock input is transformed by the device-tree
 `ims/compat/sve/patch_audiofw_imports.py` helper. This inventory is not a
 claim that a fresh public checkout can rebuild every Stage 3 private output.
 
+The separate `imsservice.apk` Stage 3 BT1 media fix is public and reproducible:
+`tools/transform_bt1_mt_vowifi_media.py` consumes the already ordered,
+hash-pinned private decoded input and emits a disposable private overlay. Its
+contract, synthetic tests and deterministic final APK/DEX pins are published;
+neither the Samsung input nor the generated smali/APK is published. See
+`STAGE3_MT_VOWIFI_MEDIA.md`.
+
 The existing verifier accepts an extracted `system/` directory (or its parent),
 not an ext4 `system.img` directly. It verifies stock inputs without publishing
 them. No APK, JSON payload, ELF, or other Samsung-derived content belongs in

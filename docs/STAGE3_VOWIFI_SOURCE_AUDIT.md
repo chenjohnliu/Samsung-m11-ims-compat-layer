@@ -2,6 +2,14 @@
 
 Date: 2026-09-13
 
+> Historical audit note: this document records the initial Stage 3 source and
+> integration review. Its statement that no runtime success was claimed was
+> correct on 2026-09-13, but has been superseded by the 2026-09-26 runtime
+> validation. Outgoing VoWiFi to 188 and incoming VoWiFi with bidirectional
+> audio are now confirmed for the tested M11/Taiwan Mobile setup. See
+> `STAGE3_MT_VOWIFI_MEDIA.md`; later sections below remain useful as chronology
+> and should not be read as the current project status.
+
 ## Outcome
 
 The first custom-ROM VoWiFi candidate now packages the Samsung ePDG service and
@@ -9,7 +17,8 @@ native backend together with a device CarrierConfig allowlist for Taiwan's four
 statically supported PLMNs. It does not add carrier branches to the IMS bridge.
 Unknown carriers remain fail-closed.
 
-No Android build was run and no runtime success is claimed by this audit.
+No Android build was run and no runtime success was claimed by this audit at
+the time it was written.
 
 ## Source state reviewed
 

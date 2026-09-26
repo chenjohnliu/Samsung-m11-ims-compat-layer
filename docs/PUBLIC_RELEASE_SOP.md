@@ -1,10 +1,11 @@
 # Samsung M115F IMS compatibility layer — public release SOP
 
-Status: **source-complete publication candidate; public visibility is still
-gated on the final history audit and action-time confirmation**. The seven
-project-authored bridge Java sources are published under Apache-2.0. The fresh
-firmware extraction and complete non-ROM rebuild gate was rerun successfully on
-2026-09-10; see `docs/FRESH_EXTRACTION_VALIDATION.md`.
+Status: **published source-only compatibility layer**. The seven
+project-authored bridge Java sources and fail-closed transformations are
+published under Apache-2.0. Samsung payloads and generated private outputs
+remain excluded. The latest Stage 3 BT1 pipeline passed the complete source
+test suite, two identical pin-discovery runs and a strict non-ROM rebuild on
+2026-09-26.
 
 This is not legal advice.  The conservative project policy is that Samsung APK,
 JAR, ELF and executable files are supplied by the user from firmware they are
@@ -22,21 +23,27 @@ Known-good device/firmware baseline:
 - Extracted `system.img` SHA-256:
   `9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d`.
 - Target validated so far: CherishOS 4.12 / Android 13.
-- Confirmed function: SIM1 WWAN IMS registration, outgoing and incoming VoLTE
-  establishment, incoming ringing/answer, clear two-way speech and teardown,
-  SMS send/receive, and physical SIM1 hot-swap recovery followed by VoLTE and
-  SMS operation under SELinux Enforcing.
-- Verified source checkpoints: compatibility layer `8a3dc34`, device tree
-  `510d965`, Telephony `afedb3add`, and ROM pre-release `20260910-13-rc1`.
+- Confirmed WWAN function with one active subscription at a time: SIM1 and
+  SIM2 IMS registration, outgoing and incoming VoLTE with clear two-way speech
+  and teardown, and SMS send/receive. Physical SIM1 hot-swap recovery was also
+  validated under SELinux Enforcing.
+- Confirmed Stage 3 function on the tested M11/Taiwan Mobile setup: outgoing
+  VoWiFi to 188 with audible service audio and normal teardown, plus incoming
+  VoWiFi from another handset with sustained bidirectional audio after BT1.
+- Historical Stage 1 source checkpoints were compatibility layer `8a3dc34`,
+  device tree `510d965`, Telephony `afedb3add`, and ROM pre-release
+  `20260910-13-rc1`. Current behavior and reproducible output identities are
+  recorded in `README.md`, `docs/IMS_APK_BUILDER.md`, and
+  `docs/STAGE3_MT_VOWIFI_MEDIA.md` rather than inferred from those old commits.
 - Selected candidate: BQ3 IMS bridge plus BQ6 generic Telephony fallback.
   BQ7 is excluded. A prior cold-boot failure was attributed to dirty `/data`
   persistent-state contamination; the exact contaminating item was not
   isolated.
 
-Do not describe SIM2/DSDS, pure IMS-SMS delivery, VoWiFi, IMS emergency calling, ViLTE,
-handover, other Samsung devices, other stock builds or general carrier support
-as working until each is tested separately. SIM2 currently exposes no
-VoLTE/MMTEL support flag; this remains a SIM1-only claim.
+Do not generalize the validated single-active SIM2 result to concurrent DSDS,
+or the tested Taiwan Mobile VoWiFi result to general carrier support. Pure
+IMS-SMS delivery, IMS emergency calling, ViLTE, handover, alternate audio
+routes, other Samsung devices and other stock builds remain unverified.
 
 ## 2. What the public repository may contain
 

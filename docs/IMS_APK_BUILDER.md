@@ -76,9 +76,11 @@ speech/teardown, and SMS send/receive. BQ7 was excluded: the apparent
 call-failure regression that motivated it persisted after source rollback but
 disappeared after formatting `/data`, so it was not valid evidence for a code
 change.
-This does not validate
-SIM2/DSDS, VoWiFi, emergency
-calling, ViLTE or extended regression behavior.
+That historical Stage 1 validation did not by itself validate SIM2 or VoWiFi.
+Later Stage 2 testing validated SIM2 as the sole active subscription, and the
+Stage 3 BT1 result at the top of this document validates the stated Taiwan
+Mobile VoWiFi call scope. Concurrent DSDS, emergency calling, ViLTE and
+extended regression behavior remain unverified.
 
 The deterministic build invokes apktool with
 `-XX:ActiveProcessorCount=1`. Without that setting, apktool 2.9.3/smali 3.0.3
