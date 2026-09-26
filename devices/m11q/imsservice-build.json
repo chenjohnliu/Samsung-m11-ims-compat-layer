@@ -77,7 +77,8 @@
     "BG1-network-statistics-guard",
     "BH1-sms-icc-type-compat",
     "BP1-sms-hqm-telemetry-guard",
-    "BR1-sms-delivery-ack-abi-guard"
+    "BR1-sms-delivery-ack-abi-guard",
+    "BT1-mt-vowifi-post-est-media"
   ],
   "transformation_contracts": {
     "BC1-modern-mmtel-discovery": "devices/m11q/bc1-manifest-contract.json",
@@ -85,7 +86,8 @@
     "BG1-network-statistics-guard": "devices/m11q/bg1-stats-guard-contract.json",
     "BH1-sms-icc-type-compat": "devices/m11q/bh1-sms-icc-type-contract.json",
     "BP1-sms-hqm-telemetry-guard": "devices/m11q/bp1-sms-hqm-telemetry-guard-contract.json",
-    "BR1-sms-delivery-ack-abi-guard": "devices/m11q/br1-sms-delivery-ack-abi-guard-contract.json"
+    "BR1-sms-delivery-ack-abi-guard": "devices/m11q/br1-sms-delivery-ack-abi-guard-contract.json",
+    "BT1-mt-vowifi-post-est-media": "devices/m11q/bt1-mt-vowifi-post-est-media-contract.json"
   },
   "allowed_entry_changes": {
     "removed_exact": [
@@ -116,19 +118,23 @@
     "BR1-sms-delivery-ack-abi-guard": {
       "replace_existing": ["classes.dex"],
       "add": []
+    },
+    "BT1-mt-vowifi-post-est-media": {
+      "replace_existing": ["classes.dex"],
+      "add": []
     }
   },
   "final_dex_invariants": {
     "pin_state": "pinned",
     "pin_basis": "current-source-build",
     "dex_count": 2,
-    "unsigned_apk_sha256": "b9d3069500f824335d598339d54382bbe8b1d218519b7a676056e32ee226f5dc",
+    "unsigned_apk_sha256": "832ad6fca643791a19776be14cb11ad6d1395bfe3d128e058dc4442e703990a9",
     "entries": {
-      "classes.dex": "0f5bc4f2cf36af2b43c15c9c9d0f1d445b4e68afe49f6230d329fcee542f8774",
+      "classes.dex": "cd8be33628bfabeafe77e78c58bf13ba8207e0eba41718845dcf116a8594cfe2",
       "classes2.dex": "b9d57c1a1aab37fd88a5443bde177c710897b1603481350e8037cf332ce0d325"
     },
     "classes2_policy": "Stage 2 candidate: allow one active subscription in slot 0 or slot 1 for MMTEL Voice and IMS SMS, publish normal Samsung MMTEL voice on matching LTE or IWLAN transport with independent Android enablement state, bind every Samsung SMS operation and callback to the exact current phone/subscription pair, translate the AOSP incoming-SMS token back to Samsung's pending message ID for delivery acknowledgement, normalize an active-subscription SIM SMSC to E.164 only when the platform formatter succeeds and otherwise preserve its original TON, dispatch Android ImsFeature lifecycle and capability publication without a ModernVoiceContext-to-ImsFeature lock inversion, and fail closed for dual-active, stale, unsupported-transport, emergency, or CMC mappings",
-    "primary_policy": "Runtime-targeted clean-stock one-pass apktool output with BH1 ICC-type compatibility, BP1 fail-soft optional SMS HQM role telemetry, and BR1 suppression of the Samsung-only SMS delivery-ACK completion callback absent from Android 13"
+    "primary_policy": "Runtime-targeted clean-stock one-pass apktool output with BH1 ICC-type compatibility, BP1 fail-soft optional SMS HQM role telemetry, BR1 suppression of the Samsung-only SMS delivery-ACK completion callback absent from Android 13, and BT1 post-ESTABLISHED SAE selection for ordinary incoming IWLAN voice"
   },
   "historical_reference": {
     "hard_gate": false,

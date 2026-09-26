@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BT1-mt-vowifi-post-est-media",
+  "targets": [
+    {
+      "path": "com/sec/internal/ims/servicemodules/volte2/ImsInCall.smali",
+      "class": "Lcom/sec/internal/ims/servicemodules/volte2/ImsInCall;",
+      "class_access": ["public"],
+      "super": "Lcom/sec/internal/ims/servicemodules/volte2/CallState;",
+      "input_sha256": "7d1d149c95181a1bcb22b2146b621bcd8fbd5cad5e5f64435a915c00044a1499",
+      "required_method": "private enter_InCall()V",
+      "established_anchor_count": 1,
+      "inserted_hook_count": 1
+    }
+  ]
+}
