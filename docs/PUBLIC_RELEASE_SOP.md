@@ -371,8 +371,8 @@ and apply the published integration/framework patches.  It must refuse to:
 Known local source checkpoints:
 
 ```text
-device/samsung/m11q: 4ada41f + 566bfd4 on m11q-volte-stage1
-frameworks/base:      e9346dd40f60 on m11q-volte-stage1
+device/samsung/m11q: 4ada41f + 566bfd4 on m11q-volte
+frameworks/base:      e9346dd40f60 on m11q-volte
 ```
 
 These are local checkpoint identities, not public remote references.  Export
