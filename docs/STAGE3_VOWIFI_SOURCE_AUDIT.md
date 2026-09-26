@@ -25,7 +25,7 @@ the time it was written.
 - Public compatibility repository: `b07c19b` (`Complete Stage 2 IMS SMS
   compatibility`). The pre-existing uncommitted `README.md` update was left
   untouched.
-- Device tree: `706e607` on `m11q-volte-stage1`. The pre-existing
+- Device tree: `706e607` on the branch now named `m11q-volte`. The pre-existing
   `AndroidProducts.mk` modification was left untouched.
 - AOSP CarrierConfig: clean `android-13.0.0_r82` baseline at `bb1e0f2`.
 - The current IMS APK and integration files were inspected in place. No IMS
