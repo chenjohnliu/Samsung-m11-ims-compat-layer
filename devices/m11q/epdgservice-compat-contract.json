@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "transformation_id": "EC1-epdgservice-android13-compat",
+  "source_artifact": {
+    "apk_sha256": "c798cd875f17bcad5ac5181587b09152ed96c453914b6a314d701746b08b8ad7",
+    "apk_size": 562108,
+    "classes_dex_sha256": "0a70f09b57e532c67f5cdda27eddd0dd85427317e153bc0009e926ee5ad5d739",
+    "validated_reference_dex_sha256": "636e86b3f17080d0b16ddc8f8421ee9bee437b719ddc92e1c1ef84f06afd6ddf"
+  },
+  "roundtrip_normalizations": [
+    {
+      "path": "com/sec/epdg/utils/retry/RetryManager.smali",
+      "input_sha256": "6ca67c6f058a9100827477f79ab2a2927c6a4c71e72c2acf9204a131b809cea8",
+      "output_sha256": "350d5c571513260eaa96424fc8108bb4d27e09f6cc8fb8f751bf14948317f23b",
+      "rule": "explicit_false_static_default_elided"
+    }
+  ],
+  "targets": [
+    {
+      "path": "com/sec/epdg/apassist/interfaceController/EpdgInterface.smali",
+      "class": "Lcom/sec/epdg/apassist/interfaceController/EpdgInterface;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "a0aa1f4f78bd7baab3da7059e00653d5df5b7df21c5545af346e3b787b17b40a",
+      "output_sha256": "35368da1f9b5f2f9c0536248eac0e173e5732559c1107f01c4e8067467a8e8dc",
+      "required_methods": ["private makeInterfaceUp(Ljava/lang/String;Ljava/util/List;)V"],
+      "operations": ["configure_existing_interface", "configure_ipv6_before_enable"]
+    },
+    {
+      "path": "com/sec/epdg/apassist/IwlanService/EpdgQualifiedNetworksService$EpdgNetworkAvailabilityProvider.smali",
+      "class": "Lcom/sec/epdg/apassist/IwlanService/EpdgQualifiedNetworksService$EpdgNetworkAvailabilityProvider;",
+      "class_access": [],
+      "super": "Landroid/telephony/data/QualifiedNetworksService$NetworkAvailabilityProvider;",
+      "input_sha256": "f01f8ee3657bb5f1268d95e63ac9892c45a5730faf58c6f350c7ccbe82ca0577",
+      "output_sha256": "441788ff2737dcb1538e415f125c74f7ed3c5d5f5f90c7a88c21e664ffb26f24",
+      "required_methods": ["private updateHandOverEnabled(I)V"],
+      "operations": ["suppress_unsupported_qns_super_call"]
+    },
+    {
+      "path": "com/sec/epdg/apassist/IwlanService/TelephonyAdapter.smali",
+      "class": "Lcom/sec/epdg/apassist/IwlanService/TelephonyAdapter;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "c756dda5b36c0911e5f98650d64b149c4ce068b14c47eea4b6d13a81344c3991",
+      "output_sha256": "4e42dd21529449c91ea3a5bf39e3d9d7e4e865855772aa44a15e2e8fd819d0de",
+      "required_methods": ["private constructor <init>(I)V", "public setupDataCall(ILandroid/telephony/data/DataProfile;ZZILandroid/net/LinkProperties;Landroid/os/Message;)V"],
+      "operations": ["epdg_interface_namespace", "bounded_cid_fallback"]
+    },
+    {
+      "path": "com/sec/epdg/EpdgSubScriptionBase.smali",
+      "class": "Lcom/sec/epdg/EpdgSubScriptionBase;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "07934a41834cb131719b9bdefb406c0d5ce5fdb924edee7be51328af33cfdd45",
+      "output_sha256": "07dbe19aed88ded2708d8ddf3532d43438d4acd564e5559e590f13b1f4cfdc07",
+      "required_methods": ["protected getVowifiSetting()I"],
+      "operations": ["subscription_wfc_setting"]
+    },
+    {
+      "path": "com/sec/epdg/EpdgUtils.smali",
+      "class": "Lcom/sec/epdg/EpdgUtils;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "fb7da509678f5c95076d59a4aeff9cf72272ac4d367124490f8d4a459b98123d",
+      "output_sha256": "0346f97e367857a329cea2d43dc4936f42d0e2e16d19e81f046d5380593a43d9",
+      "required_methods": ["public static final getMobileInterfacePrefix()Ljava/lang/String;"],
+      "operations": ["epdg_interface_namespace"]
+    },
+    {
+      "path": "com/sec/epdg/utils/WifiInterface/EpdgWifiInfo.smali",
+      "class": "Lcom/sec/epdg/utils/WifiInterface/EpdgWifiInfo;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "840ce633ef3e5796a9d719093c9a4a97bdc2e60532fa7ad836b7bde158a9734c",
+      "output_sha256": "291f478171ace673f8f6f86c054d2d9ea6735714cb6fb2d64245ef245f79001c",
+      "required_methods": ["public static getCurrentSSID(Landroid/content/Context;)Ljava/lang/String;", "public static getCurrentWifiRssi(Landroid/content/Context;)I", "public static getUeWiFiMac(Landroid/content/Context;)Ljava/lang/String;"],
+      "operations": ["wifi_service_null_guards"]
+    },
+    {
+      "path": "com/sec/epdg/VoWifiSettingObserver.smali",
+      "class": "Lcom/sec/epdg/VoWifiSettingObserver;",
+      "class_access": ["public"],
+      "super": "Lcom/sec/epdg/EpdgContentObserverBase;",
+      "input_sha256": "7f20101c37dd30d57c8f15de2de4182af21e952a6884917f6e34955b2f150463",
+      "output_sha256": "48e03824b77d61524312afc7ebcfa340815afdc1b61be65659c1e6eb064f55b7",
+      "required_methods": ["public onChangeSlowPath(ZLandroid/net/Uri;)V", "public registerObserver(I)V"],
+      "operations": ["siminfo_setting_observer"]
+    }
+  ]
+}
