@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "transformation_id": "SV1-sveservice-media-compat",
+  "artifact": {
+    "stock_apk_sha256": "5066ebdbd2dc8d5ff8da613f8b0f63b1d7e0408f3732b889719179d2bc1e33ab",
+    "stock_apk_size": 634428,
+    "stock_dex_sha256": "630ff3e440b8199fb9037bd3a56585573a724c83f548e6754cdc4dbad64fa804",
+    "runtime_reference_apk_sha256": "5293755ea74848a8e8ba311ecbef53cc10c1af588857d98ef9d6dbad3b5cd1be",
+    "runtime_reference_dex_sha256": "39d848a267da1c54ff73d1d7f06b2c8cc6a6a9f743a97ced4a3cf944237fff5d"
+  },
+  "targets": [
+    {
+      "path": "com/samsung/sve/sveJNI.smali",
+      "class": "Lcom/samsung/sve/sveJNI;",
+      "class_access": ["public"],
+      "super": "Ljava/lang/Object;",
+      "input_sha256": "4536e9fa48d0407dd700b2cd26725366df62044234a47f9ff27d0a94fbf1ced4",
+      "output_sha256": "e4babeae0c6c25f6deb1444168f4576a2888dcad41b7bf7eb95cdb1e5c31d0dc",
+      "methods": [
+        {
+          "signature": "static constructor <clinit>()V",
+          "input_sha256": "8b4256f81a4bcd3e1f7c8a10fd1f60fce8632a0e78c667602081a6f1d375000b",
+          "output_sha256": "e09d15daa5abac5e59ad8fc9904bc939b713f2272a2778a478ac9694d24ca360",
+          "anchor_count": 1,
+          "invariant": "compat_loader_precedes_svejni"
+        }
+      ]
+    },
+    {
+      "path": "com/sec/sve/service/sve/SecVideoEngineImpl.smali",
+      "class": "Lcom/sec/sve/service/sve/SecVideoEngineImpl;",
+      "class_access": ["public"],
+      "super": "Lcom/sec/sve/ISecVideoEngineService$Stub;",
+      "input_sha256": "237ace851c3ccfcb90b01808d33e00587b8a126e69cedc2ee0ba6e1d4e9487dc",
+      "output_sha256": "4349b17d37780f8b3e38e6b062af63b8eed8b92910b3abdfb198ce21e3c8ccb1",
+      "methods": [
+        {
+          "signature": "public saeCreateChannel(IILjava/lang/String;ILjava/lang/String;IIILjava/lang/String;ZZ)I",
+          "input_sha256": "1e6c2725582e7aec9c56883de82a9f85a6999557a965575be7a32492e0f17b20",
+          "output_sha256": "d7f823c3f81d6453536d991598d8407c2e2d2652a796de785070b5069009b0d4",
+          "anchor_count": 2,
+          "invariant": "single_entry_and_return_diagnostic"
+        },
+        {
+          "signature": "public saeStartChannel(IIZ)I",
+          "input_sha256": "489e7836d2fb07d310d611079c160dce40d8811c9e25fd72f8ae91410b80bbf2",
+          "output_sha256": "38486ef37891ff45b1322b36f3d8a669e3cb6544379391bd785cc6cef3a83a47",
+          "anchor_count": 3,
+          "invariant": "expanded_locals_and_single_entry_and_return_diagnostic"
+        }
+      ]
+    }
+  ]
+}
