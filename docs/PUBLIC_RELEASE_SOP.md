@@ -3,9 +3,10 @@
 Status: **published source-only compatibility layer**. The seven
 project-authored bridge Java sources and fail-closed transformations are
 published under Apache-2.0. Samsung payloads and generated private outputs
-remain excluded. The latest Stage 3 BT1 pipeline passed the complete source
-test suite, two identical pin-discovery runs and a strict non-ROM rebuild on
-2026-09-26.
+remain excluded. BT1 passed its complete source and non-ROM validation on
+2026-09-26. On 2026-09-27, SV1 and EC1 each passed two deterministic clean
+rebuilds from exact stock APKs, closing the last saved-final-payload
+dependencies for `sveservice.apk` and `EpdgService.apk`.
 
 This is not legal advice.  The conservative project policy is that Samsung APK,
 JAR, ELF and executable files are supplied by the user from firmware they are
@@ -422,26 +423,31 @@ Do not tag a public release until all of these are true:
 
 - clean-room run starts from exact CWK3 firmware and an empty output directory;
 - all stock inputs pass `PAYLOAD_MANIFEST.tsv`;
-- a single command regenerates the final APK without historical binary inputs;
+- the documented builders regenerate every transformed APK without historical
+  patched/final binary inputs;
 - structural checks and source-extracted unit tests pass;
 - a manually built/flashed ROM made from those exact generated inputs repeats
   the confirmed outgoing and incoming two-way calls under Enforcing;
 - A full Git-history scan—not only `git status`—finds no Samsung binaries,
   firmware, decoded trees or keys;
-- README clearly limits the validated runtime claim to the actually tested
-  SIM1 WWAN configuration.
+- README clearly limits runtime claims to the tested single-active-subscription
+  VoLTE/SMS scope and the tested Taiwan Mobile VoWiFi calls.
 
 ## 13. Confirmed, recommended and pending
 
 Confirmed:
 
-- The 14 current payload identities and the historical three-stage APK hash
-  chain.
+- The 47 current payload identities and the historical three-stage IMS APK
+  hash chain.
 - The Stage 1BQ3/BQ6 candidate passed real-party SIM1 outgoing and incoming
   calls under Enforcing, including incoming ringing, answer, bidirectional
   speech and teardown, plus SMS send/receive and post-hot-swap recovery.
 - Device/framework source checkpoints exist locally without the proprietary
   payload being committed.
+- SV1 and EC1 rebuild their Stage 3 APKs from exact stock inputs without a
+  saved decoded tree, patched DEX, or final APK. The clean unsigned outputs are
+  deterministic and structurally match the runtime-validated implementations;
+  those newly repacked files have not yet been separately flashed.
 
 Recommended design:
 
