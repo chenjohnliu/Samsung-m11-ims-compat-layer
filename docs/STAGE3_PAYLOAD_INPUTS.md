@@ -28,12 +28,16 @@ therefore **not** represented as `copy` rows:
 
 The `transform-input` row for `UnifiedWFC.apk` is handled by the public UW1
 direct DEX transformer. `liberis_strongswan.so`, together with the private
-crypto pair, is handled by ER1. The rows for `sveservice.apk` and
-`EpdgService.apk` remain blocked because their complete ordered stock-to-final
-procedures and deterministic final DEX pins were not retained.
+crypto pair, is handled by ER1. The `sveservice.apk` row is handled by SV1 and
+the `EpdgService.apk` row by EC1. Each public builder starts from its exact
+stock APK, applies hash- and structure-pinned fail-closed transformations,
+replaces only `classes.dex`, removes only invalidated v1 signature entries,
+and pins the deterministic DEX and unsigned-APK identities. Neither consumes a
+saved decoded tree, patched DEX, or final payload.
 The `libAudioFWInterface.so` stock input is transformed by the device-tree
-`ims/compat/sve/patch_audiofw_imports.py` helper. This inventory is not a
-claim that a fresh public checkout can rebuild every Stage 3 private output.
+`ims/compat/sve/patch_audiofw_imports.py` helper. The project-authored native
+SVE sources and their device-tree helper remain a separate source-build step;
+they are not inputs to the SV1 APK builder.
 
 The separate `imsservice.apk` Stage 3 BT1 media fix is public and reproducible:
 `tools/transform_bt1_mt_vowifi_media.py` consumes the already ordered,
@@ -42,9 +46,10 @@ contract, synthetic tests and deterministic final APK/DEX pins are published;
 neither the Samsung input nor the generated smali/APK is published. See
 `STAGE3_MT_VOWIFI_MEDIA.md`.
 
-See `UW1_UNIFIEDWFC_SIM_MOBILITY.md`, `ER1_ERIS_PRIVATE_CRYPTO.md`, and
-`STAGE3_REMAINING_PAYLOAD_STATUS.md` for the new public transforms, confirmed
-evidence, and remaining blocks.
+See `UW1_UNIFIEDWFC_SIM_MOBILITY.md`, `ER1_ERIS_PRIVATE_CRYPTO.md`,
+`SV1_SVESERVICE_MEDIA.md`, `EC1_EPDGSERVICE_ANDROID13_COMPAT.md`, and
+`STAGE3_REMAINING_PAYLOAD_STATUS.md` for the public transforms, confirmed
+evidence, and remaining validation boundaries.
 
 The existing verifier accepts an extracted `system/` directory (or its parent),
 not an ext4 `system.img` directly. It verifies stock inputs without publishing

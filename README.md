@@ -15,9 +15,9 @@ its pinned firmware inputs, and the runtime scope documented below.
 
 ## Current project status
 
-Stage 3 is the current VoWiFi compatibility and validation stage. It builds on Stage 2, which
-extended the original SIM1 voice bring-up to a **single active subscription on
-either physical slot** and added an Android 13 IMS SMS bridge. Runtime
+Stage 3 is the current VoWiFi compatibility and validation stage. It builds on
+Stage 2, which extended the original SIM1 voice bring-up to a **single active
+subscription on either physical slot** and added an Android 13 IMS SMS bridge. Runtime
 validation was performed on one M11 with
 CherishOS 4.12 / Android 13, SELinux Enforcing, Taiwan Mobile and stock input
 build `M115FXXS5CWK3`.
@@ -100,9 +100,18 @@ Stage 3 stock inputs and locally derived outputs have different handling; see
 checkout automates the BT1 Samsung IMS transformation without publishing its
 private input or generated output. It also provides UW1 for the pinned
 `UnifiedWFC.apk` method and ER1 for the three-file ERIS private crypto closure.
-`sveservice.apk` and `EpdgService.apk` remain explicitly blocked pending a
-complete retained stock-to-final procedure. See
+SV1 and EC1 now reconstruct `sveservice.apk` and `EpdgService.apk` directly
+from their exact stock APKs while preserving every unrelated APK entry. Neither
+builder consumes a saved decoded tree, patched DEX, or final APK. See
+[`docs/SV1_SVESERVICE_MEDIA.md`](docs/SV1_SVESERVICE_MEDIA.md),
+[`docs/EC1_EPDGSERVICE_ANDROID13_COMPAT.md`](docs/EC1_EPDGSERVICE_ANDROID13_COMPAT.md),
+and
 [`docs/STAGE3_REMAINING_PAYLOAD_STATUS.md`](docs/STAGE3_REMAINING_PAYLOAD_STATUS.md).
+
+Both fresh builders were run twice and produced deterministic unsigned APKs.
+Their transformed class structures reproduce the historical runtime-validated
+implementations, but the newly repacked unsigned APK files have not themselves
+been platform-signed, flashed and separately revalidated on the phone.
 
 Do not publish Samsung-derived implementations, decoded trees, generated smali,
 or rebuilt APK/JAR/SO/ELF files. The builder fails closed if a bridge source is

@@ -58,3 +58,25 @@ alignment, and final re-decode gates.
 This closes the fresh-extraction/static-rebuild gate. Runtime claims remain
 bound to the separately documented `20260910-13-rc1` device validation; this
 run did not create or flash a ROM.
+
+## Stage 3 stock-only closure (2026-09-27)
+
+The two APKs that previously depended on retained patched/final artifacts were
+also rebuilt directly from their exact CWK3 stock APKs. No saved decoded tree,
+patched DEX, or final APK was used as an input. Each pipeline was run twice with
+apktool 2.9.3 and produced byte-identical unsigned outputs:
+
+```text
+sveservice classes.dex  f1294ce50783bbec6ad84fbd377a9436f70954a2bcd9a4b7e258b3a4552df4f4
+sveservice unsigned APK 8050c925f353d42872ea88933df1d88ce5678b9f9f9dc4ccb8412573b81b2cf3
+EpdgService classes.dex 845ffb5b45fa3c077776c0d51bbd51dc2aa5b2fb84b087001a2561b4ee33acee
+EpdgService unsigned APK 5eb14c66f5a6917de214d823f34b7dd453f6b22a64b91d74c733c89e23e23f98
+```
+
+Both builders repacked from the stock ZIP, replaced only `classes.dex`, removed
+only the three invalidated APK v1 signature entries, and proved every unrelated
+entry byte-identical. SV1 reproduced the runtime-reference hashes of both
+touched classes and all three touched methods. EC1's complete re-decoded smali
+tree matched the historical runtime reference. These are non-ROM structural
+validation results; the fresh unsigned APK files were not separately signed,
+flashed, or tested on device.
