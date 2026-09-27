@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "artifact": "sveservice.apk",
+  "device": {
+    "codename": "m11q",
+    "model": "SM-M115F",
+    "stock_build": "M115FXXS5CWK3",
+    "stock_android": 12,
+    "target_android": 13
+  },
+  "contract": "devices/m11q/sveservice-media-contract.json",
+  "stock": {
+    "size": 634428,
+    "sha256": "5066ebdbd2dc8d5ff8da613f8b0f63b1d7e0408f3732b889719179d2bc1e33ab",
+    "entries": {
+      "AndroidManifest.xml": "93b4011e6116e4ab3c0caf3cd72c3d05e98b4d685772f4927208b8f264c53b08",
+      "META-INF/CERT.RSA": "db2763999cb1c86f4c09499be13ed85bc3f97c4da283b1dd8190ce6dc21b51c6",
+      "META-INF/CERT.SF": "e7297c87c0b45dc57dcc06e2ef327e3176e5785f4932399a54deeb8a9735a5a9",
+      "META-INF/MANIFEST.MF": "0c0ee8d68d85cba9630603b238d4451d438d33df178f47e58c369eeaba4d5614",
+      "SEC-INF/buildConfirm.crt": "2973ed6413fd6494f8694b38820a8bb4e2544c2dc5a0d71012acc5dae0b6e717",
+      "SEC-INF/buildinfo.xml": "1d1a5bd870b93f8d0c0915fc0d111c0b90e23346afccee2af41cdd6730bc2d8f",
+      "classes.dex": "630ff3e440b8199fb9037bd3a56585573a724c83f548e6754cdc4dbad64fa804",
+      "lib/armeabi-v7a/libc++.so": "6b177fcd981a23b18b20d3bcae8305c231533050c55780be800ba3c7ee745b91",
+      "lib/armeabi-v7a/sve-dummy.so": "4087a364a4716db779e1e351d805847a48178c7f7ea449db07788fc26f874191",
+      "resources.arsc": "cc56139e81fd7868c7a8191b9bc0381bba80c966345cf7e919ded3d1dc92ecac"
+    }
+  },
+  "toolchain": {
+    "apktool": {
+      "version": "2.9.3",
+      "sha256": "7956eb04194300ce0d0a84ad18771eebc94b89fb8d1ddcce8ea4c056818646f4",
+      "jvm_args": ["-XX:ActiveProcessorCount=1"]
+    }
+  },
+  "output": {
+    "classes_dex_size": 320808,
+    "classes_dex_sha256": "f1294ce50783bbec6ad84fbd377a9436f70954a2bcd9a4b7e258b3a4552df4f4",
+    "unsigned_apk_sha256": "8050c925f353d42872ea88933df1d88ce5678b9f9f9dc4ccb8412573b81b2cf3",
+    "changed_entries": [
+      "META-INF/CERT.RSA",
+      "META-INF/CERT.SF",
+      "META-INF/MANIFEST.MF",
+      "classes.dex"
+    ]
+  }
+}
