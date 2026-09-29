@@ -22,6 +22,28 @@ validation was performed on one M11 with
 CherishOS 4.12 / Android 13, SELinux Enforcing, Taiwan Mobile and stock input
 build `M115FXXS5CWK3`.
 
+A separate Android 13 crDroid restoration and porting record is available in
+[`docs/CRDROID_ANDROID13_IMS_RESTORATION.md`](docs/CRDROID_ANDROID13_IMS_RESTORATION.md).
+Static comparison found all nine known runtime patch groups from the public
+CherishOS forks in the crDroid source trees; no omitted patch from that known
+set was found. The port has passed direct-LTE, outgoing VoWiFi and incoming
+VoWiFi calls with bidirectional audio and normal teardown. The crDroid-specific
+incoming-media fix asks Samsung `secims` to start the slot audio path only after
+Telecom enters `MODE_IN_CALL`; it is gated by an m11q resource overlay and does
+not change other devices by default. Cross-ROM acceptance remains incomplete:
+before the handover workaround, an outgoing INVITE after IWLAN-to-LTE received
+SIP 487. The published M11 CarrierConfig fix forces a fresh bearer for idle
+transitions on the tested PLMN and disconnects an active VoWiFi call when Wi-Fi
+is disabled. It is public in device-tree commit
+[`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4).
+The incoming-media integration is public in Telecom commit
+[`66d3d91d`](https://github.com/chenjohnliu/android_packages_services_Telecomm/commit/66d3d91d238436c9a04cd4b653f3db02db4f901e)
+and device-tree commit
+[`29fc1533`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/29fc1533c06fe54ef80d3808698d33edd93caed8).
+See the
+[`Android 13 ROM bring-up guide`](docs/M11_ANDROID13_ROM_BRINGUP.md) for the
+reproducible inputs, remaining manual port steps, and validation matrix.
+
 The following behavior has been validated with one active SIM at a time:
 
 - IMS registration on SIM1 and SIM2;
@@ -130,6 +152,12 @@ missing or differs from its reviewed hash.
 - `patches/` — project-authored Android source corrections kept separate from
   proprietary payloads;
 - `docs/` — runtime baseline, provenance boundary and release SOP.
+
+The repository currently provides deterministic local payload builders and
+source references, but not a one-command firmware extractor or an ordered,
+preflighted source patch series for every Android 13 ROM. The bring-up guide
+states the exact boundary and avoids claiming that a clean checkout of an
+arbitrary ROM is already reproducible.
 
 Run the source-only validation suite:
 

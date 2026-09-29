@@ -79,39 +79,30 @@ bodies or decompiler markers. Their package names and Samsung-private method
 signatures exist only for interoperability. Exact source hashes and provenance
 are recorded in `docs/BRIDGE_SOURCE_PROVENANCE.md` and enforced by the builder.
 
-## 3. Proposed public repository layout
+## 3. Current public repository layout
 
 ```text
-Samsung-QCOM-IMS-Compat/
+Samsung-m11-ims-compat-layer/
   README.md
   LICENSE
-  docs/
-    M115F_STAGE1.md
-    ARCHITECTURE.md
-    PORTING_GUIDE.md
-    RUNTIME_VALIDATION.md
+  bridge/java/
+  bridge/abi/
   devices/m11q/
     payload-manifest.tsv
-    integration/
-    init/
-    permissions/
-    sepolicy/
-    overlay/
-    patches/frameworks-base/
-    patches/device-tree/
-    patches/imsservice/
-  bridge/
-    java/
-    tests/
+    *-contract.json
+  patches/
   tools/
-    extract-firmware.sh
-    patch-imsservice.sh
-    verify-input.sh
-    verify-output.sh
-    prepare-device-tree.sh
-  proprietary/                 # generated locally; gitignored
-  out/                         # generated locally; gitignored
+  tests/
+  docs/
 ```
+
+Device-tree packaging, init, SELinux and overlay integration live in the
+separate public M11 device-tree repository, not under this compatibility-layer
+checkout. This repository does not currently contain a universal Android
+source patch runner, a complete firmware-image extractor, or a one-command
+ROM build wrapper. See
+[`M11_ANDROID13_ROM_BRINGUP.md`](M11_ANDROID13_ROM_BRINGUP.md) for the current
+end-to-end boundary and manual hand-off between repositories.
 
 Recommended `.gitignore` minimum:
 
@@ -168,50 +159,67 @@ mkdir -p work/ap work/super work/partitions
 tar -xf "/path/to/AP_M115FXXS5CWK3_...tar.md5" -C work/ap super.img.lz4
 lz4 -d work/ap/super.img.lz4 work/super/super.sparse.img
 simg2img work/super/super.sparse.img work/super/super.raw.img
-python3 tools/lpunpack.py -p system work/super/super.raw.img work/partitions
+python3 /path/to/lpunpack.py -p system work/super/super.raw.img work/partitions
 sha256sum work/partitions/system.img
 ```
 
 Expected `system.img` SHA-256 is the value in section 1.  Stop if it differs.
-Tool versions and their own hashes must be documented in the final public
-`tools/README.md`.  The exact command above is a reference derived from the
-current local extraction method; the public wrapper still requires a clean
-end-to-end verification run.
+In the original bring-up, `lpunpack.py` was the local
+`stock_analysis/lpunpack.py` helper. It is not present at `tools/lpunpack.py`
+in this public repository; substitute the local helper's actual path or a
+compatible `lpunpack` implementation. Record its source/version and hash before
+calling the extraction workflow reproducible. The image hashes from the
+successful CWK3 extraction are in
+[`FRESH_EXTRACTION_VALIDATION.md`](FRESH_EXTRACTION_VALIDATION.md).
 
-## 6. Extract the payload locally
+## 6. Extract and verify the payload locally
 
-Extract only paths declared in `PAYLOAD_MANIFEST.tsv`.  The current research
-workspace has a local `stock_analysis/extract_ext4.py` helper which supports an
-explicit path list.  The example below describes the planned public
-`tools/extract_ext4.py`; that public helper has not yet been packaged or tested
-from a clean checkout:
+The repository pins the expected files in
+[`devices/m11q/payload-manifest.tsv`](../devices/m11q/payload-manifest.tsv),
+but does not package the local ext4 file extractor used during bring-up. That
+run used `stock_analysis/extract_ext4.py`, which accepts an image, output
+directory and explicit `/system/...` paths; it depends on a local Python
+`ext4` module and is not in this repository. The exact payload path list is the
+manifest's `stock_path` column. From the repository root, the original
+manifest-driven invocation is:
 
 ```bash
-python3 tools/extract_ext4.py \
-  work/partitions/system.img proprietary \
-  /system/bin/imsd \
-  /system/bin/multiclientd \
-  /system/framework/EpdgManager.jar \
-  /system/framework/imsmanager.jar \
-  /system/framework/framework-res.apk \
-  /system/framework/rcsopenapi.jar \
-  /system/framework/vsimmanager.jar \
-  /system/lib/libaresdns.so \
-  /system/lib/libcurl2.so \
-  /system/lib/libext2_uuid.so \
-  /system/lib/libsec-ims.so \
-  /system/lib/vendor.samsung.hardware.radio.bridge@2.0.so \
-  /system/lib/vendor.samsung.hardware.radio.bridge@2.1.so \
-  /system/priv-app/imsservice/imsservice.apk
+mapfile -t STOCK_PATHS < <(awk -F '\t' 'NR > 1 && $1 ~ /^\/system\// { print $1 }' \
+  devices/m11q/payload-manifest.tsv)
+python3 /path/to/extract_ext4.py \
+  work/partitions/system.img \
+  /path/to/private/m11q-cwk3-extracted \
+  "${STOCK_PATHS[@]}"
 ```
 
-The file list above is the original Stage 1 subset; the manifest now also pins
-Stage 3 stock inputs. The release wrapper must verify every stock SHA-256 before
-any transformation. Only `copy` rows go unchanged to the device-tree
-destination. `patch-to-stage1` and `transform-input` rows are private stock
-inputs, not finished APK/ELF outputs; `build-input` rows remain build inputs.
-See [`STAGE3_PAYLOAD_INPUTS.md`](STAGE3_PAYLOAD_INPUTS.md) for the Stage 3
-provenance boundary.
+The output directory must preserve the `system/...` path prefix expected by
+the verifier. This records the original extraction method; the external
+`lpunpack.py`, `extract_ext4.py`, and Python `ext4` dependency still need to be
+obtained and version-pinned by the builder. The successful historical hashes
+are in [`FRESH_EXTRACTION_VALIDATION.md`](FRESH_EXTRACTION_VALIDATION.md).
+
+From the repository root, the public verifier can check all manifest inputs,
+copy only rows marked `copy` to the device tree, and stage transformation/build
+inputs in a private directory. Substitute local paths and keep the report and
+private staging directory outside Git:
+
+```bash
+python3 tools/verify_payload.py \
+  /path/to/extracted/system \
+  /path/to/android/device/samsung/m11q \
+  --copy \
+  --stock-input-dir /path/to/private/m11q-cwk3-inputs \
+  --report /path/to/private/reports/m11q-payload-verification.json
+```
+
+A successful report must show every manifest row as `verified`. `--copy` only
+places unchanged `copy` rows under the device-tree root; it does not install
+transformed outputs. `patch-to-stage1`, `transform-input`, and `build-input`
+rows are staged as private builder inputs. The per-row action and output
+destination are authoritative; follow
+[`STAGE3_PAYLOAD_INPUTS.md`](STAGE3_PAYLOAD_INPUTS.md) before creating the
+transformed APKs, libraries, or ABI stub. Never commit stock inputs, generated
+outputs, or reports containing private paths.
 
 ## 7. Rebuild the IMS APK from stock
 
@@ -352,32 +360,47 @@ tool versions, applied patch IDs, DEX hashes, changed-entry inventory and final
 structural results.  A signed APK may have a different whole-file hash; verify
 its DEX and manifest contents independently after signing.
 
-## 9. Place payload into the Android tree
+## 9. Integrate the payload and Android source
 
-The preparation script should copy verified `copy` inputs and separately
-prepared private outputs into:
+There is not yet a public preparation script that applies all device and
+framework changes to a clean ROM checkout. The device-tree repository provides
+the integration fragments and `ims/verify_payload.ps1`; use its README to
+install the `ims` directory, review the `device.mk` / `BoardConfig.mk`
+fragments, and verify the completed payload before building. The public device
+tree update [`9aebafe`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/9aebafee57492a75cadd115ae80ea21db378a760) fixes the verifier's expected
+BT1 APK hash and documents how to generate that APK.
+The later device-tree commit
+[`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4)
+adds the stable IWLAN-to-EUTRAN fresh-bearer policy for PLMNs 46601, 46605,
+46692, and 46697. TWM runtime validation is confirmed on 46697 only; turning
+Wi-Fi off during an active VoWiFi call intentionally disconnects it.
+
+Public Android source references and the manually restored crDroid baseline
+are recorded in
+[`CRDROID_ANDROID13_IMS_RESTORATION.md`](CRDROID_ANDROID13_IMS_RESTORATION.md).
+That record is currently a source map and port review, not a ready-to-apply
+patch bundle. A clean ROM checkout still requires a maintainer to port those
+changes to its exact source revisions and review framework/build-context
+differences. Do not infer that the Android forks' branches can be dropped into
+an unrelated ROM manifest unchanged.
+
+The source checkpoints checked on 2026-09-29 are:
 
 ```text
-device/samsung/m11q/ims/proprietary/
+device/samsung/m11q: functional integration through 97206c0e; verifier/docs update 9aebafe; handover policy d11cbe58
+frameworks/base:      e9346dd4 + 15a303b8 + 73178bfc (CherishOS fork)
+frameworks/opt/net/ims: 1b1a3226 (CherishOS fork)
+frameworks/opt/telephony: 6c209a7d (CherishOS fork)
+packages/services/Telephony: cf338879 + afedb3ad + 26d0551a (CherishOS fork)
+system/netd:           8e455b91 (CherishOS fork)
 ```
 
-and apply the published integration/framework patches.  It must refuse to:
-
-- overwrite a non-matching APK or source file;
-- apply to an unsupported branch;
-- copy signing keys;
-- enable global permissive SELinux;
-- change SIM2, VoWiFi or emergency behavior implicitly.
-
-Known local source checkpoints:
-
-```text
-device/samsung/m11q: 4ada41f + 566bfd4 on m11q-volte
-frameworks/base:      e9346dd40f60 on m11q-volte
-```
-
-These are local checkpoint identities, not public remote references.  Export
-reviewable patches or recreate clean commits in the eventual public repo.
+These are source references rather than one universal ROM baseline. For the
+crDroid 13 port, the nine known runtime patch groups were found in the local
+source trees, with documented context adaptations. The same static check does
+not establish that an arbitrary ROM has those changes or that its VoWiFi media
+path works. The step-by-step scope and remaining gaps are in
+[`M11_ANDROID13_ROM_BRINGUP.md`](M11_ANDROID13_ROM_BRINGUP.md).
 
 ## 10. Builder responsibility
 
@@ -458,10 +481,51 @@ Recommended design:
 - Be more conservative than that reference repository by not publishing the
   Samsung prebuilt payload itself.
 
-Pending before changing GitHub visibility to public:
+Remaining reproducibility work:
 
-- Confirm the full-history audit again immediately before visibility change.
-- Obtain action-time confirmation for the visibility change.
+- Package and validate the firmware image extraction workflow from a clean
+  checkout, or document a supported external extractor and its exact inputs.
+- Export the reviewed Android source ports as ordered per-repository patches
+  with baseline checks and an apply/preflight command that fails before making
+  partial changes.
+- Carry the published crDroid Telecom and m11q incoming-media commits in the
+  clean-checkout patch workflow, and test the carrier policy on each listed
+  PLMN before claiming broader cross-ROM/carrier support.
+
+## 14. Cross-ROM IMS port acceptance
+
+The CherishOS 4.12 runtime results are a historical baseline. For each new ROM
+target, record its exact Android/framework revisions and keep shared Samsung
+IMS API shims separate from ROM-specific build, product, SELinux, and carrier
+configuration.
+
+Before claiming the port works on that ROM:
+
+- apply the ordered source-only patch set to a clean checkout of the recorded
+  baseline and review every context adaptation;
+- build and boot that ROM on the target device;
+- verify the Samsung IMS process stays alive and registration completes;
+- validate outgoing and incoming VoLTE through audio and teardown under
+  Enforcing;
+- validate SMS and hot-swap behavior separately from voice;
+- for VoWiFi, verify ePDG service startup, tunnel interface creation, traffic
+  rules, IMS IWLAN registration, call audio, and clean teardown;
+- record unsupported Samsung APIs and any carrier/SIM-specific limits rather
+  than treating compatibility stubs as full platform implementations.
+
+The crDroid 13 restoration has partial user-built/flashed results. Direct LTE
+calling and a fresh WWAN IMS setup after airplane-mode reset succeeded. The
+call-state cleanup now clears the Dialer after a failed call, but does not
+change the carrier SIP 487. On the validated Taiwan Mobile PLMN, the M11
+CarrierConfig overlay change in
+[`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4)
+disallows idle IWLAN-to-EUTRAN IMS handover and forces a fresh WWAN bearer;
+turning Wi-Fi off during an active VoWiFi call disconnects that call.
+Incoming VoWiFi media is now validated on the tested crDroid build with the
+same BT1 APK plus the m11q-gated post-`MODE_IN_CALL` Telecom callback. See the
+restoration record and
+[`M11_ANDROID13_ROM_BRINGUP.md`](M11_ANDROID13_ROM_BRINGUP.md) for the evidence,
+limitations, and practical port boundary.
 
 The repository includes `LICENSE`, which covers only project-authored source,
 tooling, tests, contracts, ABI fixtures and documentation. It does not license

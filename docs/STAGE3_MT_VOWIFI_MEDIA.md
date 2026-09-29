@@ -16,12 +16,22 @@ concurrent dual-SIM operation, other carriers, or other devices/builds.
 ## Cross-ROM status
 
 The crDroid Android 13 port uses the deterministic builder APK identified
-below, including the same BT1 post-ESTABLISHED hook, but an incoming VoWiFi call
-there reproduced bidirectional silence and an automatic disconnect. This rules
-out a missing BT1 payload as the explanation for that crDroid result. It also
-means the CherishOS success must not be generalized into a cross-ROM fix: BT1
-may be necessary for the validated build, while another framework, audio-route
-or native-media precondition remains unresolved on crDroid.
+below, including the same BT1 post-ESTABLISHED hook. It initially reproduced
+bidirectional silence and an automatic disconnect because the BT1 SAE request
+arrived before Telecom entered `MODE_IN_CALL`. The crDroid-specific integration
+now repeats the slot-aware Samsung `secims` audio-path request immediately after
+Telecom sets that mode. The user then validated both an outgoing 188 call and
+an incoming VoWiFi call with audible media and normal teardown.
+
+The framework behavior is opt-in: the Telecom resource defaults to `false`,
+and only the m11q overlay enables it. The callback is also limited to incoming
+calls carrying Android's Wi-Fi-call property. The implementation is public in
+Telecom commit
+[`66d3d91d`](https://github.com/chenjohnliu/android_packages_services_Telecomm/commit/66d3d91d238436c9a04cd4b653f3db02db4f901e)
+and m11q device-tree commit
+[`29fc1533`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/29fc1533c06fe54ef80d3808698d33edd93caed8).
+This validates the tested crDroid build; it does not turn BT1 alone into a
+portable cross-ROM media fix.
 
 ## Root cause and rejected placement
 
