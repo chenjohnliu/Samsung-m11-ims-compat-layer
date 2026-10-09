@@ -1,0 +1,651 @@
+{
+  "schema_version": 1,
+  "policy": "global-stock-profile-v1",
+  "stock_firmware": "M115FXXS5CWK3",
+  "source_baseline_sha256": "164515303794e27f4b7bf0ec2c52b20deea504ba52a7fe037dc869c6297cecea",
+  "vendor_sha256": "4d5750cb8c60e67f9d140b40914ac763854a28c039d9c203e71e3b9932f4c38a",
+  "input_resource_sha256": {
+    "mnomap": "b441ae8509d8eaaa11b1d5763831177b8eaa9db97da118f914e978d4da5b2600",
+    "imsswitch": "8c1fd14cf40b98a78d46f208d9acae0f8387d2a5265dcb0896f3d869fff34c2f",
+    "imsprofile": "856f0a2659769a1868365f3ead337ff099221fca8832d5f32266abce440b2a07",
+    "epdg_apns_conf": "90c167b23baf39cac4fe235a1f1bb726231f1999f017be8975968e7cb8c749b3"
+  },
+  "approved": [
+    {
+      "plmn": "20201",
+      "mnos": [
+        "TMobile_GR"
+      ]
+    },
+    {
+      "plmn": "20205",
+      "mnos": [
+        "Vodafone_GR"
+      ]
+    },
+    {
+      "plmn": "20410",
+      "mnos": [
+        "KPN_NL"
+      ]
+    },
+    {
+      "plmn": "20416",
+      "mnos": [
+        "TMobile_NL"
+      ]
+    },
+    {
+      "plmn": "20469",
+      "mnos": [
+        "KPN_NL"
+      ]
+    },
+    {
+      "plmn": "20605",
+      "mnos": [
+        "Telenet_BE"
+      ]
+    },
+    {
+      "plmn": "20610",
+      "mnos": [
+        "Orange_BE"
+      ]
+    },
+    {
+      "plmn": "20802",
+      "mnos": [
+        "Orange_FR"
+      ]
+    },
+    {
+      "plmn": "20820",
+      "mnos": [
+        "Bouygues_FR"
+      ]
+    },
+    {
+      "plmn": "21630",
+      "mnos": [
+        "TMobile_HU"
+      ]
+    },
+    {
+      "plmn": "21901",
+      "mnos": [
+        "TMobile_HR"
+      ]
+    },
+    {
+      "plmn": "21920",
+      "mnos": [
+        "TMobile_HR"
+      ]
+    },
+    {
+      "plmn": "22605",
+      "mnos": [
+        "RDS_RO"
+      ]
+    },
+    {
+      "plmn": "22610",
+      "mnos": [
+        "Orange_RO"
+      ]
+    },
+    {
+      "plmn": "22802",
+      "mnos": [
+        "Sunrise_CH"
+      ]
+    },
+    {
+      "plmn": "23001",
+      "mnos": [
+        "TMobile_CZ"
+      ]
+    },
+    {
+      "plmn": "23003",
+      "mnos": [
+        "Vodafone_CZ"
+      ]
+    },
+    {
+      "plmn": "23101",
+      "mnos": [
+        "Orange_SK"
+      ]
+    },
+    {
+      "plmn": "23106",
+      "mnos": [
+        "Telefonica_SK"
+      ]
+    },
+    {
+      "plmn": "23203",
+      "mnos": [
+        "TMobile_AT"
+      ]
+    },
+    {
+      "plmn": "23207",
+      "mnos": [
+        "TMobile_AT"
+      ]
+    },
+    {
+      "plmn": "23402",
+      "mnos": [
+        "Telefonica_GB"
+      ]
+    },
+    {
+      "plmn": "23420",
+      "mnos": [
+        "Hutchison_GB"
+      ]
+    },
+    {
+      "plmn": "23594",
+      "mnos": [
+        "Hutchison_GB"
+      ]
+    },
+    {
+      "plmn": "23806",
+      "mnos": [
+        "3_DK"
+      ]
+    },
+    {
+      "plmn": "25001",
+      "mnos": [
+        "MTS_RU"
+      ]
+    },
+    {
+      "plmn": "25050",
+      "mnos": [
+        "Sberbank_RU"
+      ]
+    },
+    {
+      "plmn": "26002",
+      "mnos": [
+        "TMobile_PL"
+      ]
+    },
+    {
+      "plmn": "26003",
+      "mnos": [
+        "Orange_PL"
+      ]
+    },
+    {
+      "plmn": "26006",
+      "mnos": [
+        "Play_PL"
+      ]
+    },
+    {
+      "plmn": "26098",
+      "mnos": [
+        "Play_PL"
+      ]
+    },
+    {
+      "plmn": "27099",
+      "mnos": [
+        "Orange_LU"
+      ]
+    },
+    {
+      "plmn": "27201",
+      "mnos": [
+        "Vodafone_IE"
+      ]
+    },
+    {
+      "plmn": "27411",
+      "mnos": [
+        "Nova_IS"
+      ]
+    },
+    {
+      "plmn": "28602",
+      "mnos": [
+        "Vodafone_TR"
+      ]
+    },
+    {
+      "plmn": "28603",
+      "mnos": [
+        "AVEA_TR"
+      ]
+    },
+    {
+      "plmn": "29501",
+      "mnos": [
+        "Swisscom_CH"
+      ]
+    },
+    {
+      "plmn": "34001",
+      "mnos": [
+        "Orange_FR:Caraibe"
+      ]
+    },
+    {
+      "plmn": "40402",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40403",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40410",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40416",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40431",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40440",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40445",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40449",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40470",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40490",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40492",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40493",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40494",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40495",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40496",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40497",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40498",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40551",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40552",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40553",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40554",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40555",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "40556",
+      "mnos": [
+        "AIRTEL_IN"
+      ]
+    },
+    {
+      "plmn": "41302",
+      "mnos": [
+        "Dialog_LK"
+      ]
+    },
+    {
+      "plmn": "45400",
+      "mnos": [
+        "CSL_HK"
+      ]
+    },
+    {
+      "plmn": "45402",
+      "mnos": [
+        "CSL_HK"
+      ]
+    },
+    {
+      "plmn": "45403",
+      "mnos": [
+        "3_HK"
+      ]
+    },
+    {
+      "plmn": "45406",
+      "mnos": [
+        "Smartone_HK"
+      ]
+    },
+    {
+      "plmn": "45410",
+      "mnos": [
+        "CSL_HK"
+      ]
+    },
+    {
+      "plmn": "45412",
+      "mnos": [
+        "CMHK_HK"
+      ]
+    },
+    {
+      "plmn": "45413",
+      "mnos": [
+        "CMHK_HK"
+      ]
+    },
+    {
+      "plmn": "45415",
+      "mnos": [
+        "Smartone_HK"
+      ]
+    },
+    {
+      "plmn": "45416",
+      "mnos": [
+        "PCCW_HK"
+      ]
+    },
+    {
+      "plmn": "45417",
+      "mnos": [
+        "Smartone_HK"
+      ]
+    },
+    {
+      "plmn": "45418",
+      "mnos": [
+        "CSL_HK"
+      ]
+    },
+    {
+      "plmn": "45419",
+      "mnos": [
+        "PCCW_HK"
+      ]
+    },
+    {
+      "plmn": "45420",
+      "mnos": [
+        "PCCW_HK"
+      ]
+    },
+    {
+      "plmn": "45430",
+      "mnos": [
+        "CMHK_HK"
+      ]
+    },
+    {
+      "plmn": "45503",
+      "mnos": [
+        "3_MO"
+      ]
+    },
+    {
+      "plmn": "45505",
+      "mnos": [
+        "3_MO"
+      ]
+    },
+    {
+      "plmn": "45606",
+      "mnos": [
+        "Smart_KH"
+      ]
+    },
+    {
+      "plmn": "46601",
+      "mnos": [
+        "FET_TW"
+      ]
+    },
+    {
+      "plmn": "46605",
+      "mnos": [
+        "APT_TW"
+      ]
+    },
+    {
+      "plmn": "46692",
+      "mnos": [
+        "CHT_TW"
+      ]
+    },
+    {
+      "plmn": "46697",
+      "mnos": [
+        "TWM_TW"
+      ]
+    },
+    {
+      "plmn": "50208",
+      "mnos": [
+        "UMobile_MY"
+      ]
+    },
+    {
+      "plmn": "50218",
+      "mnos": [
+        "UMobile_MY"
+      ]
+    },
+    {
+      "plmn": "50502",
+      "mnos": [
+        "Optus_AU"
+      ]
+    },
+    {
+      "plmn": "52001",
+      "mnos": [
+        "AIS_TH"
+      ]
+    },
+    {
+      "plmn": "52003",
+      "mnos": [
+        "AIS_TH"
+      ]
+    },
+    {
+      "plmn": "52004",
+      "mnos": [
+        "Truemove_TH"
+      ]
+    },
+    {
+      "plmn": "52005",
+      "mnos": [
+        "DTAC_TH"
+      ]
+    },
+    {
+      "plmn": "52054",
+      "mnos": [
+        "AIS_TH"
+      ]
+    },
+    {
+      "plmn": "52074",
+      "mnos": [
+        "AIS_TH"
+      ]
+    },
+    {
+      "plmn": "62001",
+      "mnos": [
+        "MTN_GH"
+      ]
+    }
+  ],
+  "excluded_plmns": 705,
+  "excluded_reason_counts": {
+    "filtered-only-mapping": 15,
+    "incomplete-or-certificate-dependent-variant": 690
+  },
+  "excluded_candidates": [
+    {
+      "plmn": "20404",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "20408",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "20601",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "20620",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "20801",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "21403",
+      "reason": "filtered-only-mapping",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "22201",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "22801",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "23410",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "24007",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "25020",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "28601",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "52000",
+      "reason": "filtered-only-mapping",
+      "has_supported_variant": true
+    },
+    {
+      "plmn": "65507",
+      "reason": "incomplete-or-certificate-dependent-variant",
+      "has_supported_variant": true
+    }
+  ],
+  "runtime_validated_outside_taiwan": false
+}

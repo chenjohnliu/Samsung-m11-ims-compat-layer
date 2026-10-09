@@ -292,7 +292,28 @@ def binary_xml(data):
             if not stack or header != 16 or size < 24 or strings[struct.unpack_from("<I", chunk, 20)[0]] != stack[-1].tag:
                 raise ValueError("mismatched end element")
             stack.pop()
-        elif kind not in (0x100, 0x101, 0x104, 0x180):
+        elif kind == 0x104:
+            # CarrierConfig string values are CDATA nodes in compiled XML.
+            # Preserve them rather than validating attributes alone.
+            if strings is None or not stack or header != 16 or size < 28:
+                raise ValueError("invalid XML text node")
+            data_index, value_size, _, value_type, value = struct.unpack_from(
+                "<IHBBI", chunk, header)
+            # AAPT2 writes the raw string index and leaves typedData zeroed.
+            # Older encoders can also populate the standard eight-byte value.
+            if value_size not in (0, 8):
+                raise ValueError("invalid XML text value")
+            index = data_index if data_index != 0xffffffff else value
+            if data_index == 0xffffffff and (value_size != 8 or value_type != 3):
+                raise ValueError("unsupported XML text type")
+            if index >= len(strings):
+                raise ValueError("invalid XML text string index")
+            parent = stack[-1]
+            if len(parent):
+                parent[-1].tail = (parent[-1].tail or "") + strings[index]
+            else:
+                parent.text = (parent.text or "") + strings[index]
+        elif kind not in (0x100, 0x101, 0x180):
             raise ValueError("unknown resource XML chunk")
         pos += size
     if root is None or stack:
@@ -352,6 +373,12 @@ def main():
             if args.product_root is None:
                 raise ValueError("--product-root required")
             output = verify_product(args.product_root)
+            # New releases must contain the full profile-derived global matrix,
+            # not merely the historical four Taiwan entries. Historical direct
+            # verify_product() callers retain their original baseline checks.
+            import global_wfc_profile_policy as global_wfc
+            if global_wfc.DEFAULT_CONTRACT.exists():
+                output.update(global_wfc.verify_product(args.product_root))
         else:
             if args.android_root is None or args.state_dir is None:
                 raise ValueError("--android-root and --state-dir required")

@@ -1,5 +1,11 @@
 # crDroid Android 13 IMS source restoration
 
+Configuration update, 2026-10-09: the extra vendor WFC policy is now
+[global/profile-backed: 93 PLMNs across 33 MCCs](GLOBAL_PROFILE_BACKED_WFC_20261009.md),
+not Taiwan-only. Source and compiled-resource gates pass; a user ROM build/flash
+and foreign-carrier runtime validation remain pending. The separate
+[phone-number display fix](PHONE_NUMBER_DISPLAY_FIX_20261009.md) is also applied.
+
 Latest checkpoint, 2026-10-09:
 [complete conversation changes, all-carrier source scope and Git audit](CONVERSATION_CHANGE_AND_GIT_AUDIT_20261009.md).
 The modem-led legacy path plus stock-derived Telecom audio now has successful
