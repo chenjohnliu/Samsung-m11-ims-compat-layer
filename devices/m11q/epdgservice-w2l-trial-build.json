@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "transformation_id": "EC2-active-w2l-trial",
+  "classes_dex_sha256": "d8a7f8b1c22777b1e205e3dbf5b47db2b9fa2c37b2a403c8f527ee17e0753f1d",
+  "unsigned_apk_sha256": "4c7cca55f8647fd49e4d91b0c600033fcbbab71292fb039c53cbf289c0fc63bc"
+}

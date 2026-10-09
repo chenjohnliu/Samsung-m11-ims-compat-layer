@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "transformation_id": "EC2-active-w2l-trial",
+  "source_baseline": {
+    "transformation_id": "EC1-epdgservice-android13-compat",
+    "decoded_smali_root": "exact EC1 output"
+  },
+  "targets": [
+    {
+      "path": "com/sec/epdg/IntentReceiver.smali",
+      "input_sha256": "09195d7295dd5e50b21d44f12f6ce1d2b275c71be83181a94533ea4e8eecf826",
+      "output_sha256": "faca368c072cf8c2747e392c66a9c7e9ff8ed518b9242ad5195ebe2a32fd5ed7",
+      "redecoded_sha256": "28137d1d9b4cf3d6bd3844bf7e27dddc10d7c3cf4224315d5f3e5ddc9f658c84",
+      "required_methods": ["public initializeIntentReceiver()V", "public processSlowPath(Ljava/lang/Object;)V"],
+      "operations": ["register_wifi_state_changed", "dispatch_disabling_and_disabled"]
+    },
+    {
+      "path": "com/sec/epdg/EpdgSubScription.smali",
+      "input_sha256": "de192b5e2f1b3452b12febb2d5e704b06d7070159513a9ac32a399c62d82dfeb",
+      "output_sha256": "eada33cdce9a9080354cdc29a6614239c1d6dd0793a06dfe3bb5aa31fa975446",
+      "redecoded_sha256": "7d571b556755aece2e80a706d394cd6955af07659d982fbdaa010adca5b0b128",
+      "required_methods": ["protected retryW2LHandoverIfRequired(Ljava/lang/String;)Z", "protected notifyQualifiedNetworksChange()V", "protected notifyQualifiedNetworksChange(Ljava/lang/String;I)V"],
+      "operations": ["route_weak_rssi_to_ap_assist_qn", "pin_only_ims_before_qn_publication"]
+    },
+    {
+      "path": "com/sec/epdg/EpdgHandler.smali",
+      "input_sha256": "ba5829cf1483f7a0afe0ff7a7016163ea909a5d1c600d3e6b25e44332772bb53",
+      "output_sha256": "2791c03a8a6416f2a95d618fa8fdb7ad7ed706fe591c45ed10d1dec6ef83e68b",
+      "redecoded_sha256": "13826f02083391bd8dfba325887c0f3d912b9f0b8cb7ac0dedfc3244f318b5ac",
+      "required_methods": ["private handleCallStatusChange(Landroid/os/Message;)V"],
+      "operations": ["cleanup_trial_on_call_idle"]
+    },
+    {
+      "path": "com/sec/epdg/IPSecDataConnSM$W2MInProgressState.smali",
+      "input_sha256": "e9dca03fb6b0b356d81bb4db0e011b21474815c03c1f7fc6c1b95b7e86bca83c",
+      "output_sha256": "4369bfcd40483782aa6d86f87035b62dc74af82f8eb3b3ce37dd0251dd0c73c0",
+      "redecoded_sha256": "3411562da70ecb64468a8fd9ff35cd36f9f9b2534ec7212509740a27f8d7d2fd",
+      "required_methods": ["public enter()V", "public exit()V", "public processMessage(Landroid/os/Message;)Z"],
+      "operations": ["attach_trial_transaction", "defer_same_cid_source_msg7_once", "cleanup_on_state_exit"]
+    },
+    {
+      "path": "com/sec/epdg/apassist/IwlanService/IwlanDataService$IwlanDataServiceProvider.smali",
+      "input_sha256": "ba5fec14a3109bdbb5f22610133ffd62b545ef72be024b46b94fb7a2226cbe32",
+      "output_sha256": "13ed426bc7c96e222b2bc788b92729694a1e0d47f23c4d3e18058ae018e7b986",
+      "redecoded_sha256": "13ed426bc7c96e222b2bc788b92729694a1e0d47f23c4d3e18058ae018e7b986",
+      "required_methods": ["public cancelHandover(ILandroid/telephony/data/DataServiceCallback;)V"],
+      "operations": ["cleanup_on_framework_cancel_or_timeout"]
+    }
+  ],
+  "additions": [
+    {
+      "path": "com/sec/epdg/M11qW2LTrial.smali",
+      "output_sha256": "a2dc03ae458ca5db9aa7f40f51d8dd84122ad3353a180287fbd69daf9a9bbfeb",
+      "redecoded_sha256": "8cb5a87220d630c99e3920c75302e5df4a1cb973883f5fac31749def6e9db4bb",
+      "operations": ["fail_closed_guard", "transient_qn_pin", "idempotent_transaction_cleanup", "diagnostic_markers"]
+    }
+  ]
+}

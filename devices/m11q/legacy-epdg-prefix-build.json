@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "transformation_id": "LG2-legacy-epdg-prefix",
+  "classes_dex_sha256": "3cc23c6af802802859a1644d3d6187c90a4efcd575c285e0a975a0fae37d0c05",
+  "unsigned_apk_sha256": "5c9f372867afcee56da55f10851b4c30bd95452bea0720fca68e6e73ac96de27"
+}

@@ -483,14 +483,21 @@ Recommended design:
 
 Remaining reproducibility work:
 
-- Package and validate the firmware image extraction workflow from a clean
-  checkout, or document a supported external extractor and its exact inputs.
-- Export the reviewed Android source ports as ordered per-repository patches
-  with baseline checks and an apply/preflight command that fails before making
-  partial changes.
+- The manual firmware image/ext4 extraction procedure, helper locations used
+  during bring-up, expected hashes, and crDroid restoration order are recorded
+  in [`M11_ANDROID13_ROM_BRINGUP.md`](M11_ANDROID13_ROM_BRINGUP.md) and
+  [`CRDROID_ANDROID13_IMS_RESTORATION.md`](CRDROID_ANDROID13_IMS_RESTORATION.md).
+  Still package/version-pin those local extraction helpers and the Python
+  `ext4` dependency, then validate the instructions from a clean checkout.
+- Export the already documented crDroid source changes as ordered
+  per-repository patches with baseline checks and an apply/preflight command
+  that fails before making partial changes.
 - Carry the published crDroid Telecom and m11q incoming-media commits in the
-  clean-checkout patch workflow, and test the carrier policy on each listed
-  PLMN before claiming broader cross-ROM/carrier support.
+  clean-checkout workflow. The local manifest must pin Telecom commit
+  `66d3d91d238436c9a04cd4b653f3db02db4f901e` from branch
+  `m11q-vowifi-audio-path` before `repo sync`; see the restoration guide. Test
+  the carrier policy on each listed PLMN before claiming broader
+  cross-ROM/carrier support.
 
 ## 14. Cross-ROM IMS port acceptance
 

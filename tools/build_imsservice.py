@@ -95,7 +95,7 @@ def load_config(path: Path) -> dict:
             "BC1-modern-mmtel-discovery", "BC2-modern-bridge-native-hooks",
             "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
             "BP1-sms-hqm-telemetry-guard", "BR1-sms-delivery-ack-abi-guard",
-            "BT1-mt-vowifi-post-est-media",
+            "BT1-mt-vowifi-post-est-media", "BU1-twm-pcscf-failover-trial",
         ]:
             raise BuildError("ordered transformation identity drift")
         expected_contracts = {
@@ -106,6 +106,7 @@ def load_config(path: Path) -> dict:
             "BP1-sms-hqm-telemetry-guard": "devices/m11q/bp1-sms-hqm-telemetry-guard-contract.json",
             "BR1-sms-delivery-ack-abi-guard": "devices/m11q/br1-sms-delivery-ack-abi-guard-contract.json",
             "BT1-mt-vowifi-post-est-media": "devices/m11q/bt1-mt-vowifi-post-est-media-contract.json",
+            "BU1-twm-pcscf-failover-trial": "devices/m11q/bu1-twm-pcscf-failover-trial-contract.json",
         }
         if config["transformation_contracts"] != expected_contracts:
             raise BuildError("transformation contract mapping drift")
@@ -256,7 +257,10 @@ def _inspect_zip(stock: Path, candidate: Path) -> dict:
     for name in sorted(set(before) | set(after)):
         if before.get(name) != after.get(name):
             changed.append(name)
-    allowed = SIGNATURES | {"AndroidManifest.xml", "classes.dex", "classes2.dex"}
+    allowed = SIGNATURES | {
+        "AndroidManifest.xml", "classes.dex", "classes2.dex",
+        "res/raw/imsprofile.json",
+    }
     if set(changed) - allowed:
         raise BuildError(f"undeclared final APK entry changes: {sorted(set(changed) - allowed)}")
     return {"entry_count": len(after), "changed_entries": changed,
@@ -448,6 +452,7 @@ def build(args: argparse.Namespace) -> dict:
         bp1 = _module("m11_bp1", "tools/transform_bp1_sms_hqm_guard.py")
         br1 = _module("m11_br1", "tools/transform_br1_sms_delivery_ack_abi.py")
         bt1 = _module("m11_bt1", "tools/transform_bt1_mt_vowifi_media.py")
+        bu1 = _module("m11_bu1", "tools/transform_bu1_twm_pcscf_failover.py")
         stubs = _module("m11_stubs", "tools/generate_compile_stubs.py")
         abi = _module("m11_abi", "tools/verify_framework_abi.py")
         packer = _module("m11_packer", "tools/apk_entry_replace.py")
@@ -495,6 +500,11 @@ def build(args: argparse.Namespace) -> dict:
             bt1_overlay, bt1_report)
         _copy_overlay(bt1_overlay, decoded / "smali", bt1.EXPECTED_PATHS)
 
+        bu1_out = stage / "bu1-imsprofile.json"
+        transform_reports["BU1-twm-pcscf-failover-trial"] = bu1.transform(
+            contracts["BU1-twm-pcscf-failover-trial"],
+            decoded / "res/raw/imsprofile.json", bu1_out)
+
         stub_dir, stub_report = stage / "compile-stubs", stage / "stub-report.json"
         stub_result = stubs.generate(ROOT / "devices/m11q/compile-stub-contract.json",
             {"imsmanager": manager_decoded / "smali", "imsservice": decoded / "smali"},
@@ -540,7 +550,8 @@ def build(args: argparse.Namespace) -> dict:
         unaligned = stage / "candidate-unaligned.apk"
         packer.build_archive(stock, unaligned,
             {"AndroidManifest.xml": stage / "AndroidManifest.xml",
-             "classes.dex": stage / "classes.dex"},
+             "classes.dex": stage / "classes.dex",
+             "res/raw/imsprofile.json": bu1_out},
             {"classes2.dex": bridge_dex})
         aligned = stage / "candidate.apk"
         _run([str(tools["zipalign"]), "-p", "-f", "4", str(unaligned), str(aligned)],
@@ -583,6 +594,7 @@ def build(args: argparse.Namespace) -> dict:
             raise BuildError("final primary DEX is missing the post-established MT VoWiFi hook")
         if bt1_body.index(bt1.ESTABLISHED_ANCHOR) >= bt1_body.index(bt1.UPDATE_CALL):
             raise BuildError("final MT VoWiFi audio update is not post-ESTABLISHED")
+        bu1.validate_result(verified / "res/raw/imsprofile.json")
         bridge_defs = {item.stem.split("$", 1)[0] for item in
                        (verified / "smali_classes2/com/sec/internal/google").glob("*.smali")}
         if bridge_defs != set(config["bridge_source"]["top_level_classes"]):

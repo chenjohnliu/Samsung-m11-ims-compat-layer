@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "transformation_id": "LG3-legacy-wfc-startup-gate",
+  "classes_dex_sha256": "8dd61436164931a648f49f88b41bb88e2ac71c5d9df7893cbdbbbf10a8924064",
+  "unsigned_apk_sha256": "4aeb261ac3f43ac85a5f8825c2bfe3b7741b442f251d9bee8be1631e0538fb97"
+}

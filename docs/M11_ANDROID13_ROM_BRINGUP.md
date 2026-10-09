@@ -1,5 +1,12 @@
 # Samsung Galaxy M11 Android 13 IMS ROM bring-up
 
+2026-10-09 update: this bring-up guide retains the historical restoration
+recipe. For the active modem-led legacy handover, successful stock audio
+adaptation and newly carrier-neutral SA2/SEH1 source scope, use the
+[current conversation and Git audit](CONVERSATION_CHANGE_AND_GIT_AUDIT_20261009.md).
+The historical fresh-bearer/disallow policy below must not be mistaken for
+the current successful active-call handover path.
+
 Status snapshot: 2026-09-29. This guide joins the public IMS payload builders,
 the M11 device-tree integration, and the ROM-specific Android source changes.
 It is an evidence-based bring-up path, not a claim that every Android 13 ROM
@@ -201,6 +208,22 @@ crDroid port, but its upstream test-only hunk was not imported. Do not replace
 ROM-specific `Android.bp`, product, SELinux, or carrier configuration with a
 mechanical cherry-pick without checking the local source context.
 
+For the actual crDroid restoration order, use the source-baseline table and
+manual port sequence in
+[`CRDROID_ANDROID13_IMS_RESTORATION.md`](CRDROID_ANDROID13_IMS_RESTORATION.md).
+That sequence records the work already done: establish the exact clean source
+baselines, integrate the M11 payload/device files, restore the paired
+framework/netd/Telephony changes, then add the crDroid-specific incoming-WFC
+audio fix. The crDroid Telecom change must be pinned in the local manifest
+before `repo sync`: use
+`chenjohnliu/android_packages_services_Telecomm` at branch
+`m11q-vowifi-audio-path`, revision
+`66d3d91d238436c9a04cd4b653f3db02db4f901e`. The existing ROM project at
+`packages/services/Telecomm` must be replaced using its manifest project
+identity. The corresponding M11 resource and SELinux integration is in device
+tree commit `29fc1533`; without the manifest pin, a later sync can reset the
+Telecom checkout to crDroid upstream.
+
 **Porting limitation:** the matching CherishOS commit replay and the crDroid
 manual source map are now documented, but the compatibility repository still
 does not package crDroid's adapted changes as ordered patch files or provide an
@@ -244,26 +267,28 @@ native active-W2L experiment was reverted; this CarrierConfig rule is the
 current implementation. Recheck carrier registration and call behavior before
 claiming support for the other three or another operator.
 
-## 6. Reproducibility gaps to close before claiming general bring-up
+## 6. Remaining reproducibility work before claiming general bring-up
 
-The public material now records the original manual CWK3 extraction commands,
-manifest-driven payload extraction, CherishOS commit replay order, crDroid
-source map, deterministic transformers, device integration, and runtime
-results. The manual procedures for the first two areas are now written above;
-the remaining work is to package and pin those helper tools and turn the
-crDroid source map into a clean-checkout patch workflow. It still lacks:
+The manual CWK3 extraction steps and the crDroid restoration order are now
+documented above from the bring-up that was performed. A builder can follow
+those procedures manually. The outstanding work is to make them portable and
+repeatable from a clean checkout; the remaining gaps are:
 
 These are independent gaps, not a required sequence. The earlier crDroid
 incoming-VoWiFi media blocker is closed by the published Telecom and m11q
 post-`MODE_IN_CALL` integration. Remaining work concerns clean-checkout
 reproducibility, additional carriers and the separately tracked handover scope.
 
-1. bundled, version-pinned image and ext4 extraction tools plus a clean-checkout
-   extraction validation; the documented workflow currently uses
-   workspace-local helpers;
-2. ordered patch files and an apply/preflight tool for the crDroid adaptations
-   and other non-CherishOS baselines; the matching CherishOS commit replay is
-   documented above;
+1. distribute and version-pin the image/ext4 extraction helpers and Python
+   `ext4` dependency, then validate the documented extraction from a clean
+   checkout. The exact manual commands, helper paths used during bring-up, and
+   expected image hashes are already recorded in section 2 and
+   `PUBLIC_RELEASE_SOP.md`;
+2. export the documented crDroid changes as ordered per-repository patch files
+   and add an apply/preflight tool that checks the recorded baselines before
+   changing any source. The matching CherishOS commit replay and the actual
+   crDroid restoration order are already documented above and in
+   `CRDROID_ANDROID13_IMS_RESTORATION.md`;
 3. a pinned complete ROM/device/vendor/kernel manifest for a fresh build; and
 4. additional runtime carrier and handover results beyond the tested
    M11/Taiwan Mobile configuration.

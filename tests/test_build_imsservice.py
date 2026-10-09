@@ -40,7 +40,7 @@ class BuildImsserviceTests(unittest.TestCase):
             "BC1-modern-mmtel-discovery", "BC2-modern-bridge-native-hooks",
             "BG1-network-statistics-guard", "BH1-sms-icc-type-compat",
             "BP1-sms-hqm-telemetry-guard", "BR1-sms-delivery-ack-abi-guard",
-            "BT1-mt-vowifi-post-est-media"])
+            "BT1-mt-vowifi-post-est-media", "BU1-twm-pcscf-failover-trial"])
         self.assertEqual(len(config["bridge_source"]["files"]), 7)
         self.assertEqual(config["bridge_source"]["publication_status"],
                          "project-authored-apache-2.0")
@@ -53,7 +53,7 @@ class BuildImsserviceTests(unittest.TestCase):
         self.assertEqual(config["final_dex_invariants"]["entries"]["classes2.dex"],
                          "b9d57c1a1aab37fd88a5443bde177c710897b1603481350e8037cf332ce0d325")
         self.assertEqual(config["final_dex_invariants"]["unsigned_apk_sha256"],
-                         "832ad6fca643791a19776be14cb11ad6d1395bfe3d128e058dc4442e703990a9")
+                         "4cf9360b609fcc45329d038835a5913ba9c76844fe4cf59b70c132f904ae0dd1")
         self.assertEqual(config["final_dex_invariants"]["pin_state"], "pinned")
         self.assertEqual(config["final_dex_invariants"]["pin_basis"],
                          "current-source-build")
@@ -153,9 +153,11 @@ class BuildImsserviceTests(unittest.TestCase):
         stock = self.base / "stock.apk"
         candidate = self.base / "candidate.apk"
         stock_entries = {"AndroidManifest.xml": b"old-manifest", "classes.dex": b"old-dex",
-                         "res/raw/a": b"keep", "META-INF/CERT.RSA": b"sig"}
+                         "res/raw/a": b"keep", "res/raw/imsprofile.json": b"old-profile",
+                         "META-INF/CERT.RSA": b"sig"}
         final_entries = {"AndroidManifest.xml": b"new-manifest", "classes.dex": b"primary",
-                         "classes2.dex": b"bridge", "res/raw/a": b"keep"}
+                         "classes2.dex": b"bridge", "res/raw/a": b"keep",
+                         "res/raw/imsprofile.json": b"new-profile"}
         self.write_zip(stock, stock_entries)
         self.write_zip(candidate, final_entries)
         config = {"final_dex_invariants": {"entries": {
@@ -178,9 +180,11 @@ class BuildImsserviceTests(unittest.TestCase):
         stock = self.base / "stock.apk"
         candidate = self.base / "candidate.apk"
         stock_entries = {"AndroidManifest.xml": b"old", "classes.dex": b"old-dex",
-                         "res/raw/a": b"keep", "META-INF/CERT.SF": b"sig"}
+                         "res/raw/a": b"keep", "res/raw/imsprofile.json": b"old-profile",
+                         "META-INF/CERT.SF": b"sig"}
         final_entries = {"AndroidManifest.xml": b"new", "classes.dex": b"primary",
-                         "classes2.dex": b"bridge", "res/raw/a": b"keep"}
+                         "classes2.dex": b"bridge", "res/raw/a": b"keep",
+                         "res/raw/imsprofile.json": b"new-profile"}
         self.write_zip(stock, stock_entries)
         self.write_zip(candidate, final_entries)
         observed = MODULE._inspect_zip(stock, candidate)

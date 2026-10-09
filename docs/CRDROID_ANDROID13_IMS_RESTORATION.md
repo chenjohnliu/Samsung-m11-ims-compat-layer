@@ -1,5 +1,77 @@
 # crDroid Android 13 IMS source restoration
 
+Latest checkpoint, 2026-10-09:
+[complete conversation changes, all-carrier source scope and Git audit](CONVERSATION_CHANGE_AND_GIT_AUDIT_20261009.md).
+The modem-led legacy path plus stock-derived Telecom audio now has successful
+same-call 188 and real two-way conversational results on TWM. SA2/SEH1 carrier
+allowlists were subsequently removed at the user's request, source checks
+passed, and that scope change still needs a user build/flash. Historical
+disallow-policy, AP-assisted and silent-L2W findings below are not the current
+active solution. Recent source/tools/docs are not all committed or pushed.
+
+Latest checkpoint, 2026-10-08:
+[SEH1 + LG3 device result: L2W media failure](SEH1_LG3_L2W_MEDIA_FAILURE_20261008.md).
+The user built/flashed and observed Wi-Fi Calling and normal W2L. Two later
+LTE-to-Wi-Fi calls lost audio and ended with native RTP Timeout after switching
+back to LTE, despite successful bearer transitions and IKE error 0. The next step
+is targeted media/redirect observation while still on silent Wi-Fi, not another
+ROM build or an unproven handover patch.
+
+Implementation checkpoint, 2026-10-08:
+[SEH1 + LG3 stock APN callback and WFC startup gate](SEH1_LG3_STOCK_APN_CALLBACK_TRIAL_20261008.md).
+The controlled LG2 trace proves the next native blocker is an unregistered Samsung
+APN callback, not yet a demonstrated handover failure. The opt-in, single-SIM TWM
+bridge and read-only Android WFC startup gate are implemented, host-tested, and
+staged in the WSL source with backups. No ROM build or device validation was run.
+Use the new SEH1 product gate after the user's manual build; the old LEG1/BV1
+APK gate intentionally does not accept LG3. Android Wi-Fi deferral is unchanged.
+
+Previous checkpoint, 2026-10-05:
+[LG2 legacy ePDG prefix repair](LG2_LEGACY_EPDG_PREFIX_REPAIR_20261005.md).
+LEG1's native L2W path parses the actual IMS interface `rmnet_data1` using
+EC1's AP-assisted `epdg_data` prefix, producing `a1` and invalid CID -3 before
+IPsec setup. LG2 restores the radio-property prefix only for explicit legacy
+mode; AP-assisted naming is preserved. It requires a new ePDG APK and manual
+ROM build/flash/reboot. The updated LEG1 product gate rejects the old ePDG DEX.
+This fixes a demonstrated pre-registration blocker, not yet device-validated
+Wi-Fi IMS registration or same-call handover. See the LG2 note for the build
+status, version pins, and one consolidated validation batch.
+
+Current W2L experiment, 2026-10-04:
+[LEG1 modem-led IWLAN trial](LEG1_MODEM_LED_IWLAN_TRIAL_20261004.md).
+Device baseline exposed a missing legacy-only framework ABI before VoWiFi
+registration; [SS1 ServiceState repair](LEG1_SS1_SERVICE_STATE_CRASH_20261004.md)
+adds the Samsung mobile-data roaming entry point and packaged DEX ABI gating.
+The user built/flashed SS1. A [second capture and re-audit](LEG1_SS1_W2L_SAMPLE_NOT_ON_WFC_20261004.md)
+withdraws the prior in-call L2W success claim: data RAT changes and modem ACKs
+occur while IMS still reports LTE/non-WFC. Calls survive to local hangup, but
+actual IMS bearer continuity in either direction is not yet proved. Establish
+a genuine WFC registration/source baseline before repeating handover tests.
+CWK3 stock logs and the user's confirmation establish same-call W2L/L2W
+continuity; the crDroid EC2-r2/BV1 test instead received peer IKE DELETE and
+remote SIP BYE before LTE data-target completion. LEG1 selects Android's
+existing boot-time legacy mode and disables the AP-assisted experiment flag,
+without changing APK bytes, modem firmware, or Wi-Fi deferral. The two source
+settings retain verified backups and rollback; initial manual build/flashing
+is complete, but device acceptance remains partial. No new source change or
+reflash is requested for the next focused test. This is not a stable release.
+
+Previous W2L work, 2026-10-03: [EC2 active-call trial](EC2_ACTIVE_W2L_TRIAL.md)
+adds the standard Wi-Fi-disabling trigger and transaction-scoped ePDG source
+retention on top of the current controller experiment. Android's original
+Wi-Fi-off deferral is preserved. This opt-in 46697 trial is not a replacement
+for the historical validation below and is not yet device-validated.
+Latest revision: [EC2-r2 eligibility repair](EC2_R2_PLATFORM_VOPS_FIX_20261003.md).
+The correctly deployed EC2-r1 test exposed a Samsung VoPS-cache mismatch;
+EC2-r2 uses same-sub Android PS/WWAN LTE VoPS, passed 186 host tests and strict
+APK reconstruction, and is staged for the user's next manual ROM build.
+Previous combined test version: [EC2-r2 + BV1](BV1_ACTIVE_W2L_IMS_IP_CONTINUITY_20261003.md).
+The full private failure log also proves an IMS interface-change/local-IP-reset
+path; BV1 narrowly classifies retained-address W2L as a stacked-only change.
+Both APKs are staged, 203 host tests pass, and the combined gate must pass after
+the user's manual build. Neither seamless continuity nor removal of the later
+403 is claimed before device acceptance.
+
 Status snapshot: 2026-09-29. The source changes below were restored in the local
 crDroid checkout at `/home/user/android/crdroid` and manually built/flashed by
 the user. A static comparison against the nine known runtime patch groups in
@@ -121,6 +193,60 @@ checked out at `m11q-volte` head `97206c0e` and contains its IMS integration.
   assigns IPv6 addresses to `rmnet_data*` or `epdg_data*` interfaces.
 - The Telephony fallback code uses the M11 resource overlay. Do not turn it
   into an unconditional carrier default on other devices or carriers.
+
+### Manual restoration sequence used for crDroid 13
+
+This is the practical order for repeating the source restoration documented
+above. It is reconstructed from the changes made during bring-up and arranged
+by their dependencies; it is not a claim that every edit was originally made
+in this exact chronological order. Review the source behavior against the exact
+ROM revisions in the baseline table.
+
+1. Check out the recorded crDroid 13 revisions in the baseline table, save the
+   resolved manifest with `repo manifest -r > build-manifest.xml`, and confirm
+   the affected projects have clean worktrees. Keep the M11 device tree on
+   `m11q-volte` at the required IMS integration revision or later.
+2. Generate the private stock-derived payloads using
+   [`M11_ANDROID13_ROM_BRINGUP.md`](M11_ANDROID13_ROM_BRINGUP.md), install the
+   device tree's `ims` integration and build fragments, and require
+   `ims/verify_payload.ps1` to pass before changing Android framework source.
+3. In `frameworks/base`, restore the Samsung API compatibility change from
+   `e9346dd4`, retaining its exact public `SemSystemProperties.java`; then
+   restore IPv6-before-address setup from `15a303b8` and the ePDG Binder APIs
+   from `73178bfc`. Keep the crDroid `Android.bp` dependency list and add the
+   generated netd AIDL dependency required by the ePDG calls.
+4. Pair the ePDG framework methods with `system/netd`'s `IOemNetd` AIDL and
+   implementation from `8e455b91`. Pair `frameworks/base`'s `IPhoneSubInfo`
+   declaration from `e9346dd4` with the GID2 implementation from
+   `frameworks/opt/telephony:6c209a7d`.
+5. Restore the emergency MMTEL capability-mask production change from
+   `frameworks/opt/net/ims:1b1a3226`, then the SIM1/SIM2 carrier fallback
+   series from `packages/services/Telephony` commits `cf338879`, `afedb3ad`,
+   and `26d0551a`, together with the M11 carrier resource overlay. Preserve
+   unrelated crDroid framework/build fixes.
+6. Add the incoming-VoWiFi media correction after the base port: pin
+   `packages/services/Telecomm` to the published
+   `chenjohnliu/android_packages_services_Telecomm` commit
+   `66d3d91d238436c9a04cd4b653f3db02db4f901e` on
+   `m11q-vowifi-audio-path`, and include device-tree commit `29fc1533` or its
+   equivalent m11q-gated resource and SELinux changes. The local manifest must
+   replace the ROM's existing Telecomm project identity before `repo sync`;
+   otherwise syncing can discard the fork checkout.
+7. Keep the later Taiwan Mobile idle WFC-to-LTE workaround separate from the
+   IMS API restoration. Device-tree commit `d11cbe58` applies the configured
+   fresh-bearer policy; it was runtime-validated on PLMN 46697 and intentionally
+   disconnects an active VoWiFi call when Wi-Fi is disabled.
+8. Review the combined diffs and source baselines, build and flash the ROM,
+   then run the registration, outgoing/incoming VoLTE, outgoing/incoming
+   VoWiFi audio, teardown, and idle WFC-to-LTE checks in
+   [`M11_ANDROID13_ROM_BRINGUP.md`](M11_ANDROID13_ROM_BRINGUP.md). The user
+   performs ROM builds; no build is run by this documentation workflow.
+
+The separate `ImsPhoneCallTracker` failed-call cleanup is a crDroid Telephony
+behavior fix: it clears the stuck Dialer state after SIP 487, but does not
+prevent or explain the SIP response. Keep it as a separately reviewed
+call-state fix rather than treating it as part of the nine CherishOS IMS patch
+groups.
 
 ## Behavior and limits of the compatibility layer
 

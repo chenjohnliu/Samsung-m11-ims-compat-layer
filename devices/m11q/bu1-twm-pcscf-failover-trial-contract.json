@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BU1-twm-pcscf-failover-trial",
+  "target": {
+    "path": "res/raw/imsprofile.json",
+    "input_sha256": "eac62efba558d45826fd2951bf5087c65d005cbd2587a0d817891e525e11f937",
+    "profile_identity": {
+      "name": "TWM Mobile VoLTE",
+      "mnoname": "TWM_TW",
+      "representative_plmn": "46697",
+      "pdn": "ims",
+      "reg_enabled": true
+    },
+    "required_network_service": "mmtel",
+    "timer_f_before_ms": 128000,
+    "timer_f_after_ms": 16000,
+    "reg_retry_base_time_policy": "preserve-inherited-30-seconds"
+  }
+}

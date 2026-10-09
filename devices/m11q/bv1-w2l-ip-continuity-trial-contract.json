@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "transformation_id": "BV1-w2l-ip-continuity-trial",
+  "source_baseline": {
+    "apk_sha256": "4cf9360b609fcc45329d038835a5913ba9c76844fe4cf59b70c132f904ae0dd1",
+    "decoded_smali_root": "exact current unsigned IMS base"
+  },
+  "targets": [
+    {
+      "path": "com/sec/internal/ims/core/PdnController$NetworkCallback.smali",
+      "input_sha256": "aeece7782e8e4f43607cdac9c57e10d3ac0c6c7d253c87935c415f34d230b60a",
+      "output_sha256": "816a7a81f5c15af024240c618f9fd712af0faec800aba55e46b9f3c17b5a471c",
+      "redecoded_sha256": "03ac2ecf9e826c8419a85c579a5cd89227202a3cf6160aeb9024d047dcc45f5d",
+      "required_methods": [
+        "private isLocalIpChanged(Lcom/sec/internal/helper/os/LinkPropertiesWrapper;)I"
+      ],
+      "operations": [
+        "classify_qualified_retained_w2l_as_stacked"
+      ]
+    }
+  ],
+  "additions": [
+    {
+      "path": "com/sec/internal/ims/core/M11qW2LIPContinuity.smali",
+      "output_sha256": "ff3ce00936d60b6b5996af08aaa0262652f090245a2d1ea60ac97fba2aab53a9",
+      "redecoded_sha256": "6387cf770150683d3d50305da7be1837c3df6194dbc0148f6ecf20f5faecc730",
+      "operations": [
+        "fail_closed_w2l_continuity_classifier"
+      ]
+    }
+  ]
+}
