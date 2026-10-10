@@ -1,9 +1,12 @@
-# SA2 — stock-derived Telecom audio handover trial
+# SA2 — integrated stock-derived Telecom audio handover
 
 Current source scope, 2026-10-09: carrier-independent SA2 + SEH1 on M11,
-single active SIM in slot 0. The user requested removal of carrier
+single active SIM in either physical slot. See the
+[SIM1/SIM2 implementation and validation](IMS_SINGLE_SIM_EITHER_SLOT_20261009.md).
+The user requested removal of carrier
 allowlists; both the audio and APN boundary now accept any valid operator
-identity. Device/mode/opt-in, ordinary-call and stale-identity guards remain.
+identity. The runtime opt-in property has been removed; device/mode,
+ordinary-call and stale-identity guards remain.
 Only TWM has runtime evidence; eligibility is not a claim of other carriers'
 network provisioning or measured handover quality. See
 [complete change and Git audit](CONVERSATION_CHANGE_AND_GIT_AUDIT_20261009.md).
@@ -65,12 +68,13 @@ Telecom, as in stock; IMS bridge/modem/ePDG/APN/MTU/timeouts are unchanged.
 
 ## Scope and gates
 
-Default OFF. Requires `persist.sys.m11_ims_audio_port=stock1`, m11q, legacy
-IWLAN, any valid slot-0 MCC/MNC and no second operator. Telecom additionally requires
+Integrated by default: the former `persist.sys.m11_ims_audio_port` test
+switch has been removed. Requires m11q, legacy
+IWLAN, any valid MCC/MNC in the selected slot and no second active operator. Telecom additionally requires
 one foreground ACTIVE ordinary audio-only call from the com.android.phone
-slot-0 phone account, excluding emergency, conference, child, external,
+matching slot-0 or slot-1 phone account and sole active subscription, excluding emergency, conference, child, external,
 self-managed and explicitly VoIP calls. Its LTE call-network extra must
-have been observed before the trial can treat Wi-Fi as a transition.
+have been observed before the adapter can treat Wi-Fi as a transition.
 
 The Call listener observes actual connection properties/extras; it does
 not listen for Wi-Fi broadcasts or use registration alone as a handover
@@ -81,7 +85,7 @@ with an established LTE call and then tests both directions on that call.
 
 Before writing, the adapter loads the installed imsmanager typed proxy and
 checks the secims descriptor, normal non-emergency/non-CMC mmtel registration
-and exact Samsung call counts [1,0,0,0] on slot 0 / [0,0,0,0] on slot 1.
+and exact Samsung call counts [1,0,0,0] on the selected phone / [0,0,0,0] on the other phone.
 RAT 13 or 18 is allowed for the normal registration during transition;
 PDN 11 is never confused with RAT. Counts are rechecked before every native
 audio selection. No guessed transaction ID or permission bypass is added.
@@ -136,18 +140,16 @@ verified by the user's build and experiment.
      --product-root /home/user/android/crdroid/out/target/product/m11q
    ```
 
-   This checks SA2 code markers, including the new carrier-neutral revision,
+   This checks SA2 code markers, including the integrated/no-switch revision,
    in the built Telecom APK and reports its
    SHA256; it is not a full ROM/runtime acceptance gate. Keep the previous
    SEH1/LG3 product checks as well. Flash only after the relevant checks pass.
-3. With no ongoing call, enable the gated trial in Termux:
-
-   ```sh
-   su -c 'setprop persist.sys.m11_ims_audio_port stock1'
-   ```
+3. No feature-switch command is needed on the integrated revision. Existing
+   values (including `off`) of the former property are ignored by this revision.
+   An older flashed APK still requires its former `stock1` setting until reflash.
 
 4. Replace the phone Download copy of
-   `D:/m11q/tools/capture_ims_media_probe_termux.sh` (stock-audio-port-v6).
+   `D:/m11q/tools/capture_ims_media_probe_termux.sh` (stock-audio-port-v7).
    Connect a normal LTE 188 call, then:
 
    ```sh
@@ -156,7 +158,7 @@ verified by the user's build and experiment.
 
    **Do not use --start-sae**: that manual intervention would confound the
    automatic port test. The handover-check mode makes no audio requests and
-   does not change the trial gate or Wi-Fi state. No helper JAR is needed.
+   does not enable any feature or change Wi-Fi state. No helper JAR is needed.
 5. Enable Wi-Fi. Press Enter when the original call switches to VoWiFi,
    even if audio is normal. Keep the same call on VoWiFi for at least 30 s.
    When the script asks, turn Wi-Fi off and immediately press Enter. Keep
@@ -170,14 +172,8 @@ verified by the user's build and experiment.
    audible downlink, not remote two-way conversational quality; a normal
    person-to-person test is still needed for final acceptance.
 
-Disable with no ongoing call:
-
-```sh
-su -c 'setprop persist.sys.m11_ims_audio_port off'
-```
-
-The persist property survives reboot until explicitly disabled. Source
-rollback, when requested, is available via the verified backup:
+There is no runtime test switch in the integrated revision. Source rollback,
+when explicitly requested, is available via the verified backup:
 
 ```sh
 python3 tools/sa2_telecom_audio_trial.py restore \

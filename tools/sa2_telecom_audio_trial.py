@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Prepare/apply a hash-checked stock-derived Telecom audio trial; never build Android."""
+"""Manage the hash-checked integrated stock-derived Telecom audio port; never build Android.
+
+The historical filename and backup identity remain compatible with prior source backups.
+"""
 import argparse
 import difflib
 import hashlib
@@ -45,27 +48,31 @@ MANAGER_METHODS = '''    private void onSamsungImsAudioCallChanged(Call call) {
                 && !call.isSelfManaged() && !call.isExternalCall()
                 && !VideoProfile.isVideo(call.getVideoState()) && !call.getIsVoipAudioMode();
         boolean wifi = call != null && call.hasProperty(Connection.PROPERTY_WIFI);
+        int phoneId = -1;
+        int subId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
         if (allowed) {
             PhoneAccountHandle account = call.getTargetPhoneAccount();
-            int subId = account == null ? SubscriptionManager.INVALID_SUBSCRIPTION_ID
+            subId = account == null ? SubscriptionManager.INVALID_SUBSCRIPTION_ID
                     : mCallsManager.getPhoneAccountRegistrar().getSubscriptionIdForPhoneAccount(account);
+            phoneId = SubscriptionManager.getPhoneId(subId);
             allowed = account != null && "com.android.phone".equals(
                     account.getComponentName().getPackageName())
                     && SubscriptionManager.isValidSubscriptionId(subId)
-                    && SubscriptionManager.getPhoneId(subId) == 0;
+                    && SamsungImsAudioHandover.singleSubscriptionMatches(
+                            mCallsManager.getContext(), phoneId, subId);
             // Never infer an LTE source merely from "not Wi-Fi". Phone reports the call RAT.
-            if (allowed && !wifi && !mSamsungImsAudioHandover.owns(call)) {
+            if (allowed && !wifi && !mSamsungImsAudioHandover.owns(call, phoneId, subId)) {
                 allowed = call.getExtras() != null && call.getExtras().getInt(
                         android.telecom.TelecomManager.EXTRA_CALL_NETWORK_TYPE,
                         android.telephony.TelephonyManager.NETWORK_TYPE_UNKNOWN)
                         == android.telephony.TelephonyManager.NETWORK_TYPE_LTE;
             }
         }
-        mSamsungImsAudioHandover.observe(call, allowed, wifi);
+        mSamsungImsAudioHandover.observe(call, allowed, wifi, phoneId, subId);
     }
 
     boolean setSamsungImsHandoverAudioMode(android.media.AudioManager audio, int mode) {
-        return mSamsungImsAudioHandover.setMode(audio, mode);
+        return mSamsungImsAudioHandover.setMode(audio, mode, mCallsManager.getContext());
     }
 
     void finishSamsungImsHandoverAudioMode(android.media.AudioManager audio) {
@@ -92,13 +99,14 @@ def replace_once(text, old, new):
     return text.replace(old, new)
 
 
-def render(source):
+def render(source, baseline=None):
     results = {}
     for name, digest in INPUTS.items():
         path = target(source, name)
-        if path.is_symlink() or sha(path.read_bytes()) != digest:
+        data = path.read_bytes() if baseline is None else baseline[name]
+        if path.is_symlink() or sha(data) != digest:
             raise ValueError(f"baseline source drift: {path}; no files changed")
-        results[name] = path.read_text(encoding="utf-8")
+        results[name] = data.decode("utf-8")
     text = results["CallAudioManager.java"]
     text = replace_once(text, "    private Call mForegroundCall;\n",
                         MANAGER_FIELDS + "    private Call mForegroundCall;\n")
@@ -193,12 +201,15 @@ def restore(source, backup):
 
 
 def refresh_helpers(source, backup, history):
+    # Refresh observer hooks as well as helpers from the verified original
+    # baseline; upgrades keep the original restore transaction intact.
     verify(source, backup)  # Reject edits outside the last applied transaction.
     if history.resolve() == source.resolve() or history.resolve().is_relative_to(source.resolve()):
         raise ValueError("revision backup must be outside source checkout")
     manifest = json.loads((backup / "manifest.json").read_text())
-    updates = {name: (ROOT / "platform/telecom/sa2" / name).read_bytes() for name in HELPERS}
-    previous = {name: target(source, name).read_bytes() for name in HELPERS}
+    baseline = {name: (backup / name).read_bytes() for name in INPUTS}
+    updates = {name: text.encode("utf-8") for name, text in render(source, baseline).items()}
+    previous = {name: target(source, name).read_bytes() for name in updates}
     history.mkdir(parents=False, exist_ok=False)
     shutil.copy2(backup / "manifest.json", history / "manifest.json")
     for name, data in previous.items():
@@ -211,7 +222,7 @@ def refresh_helpers(source, backup, history):
             target(source, name).write_bytes(data)
             completed.append(name)
             manifest["applied"][name] = sha(data)
-        manifest["carrier_scope"] = "all-operators-single-sim-slot0"
+        manifest["carrier_scope"] = "all-operators-single-sim-either-slot"
         (backup / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
         return {**verify(source, backup), "carrier_scope": manifest["carrier_scope"]}
     except Exception:
@@ -220,6 +231,27 @@ def refresh_helpers(source, backup, history):
                 target(source, name).write_bytes(previous[name])
         (backup / "manifest.json").write_bytes((history / "manifest.json").read_bytes())
         raise
+
+
+def verify_product(product):
+    paths = [product / p for p in ("system/priv-app/Telecom/Telecom.apk",
+             "system_ext/priv-app/Telecom/Telecom.apk")]
+    present = [p for p in paths if p.is_file()]
+    if len(present) != 1:
+        raise ValueError("expected exactly one product Telecom APK")
+    with zipfile.ZipFile(present[0]) as apk:
+        dex = b"".join(apk.read(name) for name in apk.namelist()
+                       if name.startswith("classes") and name.endswith(".dex"))
+    markers = [b"M11StockAudioPort", b"SA2 sequence returned ",
+               b"g_call_sim_slot=0x01", b"g_call_sim_slot=0x02", b"SA2 unfocused g_call_state=",
+               b"SA2 single-SIM either-slot scope phone=", b"SA2 integrated stock audio"]
+    if not all(marker in dex for marker in markers):
+        raise ValueError("integrated SA2 code markers absent from product Telecom APK")
+    if b"persist.sys.m11_ims_audio_port" in dex:
+        raise ValueError("obsolete SA2 opt-in property remains in product Telecom APK")
+    return {"port": "SA2-stock-telecom-audio-port", "product_code_gate": "PASS",
+            "runtime_switch": "none", "telecom_apk_sha256": sha(present[0].read_bytes()),
+            "runtime_audio_validated": False}
 
 
 def main():
@@ -232,21 +264,10 @@ def main():
     args = parser.parse_args()
     if args.mode == "verify-product":
         if not args.product_root or not args.product_root.is_dir(): parser.error("verify-product requires --product-root")
-        paths = [args.product_root / p for p in ("system/priv-app/Telecom/Telecom.apk",
-                "system_ext/priv-app/Telecom/Telecom.apk")]
-        present = [p for p in paths if p.is_file()]
-        if len(present) != 1: parser.exit(1, "error: expected exactly one product Telecom APK\n")
-        with zipfile.ZipFile(present[0]) as apk:
-            dex = b"".join(apk.read(name) for name in apk.namelist()
-                           if name.startswith("classes") and name.endswith(".dex"))
-        markers = [b"M11StockAudioPort", b"persist.sys.m11_ims_audio_port", b"SA2 sequence returned ",
-                   b"g_call_sim_slot=0x01", b"SA2 unfocused g_call_state=",
-                   b"SA2 carrier-neutral slot0 scope"]
-        if not all(marker in dex for marker in markers):
-            parser.exit(1, "error: SA2 code markers absent from product Telecom APK\n")
-        print(json.dumps({"trial": "SA2-stock-telecom-audio-port", "product_code_gate": "PASS",
-                          "telecom_apk_sha256": sha(present[0].read_bytes()),
-                          "runtime_audio_validated": False}, indent=2))
+        try:
+            print(json.dumps(verify_product(args.product_root), indent=2))
+        except (OSError, ValueError, zipfile.BadZipFile) as e:
+            parser.exit(1, f"error: {e}\n")
         return
     if not args.source_root or args.source_root.is_symlink() or not args.source_root.is_dir():
         parser.error("source root must be an existing non-symlink directory")
