@@ -72,7 +72,7 @@ def prerequisites(root):
     LEG1.validate_vendor(LEG1.binary_xml(LEG1.regular(root / LEG1.VENDOR).read_bytes()))
 
 
-def candidates(original, apk, assets, legacy_comment=False):
+def candidates(original, apk, assets, legacy_comment=False, either_slot=True):
     result = dict(original)
     for relative, anchor, hook in ((RIL, RIL_ANCHOR, RIL_HOOK), (DPM, DPM_ANCHOR, DPM_HOOK)):
         if result[relative].count(anchor) != 1 or hook in result[relative]:
@@ -81,7 +81,8 @@ def candidates(original, apk, assets, legacy_comment=False):
             result[relative] = result[relative].replace(anchor, anchor[:-6] + hook + b"    }\n", 1)
         else:
             result[relative] = result[relative].replace(anchor, hook + anchor, 1)
-    scope = "slot0/TWM only" if legacy_comment else "slot0, all operators"
+    scope = ("slot0/TWM only" if legacy_comment else
+             "single active SIM in either slot, all operators" if either_slot else "slot0, all operators")
     result[PROP] += ("\n# SEH1 opt-in stock APN callback restoration, " + scope + ".\n").encode() + (FLAG + "=true\n").encode()
     result[POLICY + "property.te"] += b"\n# SEH1 exact read-only trial property.\nsystem_internal_prop(m11q_seh_trial_prop)\n"
     result[POLICY + "property_contexts"] += ("\n" + FLAG + " u:object_r:m11q_seh_trial_prop:s0 exact bool\n").encode()
@@ -132,7 +133,8 @@ def prepare(root, state, apk, report):
         entries[relative] = {"original_sha256": None if old is None else LEG1.sha(old),
                              "candidate_sha256": LEG1.sha(value)}
     (state / "manifest.json").write_text(json.dumps({"schema_version": 1,
-        "transformation_id": TRIAL, "android_root": str(root), "carrier_scope": "all", "files": entries}, indent=2) + "\n")
+        "transformation_id": TRIAL, "android_root": str(root), "carrier_scope": "all",
+        "sim_scope": "single-active-either-slot", "files": entries}, indent=2) + "\n")
     return verify_source(root, state, expected="original")
 
 
@@ -152,7 +154,8 @@ def bundle(root, state):
                 or LEG1.sha(candidate[relative]) != info["candidate_sha256"]):
             raise ValueError("backup/candidate hash drift: " + relative)
     rebuilt = candidates({r: b for r, b in original.items() if b is not None},
-                         candidate[IMS], java_assets(), legacy_comment=manifest.get("carrier_scope") != "all")
+                         candidate[IMS], java_assets(), legacy_comment=manifest.get("carrier_scope") != "all",
+                         either_slot=manifest.get("sim_scope") == "single-active-either-slot")
     if rebuilt != candidate or LEG1.sha(candidate[IMS]) != LG3.load_pins(LG3.DEFAULT_PINS)["unsigned_apk_sha256"]:
         raise ValueError("candidate no longer matches reviewed source/artifact")
     return original, candidate
@@ -222,7 +225,7 @@ def change(root, state, rollback=False):
     return {**answer, "source_changed": bool(changed), "rollback": rollback}
 
 
-def refresh_assets(root, state, history):
+def refresh_assets(root, state, history, apk=None):
     """Upgrade a verified prior batch without discarding its original rollback backup."""
     root, state, history = LEG1.source_root(root), LEG1.safe(state), LEG1.safe(history)
     if history == root or root in history.parents or history.exists():
@@ -245,11 +248,30 @@ def refresh_assets(root, state, history):
     prior_assets = {r: previous[r] for r in assets}
     source_original = {r: b for r, b in original.items() if b is not None}
     if candidates(source_original, previous[IMS], prior_assets,
-                  legacy_comment=manifest.get("carrier_scope") != "all") != previous:
+                  legacy_comment=manifest.get("carrier_scope") != "all",
+                  either_slot=manifest.get("sim_scope") == "single-active-either-slot") != previous:
         raise ValueError("prior deterministic batch drift")
     if observed(root, previous) != previous:
         raise ValueError("live source drift; upgrade refused")
-    updated = candidates(source_original, previous[IMS], assets)
+    updated_apk = previous[IMS]
+    if apk is not None:
+        # Only the exact reviewed BU1 rollback is accepted. No repackaged or
+        # arbitrary APK may enter the existing source transaction.
+        import stock_ims_timer_policy as timer
+        updated_apk = LEG1.regular(apk).read_bytes()
+        if LEG1.sha(previous[IMS]) != timer.PREVIOUS_LG3_APK:
+            raise ValueError("expected prior LG3 artifact for timer restoration")
+        if LEG1.sha(updated_apk) != LG3.load_pins(LG3.DEFAULT_PINS)["unsigned_apk_sha256"]:
+            raise ValueError("restored LG3 artifact pin mismatch")
+        LG3.verify_apk(apk)
+        with zipfile.ZipFile(root / IMS) as old_zip, zipfile.ZipFile(apk) as new_zip:
+            old_entries = {name: old_zip.read(name) for name in old_zip.namelist()}
+            new_entries = {name: new_zip.read(name) for name in new_zip.namelist()}
+        expected_entries = dict(old_entries)
+        expected_entries[timer.RESOURCE] = timer.restored_profile(old_entries[timer.RESOURCE])
+        if new_entries != expected_entries:
+            raise ValueError("timer restoration changed unrelated APK entries")
+    updated = candidates(source_original, updated_apk, assets)
     changed = [r for r in previous if previous[r] != updated[r]]
     history.mkdir(mode=0o700)
     (history / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
@@ -267,6 +289,7 @@ def refresh_assets(root, state, history):
             replace(state / "candidate" / relative, previous[relative], updated[relative])
             manifest["files"][relative]["candidate_sha256"] = LEG1.sha(updated[relative])
         manifest["carrier_scope"] = "all"
+        manifest["sim_scope"] = "single-active-either-slot"
         (state / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
         return {**verify_source(root, state), "carrier_scope": "all", "changed": changed}
     except Exception:
@@ -318,7 +341,9 @@ def verify_product(product):
         if not names or len(names) != len(set(names)): raise ValueError("telephony DEX inventory drift")
         for owner, method in required.items():
             methods = [method]
-            if owner == "M11SehApnPolicy": methods.append("validOperator(Ljava/lang/String;)Z")
+            if owner == "M11SehApnPolicy":
+                methods.extend(("validOperator(Ljava/lang/String;)Z", "supportedPhone(I)Z"))
+            if owner == "M11SehRadioBridge": methods.append("isEnabledForPhone(I)Z")
             definitions = []
             for name in names:
                 definitions.extend(SS1.dex_definitions(archive.read(name),
@@ -353,7 +378,7 @@ def main():
                 result = prepare(args.android_root, args.state_dir, args.apk, args.build_report)
             elif args.action == "refresh-assets":
                 if args.revision_backup is None: raise ValueError("--revision-backup required")
-                result = refresh_assets(args.android_root, args.state_dir, args.revision_backup)
+                result = refresh_assets(args.android_root, args.state_dir, args.revision_backup, args.apk)
             elif args.action == "verify-source": result = verify_source(args.android_root, args.state_dir)
             else: result = change(args.android_root, args.state_dir, args.action == "rollback")
         print(json.dumps(result, sort_keys=True))

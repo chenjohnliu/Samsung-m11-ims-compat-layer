@@ -214,18 +214,69 @@ class LegacySehApnTrialTests(unittest.TestCase):
         self.prepare()
         T.change(self.android, self.state)
         legacy_prop = (self.state / "candidate" / T.PROP).read_bytes().replace(
-                b"slot0, all operators", b"slot0/TWM only")
+                b"single active SIM in either slot, all operators", b"slot0/TWM only")
         self.write(self.state, "candidate/" + T.PROP, legacy_prop)
         self.write(self.android, T.PROP, legacy_prop)
         manifest_path = self.state / "manifest.json"
         manifest = json.loads(manifest_path.read_text())
         manifest.pop("carrier_scope")
+        manifest.pop("sim_scope")
         manifest["files"][T.PROP]["candidate_sha256"] = sha(legacy_prop)
         manifest_path.write_text(json.dumps(manifest))
         result = T.refresh_assets(self.android, self.state, self.sandbox / "revision")
         self.assertEqual(result["status"], "PASS")
         self.assertIn(b"all operators", (self.android / T.PROP).read_bytes())
         self.assertIn(b"slot0/TWM only", (self.sandbox / "revision/candidate" / T.PROP).read_bytes())
+
+    def timer_upgrade_fixture(self):
+        import stock_ims_timer_policy as timer
+        with zipfile.ZipFile(self.candidate_apk, "w") as archive:
+            archive.writestr(timer.RESOURCE, b"old profile")
+            archive.writestr("classes.dex", b"same native")
+            archive.writestr("classes2.dex", b"same bridge")
+        old_hash = sha(self.candidate_apk.read_bytes())
+        self.lg3_pins["unsigned_apk_sha256"] = old_hash
+        report = json.loads(self.report.read_text())
+        report["observed_build_pins"] = self.lg3_pins
+        self.report.write_text(json.dumps(report))
+        self.prepare()
+        T.change(self.android, self.state)
+        new_apk = self.sandbox / "stock-timer.apk"
+        with zipfile.ZipFile(new_apk, "w") as archive:
+            archive.writestr(timer.RESOURCE, b"stock profile")
+            archive.writestr("classes.dex", b"same native")
+            archive.writestr("classes2.dex", b"same bridge")
+        self.lg3_pins["unsigned_apk_sha256"] = sha(new_apk.read_bytes())
+        return timer, old_hash, new_apk
+
+    def test_timer_upgrade_preserves_original_rollback_and_other_sources(self):
+        timer, old_hash, apk = self.timer_upgrade_fixture()
+        before = self.snapshot()
+        history = self.sandbox / "timer-revision"
+        with mock.patch.object(timer, "PREVIOUS_LG3_APK", old_hash), \
+                mock.patch.object(timer, "restored_profile", return_value=b"stock profile"):
+            result = T.refresh_assets(self.android, self.state, history, apk)
+        self.assertEqual(result["changed"], [T.IMS])
+        self.assertEqual(T.verify_source(self.android, self.state)["status"], "PASS")
+        for name, data in before.items():
+            if name != T.IMS: self.assertEqual((self.android / name).read_bytes(), data)
+        self.assertEqual((history / "candidate" / T.IMS).read_bytes(), before[T.IMS])
+        T.change(self.android, self.state, rollback=True)
+        self.assertEqual(self.snapshot(), self.original)
+
+    def test_timer_upgrade_rejects_other_apk_changes_before_writes(self):
+        timer, old_hash, apk = self.timer_upgrade_fixture()
+        with zipfile.ZipFile(apk, "a") as archive:
+            archive.writestr("unexpected", b"change")
+        self.lg3_pins["unsigned_apk_sha256"] = sha(apk.read_bytes())
+        before = self.snapshot()
+        history = self.sandbox / "timer-revision"
+        with mock.patch.object(timer, "PREVIOUS_LG3_APK", old_hash), \
+                mock.patch.object(timer, "restored_profile", return_value=b"stock profile"), \
+                self.assertRaisesRegex(ValueError, "unrelated APK"):
+            T.refresh_assets(self.android, self.state, history, apk)
+        self.assertEqual(self.snapshot(), before)
+        self.assertFalse(history.exists())
 
     def test_refresh_refuses_live_drift_before_backup(self):
         self.prepare()
