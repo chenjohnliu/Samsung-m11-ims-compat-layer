@@ -1,0 +1,101 @@
+{
+  "format": 1,
+  "rom_build_run": false,
+  "repositories": [
+    {
+      "path": "frameworks/base",
+      "base_commit": "a6b06469a8cadfc8fd337456f91324bcac579ba6",
+      "head_commit": "ccfc0c8da6c4f64300ca27f0b78e263167f8e38b",
+      "head_tree": "ca5771edceb543df3ed410b1f0d1e102b8f1f52e",
+      "replay_tree_verified": true,
+      "commits": [
+        "8f1bd8bc5969308e261f1ad2a8d55a8c0f0fa503",
+        "9ab7378926a37c4df25d5adc49694ac6e70534ab",
+        "ccfc0c8da6c4f64300ca27f0b78e263167f8e38b"
+      ],
+      "patches": [
+        {
+          "path": "frameworks__base/0001-m11q-add-Samsung-IMS-framework-compatibility-APIs.patch",
+          "sha256": "88dc9424fa01973ed5e1b99b34411817a89fcbe9b0477bb33cedd6eadef84265"
+        },
+        {
+          "path": "frameworks__base/0002-SettingsLib-display-phone-number-from-standard-subsc.patch",
+          "sha256": "cf9c814c9e2e47483d5cd07d9d398e7cd6335ad6775cc4c64d4abfb3be2b46e9"
+        },
+        {
+          "path": "frameworks__base/0003-SystemUI-derive-VoWiFi-icon-from-IMS-registration-tr.patch",
+          "sha256": "d8ce95034acf52a233e8da970d9372bfc686c54aee424cde99735bfa8cba3fdd"
+        }
+      ]
+    },
+    {
+      "path": "frameworks/opt/net/ims",
+      "base_commit": "a819e6b6bd701838eabf471901c2cad75fba607c",
+      "head_commit": "f4c719f119848dbfeeca2c214cedd13cb4fd076a",
+      "head_tree": "cb1338ae4ecdc2826dfb9fc5441b55539285c91f",
+      "replay_tree_verified": true,
+      "commits": [
+        "f4c719f119848dbfeeca2c214cedd13cb4fd076a"
+      ],
+      "patches": [
+        {
+          "path": "frameworks__opt__net__ims/0001-ims-correctly-test-emergency-capability-bit.patch",
+          "sha256": "62696e3b124e10ef4b5aaf75a946bf86a1f3414eb8bf9109c0edb5c344f6992e"
+        }
+      ]
+    },
+    {
+      "path": "frameworks/opt/telephony",
+      "base_commit": "5fd790282cca6e61a42892398beccee065ed6101",
+      "head_commit": "96372ce211432ce3e4764a167633457dc049ef5c",
+      "head_tree": "aabbe2b1bafec230ebf8e4dd40e8bae8cdbca23d",
+      "replay_tree_verified": true,
+      "commits": [
+        "2832747fc1e92bc34ae740b6f09957620d23d715",
+        "96372ce211432ce3e4764a167633457dc049ef5c"
+      ],
+      "patches": [
+        {
+          "path": "frameworks__opt__telephony/0001-m11q-integrate-SEH-APN-bridge-and-IMS-handover-recov.patch",
+          "sha256": "0a4a3b84b737de5ab432840ca4a7998f010156e58f79e483b2d8bfc51d9fd0cf"
+        },
+        {
+          "path": "frameworks__opt__telephony/0002-m11q-support-single-active-IMS-SIM-in-either-slot.patch",
+          "sha256": "efbe9afa09e4d4cce5fcc2d6d21b4081a110716a9f35924d00df5e989691b38c"
+        }
+      ]
+    },
+    {
+      "path": "packages/services/Telephony",
+      "base_commit": "051cbcadbd9fc321c45600b038ab2901608e18dd",
+      "head_commit": "04cde10d1966ba35d1fb8fc2193867283465c487",
+      "head_tree": "9a73a0db544600afc5c21cad54fe62de0ac90d38",
+      "replay_tree_verified": true,
+      "commits": [
+        "04cde10d1966ba35d1fb8fc2193867283465c487"
+      ],
+      "patches": [
+        {
+          "path": "packages__services__Telephony/0001-m11q-guard-SIM-WFC-defaults-and-debug-carrier-config.patch",
+          "sha256": "29f8f7cce7cf64122233093e02d0934fb59635dcf3f57a73efa5dfd037dcade8"
+        }
+      ]
+    },
+    {
+      "path": "system/netd",
+      "base_commit": "967c341707b6bdc3f9af3386d2dcfe385e00a16a",
+      "head_commit": "91016fbe38db8c2bc08f7476c173648a5124c526",
+      "head_tree": "07b5848ad158a8716dfd9554658210bd07086aeb",
+      "replay_tree_verified": true,
+      "commits": [
+        "91016fbe38db8c2bc08f7476c173648a5124c526"
+      ],
+      "patches": [
+        {
+          "path": "system__netd/0001-m11q-support-Samsung-legacy-ePDG-network-endpoints.patch",
+          "sha256": "5278428a87960531e83f36999bee9487c0f17f425d69df18b80b189601cd59cc"
+        }
+      ]
+    }
+  ]
+}

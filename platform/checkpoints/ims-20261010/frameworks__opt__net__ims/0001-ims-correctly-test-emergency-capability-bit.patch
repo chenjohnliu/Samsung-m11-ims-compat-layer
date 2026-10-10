@@ -1,0 +1,22 @@
+From f4c719f119848dbfeeca2c214cedd13cb4fd076a Mon Sep 17 00:00:00 2001
+From: chenjohnliu <25525820+chenjohnliu@users.noreply.github.com>
+Date: Fri, 9 Oct 2026 13:58:48 +0800
+Subject: [PATCH] ims: correctly test emergency capability bit
+
+---
+ src/java/com/android/ims/MmTelFeatureConnection.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/java/com/android/ims/MmTelFeatureConnection.java b/src/java/com/android/ims/MmTelFeatureConnection.java
+index 3170d4130540ed71f27f7d91b377e962ee36b98c..7dceb2e65527f78305109e494bd295846f8ecce4 100644
+--- a/src/java/com/android/ims/MmTelFeatureConnection.java
++++ b/src/java/com/android/ims/MmTelFeatureConnection.java
+@@ -572,7 +572,7 @@ public class MmTelFeatureConnection extends FeatureConnection {
+     {
+         synchronized (mLock) {
+             mSupportsEmergencyCalling =
+-                    ((capabilities | ImsService.CAPABILITY_EMERGENCY_OVER_MMTEL) > 0);
++                    ((capabilities & ImsService.CAPABILITY_EMERGENCY_OVER_MMTEL) > 0);
+         }
+     }
+ 

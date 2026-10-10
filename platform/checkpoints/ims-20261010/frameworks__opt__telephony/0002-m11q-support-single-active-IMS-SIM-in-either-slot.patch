@@ -1,0 +1,87 @@
+From 96372ce211432ce3e4764a167633457dc049ef5c Mon Sep 17 00:00:00 2001
+From: chenjohnliu <25525820+chenjohnliu@users.noreply.github.com>
+Date: Sat, 10 Oct 2026 19:31:55 +0800
+Subject: [PATCH 2/2] m11q: support single active IMS SIM in either slot
+
+---
+ .../com/android/internal/telephony/M11SehApnPolicy.java  | 4 +++-
+ .../internal/telephony/M11SehProfilePublisher.java       | 2 +-
+ .../android/internal/telephony/M11SehRadioBridge.java    | 9 ++++-----
+ 3 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/M11SehApnPolicy.java b/src/java/com/android/internal/telephony/M11SehApnPolicy.java
+index 69db234c684beb4a4d7f802c7f213a72b5791dbe..8ad6026809287070728f85d752203cef2bd963f0 100644
+--- a/src/java/com/android/internal/telephony/M11SehApnPolicy.java
++++ b/src/java/com/android/internal/telephony/M11SehApnPolicy.java
+@@ -40,6 +40,8 @@ public final class M11SehApnPolicy {
+         return operator != null && operator.matches("[0-9]{5,6}");
+     }
+ 
++    public static boolean supportedPhone(int phoneId) { return phoneId == 0 || phoneId == 1; }
++
+     /** Created on the DataProfileManager handler; only final fields cross Binder threads. */
+     public static final class Snapshot {
+         public final int phoneId, subscriptionId;
+@@ -56,7 +58,7 @@ public final class M11SehApnPolicy {
+ 
+     public static Profile fallback(Snapshot snapshot, int phoneId, int subId,
+             String operator, String selection, boolean active) {
+-        if (!active || phoneId != 0 || subId < 0 || !validOperator(operator)
++        if (!active || !supportedPhone(phoneId) || subId < 0 || !validOperator(operator)
+                 || !IMS_SELECTION.equals(selection) || snapshot == null
+                 || snapshot.phoneId != phoneId || snapshot.subscriptionId != subId
+                 || !snapshot.operator.equals(operator) || snapshot.soleImsProfile == null
+diff --git a/src/java/com/android/internal/telephony/M11SehProfilePublisher.java b/src/java/com/android/internal/telephony/M11SehProfilePublisher.java
+index fb8d84727c99dee4119730571572b4d2254b6556..00a00f4ff456e838cc88b9a6f277aeaee5a43944 100644
+--- a/src/java/com/android/internal/telephony/M11SehProfilePublisher.java
++++ b/src/java/com/android/internal/telephony/M11SehProfilePublisher.java
+@@ -12,7 +12,7 @@ public final class M11SehProfilePublisher {
+ 
+     public static void publish(Phone phone, List<DataProfile> profiles) {
+         int phoneId = phone.getPhoneId();
+-        if (!M11SehRadioBridge.isTrialEnabledForPhone(phoneId)) return;
++        if (!M11SehRadioBridge.isEnabledForPhone(phoneId)) return;
+         int subId = phone.getSubId();
+         M11SehApnPolicy.Profile result = null;
+         String operator = "";
+diff --git a/src/java/com/android/internal/telephony/M11SehRadioBridge.java b/src/java/com/android/internal/telephony/M11SehRadioBridge.java
+index 8e2e7c365aa26cb3212c4072207cf58972a6a5f6..c12dce85674de88d7efc694d1ae87d0367b95754 100644
+--- a/src/java/com/android/internal/telephony/M11SehRadioBridge.java
++++ b/src/java/com/android/internal/telephony/M11SehRadioBridge.java
+@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicReferenceArray;
+ 
+ /**
+- * Opt-in owner for the legacy Samsung base-2.0 radio callbacks used by m11q.
++ * Product-configured owner for the legacy Samsung base-2.0 radio callbacks used by m11q.
+  *
+  * <p>This class does not issue radio requests or mutate telephony state. It only answers the
+  * reviewed synchronous callbacks, and fails closed whenever subscription identity changes or the
+@@ -43,7 +43,6 @@ public final class M11SehRadioBridge {
+             "apn", "protocol", "user", "password", "authtype", "roaming_protocol"
+     };
+ 
+-    private static final int SUPPORTED_PHONE_ID = 0;
+     private static final int SLOT_COUNT = 2;
+     private static final long INITIAL_RETRY_MILLIS = 250L;
+     private static final long MAX_RETRY_MILLIS = 10_000L;
+@@ -97,7 +96,7 @@ public final class M11SehRadioBridge {
+ 
+     /** Starts the one permitted owner without affecting configurations where the gate is false. */
+     public static void maybeStart(RIL owner, Context context, int phoneId) {
+-        if (owner == null || context == null || !isTrialEnabledForPhone(phoneId)) {
++        if (owner == null || context == null || !isEnabledForPhone(phoneId)) {
+             return;
+         }
+ 
+@@ -115,8 +114,8 @@ public final class M11SehRadioBridge {
+         }
+     }
+ 
+-    public static boolean isTrialEnabledForPhone(int phoneId) {
+-        return phoneId == SUPPORTED_PHONE_ID && DEVICE.equals(Build.DEVICE)
++    public static boolean isEnabledForPhone(int phoneId) {
++        return M11SehApnPolicy.supportedPhone(phoneId) && DEVICE.equals(Build.DEVICE)
+                 && SystemProperties.getBoolean(ENABLE_PROPERTY, false)
+                 && "legacy".equals(SystemProperties.get(IWLAN_MODE_PROPERTY));
+     }

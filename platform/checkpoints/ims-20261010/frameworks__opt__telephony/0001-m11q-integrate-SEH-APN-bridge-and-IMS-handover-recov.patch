@@ -1,0 +1,1306 @@
+From 2832747fc1e92bc34ae740b6f09957620d23d715 Mon Sep 17 00:00:00 2001
+From: chenjohnliu <25525820+chenjohnliu@users.noreply.github.com>
+Date: Fri, 9 Oct 2026 13:58:48 +0800
+Subject: [PATCH 1/2] m11q: integrate SEH APN bridge and IMS handover recovery
+
+---
+ .../internal/telephony/M11SehApnPolicy.java   |  71 +++
+ .../telephony/M11SehProfilePublisher.java     |  43 ++
+ .../internal/telephony/M11SehRadioBridge.java | 423 ++++++++++++++++++
+ .../telephony/M11SehRadioTransport.java       | 244 ++++++++++
+ .../telephony/PhoneSubInfoController.java     |   6 +
+ .../com/android/internal/telephony/RIL.java   |   2 +
+ .../internal/telephony/data/DataNetwork.java  |  82 +++-
+ .../telephony/data/DataNetworkController.java |  70 ++-
+ .../telephony/data/DataProfileManager.java    |   3 +
+ .../imsphone/ImsPhoneCallTracker.java         |   7 +
+ .../telephony/data/DataNetworkTest.java       | 119 +++++
+ 11 files changed, 1063 insertions(+), 7 deletions(-)
+ create mode 100644 src/java/com/android/internal/telephony/M11SehApnPolicy.java
+ create mode 100644 src/java/com/android/internal/telephony/M11SehProfilePublisher.java
+ create mode 100644 src/java/com/android/internal/telephony/M11SehRadioBridge.java
+ create mode 100644 src/java/com/android/internal/telephony/M11SehRadioTransport.java
+
+diff --git a/src/java/com/android/internal/telephony/M11SehApnPolicy.java b/src/java/com/android/internal/telephony/M11SehApnPolicy.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..69db234c684beb4a4d7f802c7f213a72b5791dbe
+--- /dev/null
++++ b/src/java/com/android/internal/telephony/M11SehApnPolicy.java
+@@ -0,0 +1,71 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package com.android.internal.telephony;
++
++/** Immutable APN boundary data. Never logs credentials or invents an APN/CID. */
++public final class M11SehApnPolicy {
++    private M11SehApnPolicy() {}
++
++    // DSDS LoadApnProfile(type=ims, RAT=14), verified from the stock native call chain.
++    public static final String IMS_SELECTION = "carrier_enabled=1"
++            + " and (bearer=14 or bearer=0) and bearer_bitmask!=131072 and type LIKE '%ims%'";
++
++    public static final class Profile {
++        public final String apn, protocol, roamingProtocol, user, password, authentication;
++
++        public Profile(String apn, String protocol, String roamingProtocol,
++                String user, String password, String authentication) {
++            this.apn = nonNull(apn);
++            this.protocol = nonNull(protocol);
++            this.roamingProtocol = nonNull(roamingProtocol);
++            this.user = nonNull(user);
++            this.password = nonNull(password);
++            this.authentication = nonNull(authentication);
++        }
++
++        public boolean usable() {
++            return !apn.isEmpty() && ipProtocol(protocol) && ipProtocol(roamingProtocol)
++                    && (authentication.equals("-1") || authentication.equals("0")
++                    || authentication.equals("1") || authentication.equals("2")
++                    || authentication.equals("3"));
++        }
++
++        public String[] wireFields() {
++            return new String[] {apn, protocol, roamingProtocol, user, password, authentication};
++        }
++    }
++
++    public static final Profile EMPTY = new Profile("", "", "", "", "", "");
++
++    public static boolean validOperator(String operator) {
++        return operator != null && operator.matches("[0-9]{5,6}");
++    }
++
++    /** Created on the DataProfileManager handler; only final fields cross Binder threads. */
++    public static final class Snapshot {
++        public final int phoneId, subscriptionId;
++        public final String operator;
++        public final Profile soleImsProfile;
++
++        public Snapshot(int phoneId, int subscriptionId, String operator, Profile soleImsProfile) {
++            this.phoneId = phoneId;
++            this.subscriptionId = subscriptionId;
++            this.operator = nonNull(operator);
++            this.soleImsProfile = soleImsProfile;
++        }
++    }
++
++    public static Profile fallback(Snapshot snapshot, int phoneId, int subId,
++            String operator, String selection, boolean active) {
++        if (!active || phoneId != 0 || subId < 0 || !validOperator(operator)
++                || !IMS_SELECTION.equals(selection) || snapshot == null
++                || snapshot.phoneId != phoneId || snapshot.subscriptionId != subId
++                || !snapshot.operator.equals(operator) || snapshot.soleImsProfile == null
++                || !snapshot.soleImsProfile.usable()) return EMPTY;
++        return snapshot.soleImsProfile;
++    }
++
++    private static String nonNull(String value) { return value == null ? "" : value; }
++    private static boolean ipProtocol(String value) {
++        return value.equals("IP") || value.equals("IPV6") || value.equals("IPV4V6");
++    }
++}
+diff --git a/src/java/com/android/internal/telephony/M11SehProfilePublisher.java b/src/java/com/android/internal/telephony/M11SehProfilePublisher.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fb8d84727c99dee4119730571572b4d2254b6556
+--- /dev/null
++++ b/src/java/com/android/internal/telephony/M11SehProfilePublisher.java
+@@ -0,0 +1,43 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package com.android.internal.telephony;
++
++import android.telephony.TelephonyManager;
++import android.telephony.data.ApnSetting;
++import android.telephony.data.DataProfile;
++import java.util.List;
++
++/** Called exclusively on the DataProfileManager handler, never on a vendor Binder thread. */
++public final class M11SehProfilePublisher {
++    private M11SehProfilePublisher() {}
++
++    public static void publish(Phone phone, List<DataProfile> profiles) {
++        int phoneId = phone.getPhoneId();
++        if (!M11SehRadioBridge.isTrialEnabledForPhone(phoneId)) return;
++        int subId = phone.getSubId();
++        M11SehApnPolicy.Profile result = null;
++        String operator = "";
++        try {
++            TelephonyManager tm = phone.getContext().getSystemService(TelephonyManager.class);
++            if (tm != null) operator = tm.createForSubscriptionId(subId).getSimOperator();
++            int imsCount = 0;
++            for (DataProfile profile : profiles) {
++                ApnSetting apn = profile.getApnSetting();
++                if (apn == null || !apn.canHandleType(ApnSetting.TYPE_IMS)) continue;
++                // Multiple, mixed-type, disabled, or LTE-ineligible profiles fail closed.
++                imsCount++;
++                if (apn.getApnTypeBitmask() != ApnSetting.TYPE_IMS || !apn.isEnabled()
++                        || !apn.canSupportNetworkType(TelephonyManager.NETWORK_TYPE_LTE)) continue;
++                result = new M11SehApnPolicy.Profile(apn.getApnName(),
++                        ApnSetting.getProtocolStringFromInt(apn.getProtocol()),
++                        ApnSetting.getProtocolStringFromInt(apn.getRoamingProtocol()),
++                        apn.getUser(), apn.getPassword(), Integer.toString(apn.getAuthType()));
++            }
++            if (imsCount != 1 || phone.getSubId() != subId) result = null;
++        } catch (RuntimeException ignored) {
++            result = null;
++        }
++        // Even an unusable update replaces the old snapshot, so it cannot survive a SIM change.
++        M11SehRadioBridge.publishSnapshot(
++                new M11SehApnPolicy.Snapshot(phoneId, subId, operator, result));
++    }
++}
+diff --git a/src/java/com/android/internal/telephony/M11SehRadioBridge.java b/src/java/com/android/internal/telephony/M11SehRadioBridge.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8e2e7c365aa26cb3212c4072207cf58972a6a5f6
+--- /dev/null
++++ b/src/java/com/android/internal/telephony/M11SehRadioBridge.java
+@@ -0,0 +1,423 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package com.android.internal.telephony;
++
++import android.content.ContentResolver;
++import android.content.Context;
++import android.database.Cursor;
++import android.net.TrafficStats;
++import android.net.Uri;
++import android.os.Build;
++import android.os.Handler;
++import android.os.HandlerThread;
++import android.os.HwBinder;
++import android.os.IHwBinder;
++import android.os.RemoteException;
++import android.os.SystemProperties;
++import android.provider.Settings;
++import android.telephony.SubscriptionInfo;
++import android.telephony.SubscriptionManager;
++import android.telephony.TelephonyManager;
++
++import com.android.telephony.Rlog;
++
++import java.util.List;
++import java.util.concurrent.atomic.AtomicBoolean;
++import java.util.concurrent.atomic.AtomicReferenceArray;
++
++/**
++ * Opt-in owner for the legacy Samsung base-2.0 radio callbacks used by m11q.
++ *
++ * <p>This class does not issue radio requests or mutate telephony state. It only answers the
++ * reviewed synchronous callbacks, and fails closed whenever subscription identity changes or the
++ * vendor service connection becomes stale.</p>
++ */
++public final class M11SehRadioBridge {
++    private static final String TAG = "M11SehRadioBridge";
++    private static final String ENABLE_PROPERTY = "ro.m11q.ims_seh_apn_bridge";
++    private static final String IWLAN_MODE_PROPERTY = "ro.telephony.iwlan_operation_mode";
++    private static final String DEVICE = "m11q";
++    private static final String SERVICE_PREFIX = "slot";
++    private static final String APN_URI_PREFIX =
++            "content://telephony/carriers/sim_apn_list/filtered/subId/";
++    private static final String[] APN_PROJECTION = {
++            "apn", "protocol", "user", "password", "authtype", "roaming_protocol"
++    };
++
++    private static final int SUPPORTED_PHONE_ID = 0;
++    private static final int SLOT_COUNT = 2;
++    private static final long INITIAL_RETRY_MILLIS = 250L;
++    private static final long MAX_RETRY_MILLIS = 10_000L;
++    private static final int PACKET_ERROR_UNSUPPORTED = 44;
++
++    /* Reviewed stock base-2.0 ABI hashes. Each callback chain is interface then IBase. */
++    private static final byte[] RESPONSE_HASH = hex(
++            "939e27ee9b2db9d044f3425f6dbde5896bc561155126551f257a0e06de01e092");
++    private static final byte[] INDICATION_HASH = hex(
++            "780fa0f585c25754cc6343bf00dee5157efcf6f8526bc1797aacb87e8d375fa4");
++    private static final byte[] BASE_HASH = hex(
++            "ec7fd79ed02dfa85bc499426adae3ebe23ef0524f3cd6957139324b83b18ca4c");
++    private static final byte[][] RESPONSE_HASH_CHAIN = {RESPONSE_HASH, BASE_HASH};
++    private static final byte[][] INDICATION_HASH_CHAIN = {INDICATION_HASH, BASE_HASH};
++
++    private static final Object OWNER_LOCK = new Object();
++    private static final M11SehRadioBridge[] OWNERS = new M11SehRadioBridge[SLOT_COUNT];
++    private static final AtomicReferenceArray<M11SehApnPolicy.Snapshot> SNAPSHOTS =
++            new AtomicReferenceArray<>(SLOT_COUNT);
++
++    private final RIL mOwner;
++    private final Context mContext;
++    private final int mPhoneId;
++    private final HandlerThread mThread;
++    private final Handler mHandler;
++
++    /* Accessed by Binder callback threads; these references deliberately remain strong. */
++    private volatile long mActiveEpoch;
++    private volatile IHwBinder mService;
++    private volatile IHwBinder.DeathRecipient mDeathRecipient;
++    private volatile M11SehRadioTransport mTransport;
++
++    /* Handler-thread state. */
++    private long mNextEpoch;
++    private int mRetryExponent;
++    private int mRetryAttempts;
++    private boolean mConnectScheduled;
++    private final AtomicBoolean mLoggedAllocateCid = new AtomicBoolean();
++    private final AtomicBoolean mLoggedReleaseCid = new AtomicBoolean();
++    private final AtomicBoolean mLoggedUnexpectedResponse = new AtomicBoolean();
++
++    private M11SehRadioBridge(RIL owner, Context context, int phoneId) {
++        mOwner = owner;
++        Context applicationContext = context.getApplicationContext();
++        mContext = applicationContext != null ? applicationContext : context;
++        mPhoneId = phoneId;
++        mThread = new HandlerThread(TAG + "-" + phoneId);
++        mThread.start();
++        mHandler = new Handler(mThread.getLooper());
++    }
++
++    /** Starts the one permitted owner without affecting configurations where the gate is false. */
++    public static void maybeStart(RIL owner, Context context, int phoneId) {
++        if (owner == null || context == null || !isTrialEnabledForPhone(phoneId)) {
++            return;
++        }
++
++        synchronized (OWNER_LOCK) {
++            M11SehRadioBridge existing = OWNERS[phoneId];
++            if (existing != null) {
++                if (existing.mOwner != owner) {
++                    Rlog.e(TAG, "Refusing a second owner for phone " + phoneId);
++                }
++                return;
++            }
++            M11SehRadioBridge bridge = new M11SehRadioBridge(owner, context, phoneId);
++            OWNERS[phoneId] = bridge;
++            bridge.mHandler.post(() -> bridge.scheduleConnect(0L));
++        }
++    }
++
++    public static boolean isTrialEnabledForPhone(int phoneId) {
++        return phoneId == SUPPORTED_PHONE_ID && DEVICE.equals(Build.DEVICE)
++                && SystemProperties.getBoolean(ENABLE_PROPERTY, false)
++                && "legacy".equals(SystemProperties.get(IWLAN_MODE_PROPERTY));
++    }
++
++    /** Publishes immutable DataProfileManager state; no profile field is logged or exported. */
++    public static void publishSnapshot(M11SehApnPolicy.Snapshot snapshot) {
++        if (snapshot == null || snapshot.phoneId < 0 || snapshot.phoneId >= SLOT_COUNT) return;
++        SNAPSHOTS.set(snapshot.phoneId, snapshot);
++    }
++
++    private void scheduleConnect(long delayMillis) {
++        if (mConnectScheduled) return;
++        mConnectScheduled = true;
++        mHandler.postDelayed(() -> {
++            mConnectScheduled = false;
++            connect();
++        }, delayMillis);
++    }
++
++    private void connect() {
++        if (mService != null) return;
++
++        final long epoch = ++mNextEpoch;
++        IHwBinder candidate = null;
++        IHwBinder.DeathRecipient deathRecipient = null;
++        try {
++            candidate = HwBinder.getService(M11SehRadioTransport.RADIO,
++                    SERVICE_PREFIX + (mPhoneId + 1), false);
++            final IHwBinder serviceForEpoch = candidate;
++            deathRecipient = cookie -> {
++                // Invalidate Binder callbacks immediately; handler cleanup may run later.
++                if (cookie == epoch && mActiveEpoch == epoch && mService == serviceForEpoch) {
++                    mActiveEpoch = 0L;
++                    mHandler.post(() -> handleDeath(epoch, serviceForEpoch, cookie));
++                }
++            };
++            if (!candidate.linkToDeath(deathRecipient, epoch)) {
++                throw new RemoteException("linkToDeath rejected");
++            }
++
++            M11SehRadioTransport transport = new M11SehRadioTransport(
++                    new EpochBackend(epoch), RESPONSE_HASH_CHAIN, INDICATION_HASH_CHAIN);
++            mService = candidate;
++            mDeathRecipient = deathRecipient;
++            mTransport = transport;
++            mActiveEpoch = epoch;
++            transport.register(candidate);
++            mRetryExponent = 0;
++            mRetryAttempts = 0;
++            Rlog.i(TAG, "Registered reviewed SEH callbacks for phone " + mPhoneId);
++        } catch (Exception e) {
++            clearConnection(epoch, candidate, deathRecipient);
++            if (shouldLogRetry()) {
++                Rlog.w(TAG, "SEH callback registration unavailable for phone " + mPhoneId);
++            }
++            retry();
++        }
++    }
++
++    private void handleDeath(long epoch, IHwBinder service, long cookie) {
++        if (cookie != epoch || mActiveEpoch != 0L || mService != service) return;
++        Rlog.w(TAG, "SEH service died for phone " + mPhoneId);
++        clearConnection(epoch, service, mDeathRecipient);
++        retry();
++    }
++
++    private void clearConnection(long epoch, IHwBinder service,
++            IHwBinder.DeathRecipient deathRecipient) {
++        if ((mActiveEpoch == epoch || mActiveEpoch == 0L)
++                && (mService == service || mService == null)) {
++            mActiveEpoch = 0L;
++            mService = null;
++            mDeathRecipient = null;
++            mTransport = null;
++        }
++        if (service != null && deathRecipient != null) {
++            try {
++                service.unlinkToDeath(deathRecipient);
++            } catch (RuntimeException ignored) {
++                // A dead service is already detached.
++            }
++        }
++    }
++
++    private void retry() {
++        long delay = INITIAL_RETRY_MILLIS << Math.min(mRetryExponent, 16);
++        if (delay < MAX_RETRY_MILLIS) mRetryExponent++;
++        scheduleConnect(Math.min(delay, MAX_RETRY_MILLIS));
++    }
++
++    private boolean shouldLogRetry() {
++        int attempt = ++mRetryAttempts;
++        return attempt == 1 || (attempt & (attempt - 1)) == 0;
++    }
++
++    private boolean isCurrent(long epoch) {
++        return epoch != 0L && mActiveEpoch == epoch && mService != null && mTransport != null;
++    }
++
++    private Identity currentIdentity() {
++        try {
++            SubscriptionManager subscriptions = SubscriptionManager.from(mContext);
++            List<SubscriptionInfo> active = subscriptions.getActiveSubscriptionInfoList();
++            if (active == null || active.size() != 1) return null;
++            SubscriptionInfo info = active.get(0);
++            int subId = info.getSubscriptionId();
++            if (info.getSimSlotIndex() != mPhoneId
++                    || SubscriptionManager.getPhoneId(subId) != mPhoneId
++                    || !SubscriptionManager.isValidSubscriptionId(subId)) return null;
++            TelephonyManager telephony = mContext.getSystemService(TelephonyManager.class);
++            if (telephony == null) return null;
++            String operator = telephony.createForSubscriptionId(subId).getSimOperator();
++            return M11SehApnPolicy.validOperator(operator) ? new Identity(subId, operator) : null;
++        } catch (RuntimeException e) {
++            Rlog.w(TAG, "Unable to verify active subscription identity");
++            return null;
++        }
++    }
++
++    private M11SehApnPolicy.Profile readApn(long epoch, String selection) {
++        if (!isCurrent(epoch)) return M11SehApnPolicy.EMPTY;
++        Identity before = currentIdentity();
++        if (before == null) return M11SehApnPolicy.EMPTY;
++
++        M11SehApnPolicy.Profile profile = M11SehApnPolicy.EMPTY;
++        boolean zeroRows;
++        ContentResolver resolver = mContext.getContentResolver();
++        Uri uri = Uri.parse(APN_URI_PREFIX + before.subId);
++        try (Cursor cursor = resolver.query(uri, APN_PROJECTION, selection, null, null)) {
++            if (cursor == null) return M11SehApnPolicy.EMPTY;
++            zeroRows = !cursor.moveToFirst();
++            while (!zeroRows) {
++                String apn = stringAt(cursor, 0);
++                if ("cinet.spcs".equals(apn) || "cdma".equals(apn)) {
++                    if (!cursor.moveToNext()) break;
++                    continue;
++                }
++                String authentication = cursor.isNull(4)
++                        ? "" : Integer.toString(cursor.getInt(4));
++                profile = new M11SehApnPolicy.Profile(apn,
++                        stringAt(cursor, 1), stringAt(cursor, 5), stringAt(cursor, 2),
++                        stringAt(cursor, 3), authentication);
++                // Provider rows are the stock source of truth, including empty authentication.
++                break;
++            }
++        } catch (RuntimeException e) {
++            Rlog.w(TAG, "APN provider read failed");
++            return M11SehApnPolicy.EMPTY;
++        }
++        // Cursor.close() can also race SIM removal/service death; recheck only after it finishes.
++        if (!isCurrent(epoch) || !before.equals(currentIdentity())) return M11SehApnPolicy.EMPTY;
++        if (zeroRows) profile = M11SehApnPolicy.fallback(SNAPSHOTS.get(mPhoneId), mPhoneId,
++                before.subId, before.operator, selection, true);
++        Rlog.i(TAG, "APN callback phone " + mPhoneId + ": "
++                + (profile == M11SehApnPolicy.EMPTY ? "empty"
++                        : zeroRows ? "immutable IMS snapshot" : "provider"));
++        return profile;
++    }
++
++    private int readSetting(long epoch, String key, String table) {
++        Identity before = currentIdentity();
++        if (!isCurrent(epoch) || before == null || key == null || table == null) {
++            return -1;
++        }
++        if ("allocateCid".equals(table)) {
++            if (mLoggedAllocateCid.compareAndSet(false, true)) {
++                Rlog.w(TAG, "allocateCid is unsupported");
++            }
++            return -1;
++        }
++        if ("releaseCid".equals(table)) {
++            if (mLoggedReleaseCid.compareAndSet(false, true)) {
++                Rlog.w(TAG, "releaseCid is unsupported");
++            }
++            return -1;
++        }
++        try {
++            ContentResolver resolver = mContext.getContentResolver();
++            final int value;
++            if ("global".equals(table)) {
++                value = Settings.Global.getInt(resolver, key, 0);
++            } else if ("system".equals(table)) {
++                value = Settings.System.getInt(resolver, key, 0);
++            } else if ("secure".equals(table)) {
++                value = Settings.Secure.getInt(resolver, key, 0);
++            } else {
++                return -1;
++            }
++            return isCurrent(epoch) && before.equals(currentIdentity()) ? value : -1;
++        } catch (RuntimeException e) {
++            Rlog.w(TAG, "Settings read failed");
++        }
++        return -1;
++    }
++
++    private M11SehRadioTransport.PacketUsage readPacketUsage(long epoch, String iface) {
++        Identity before = currentIdentity();
++        if (!isCurrent(epoch) || before == null || iface == null
++                || !iface.startsWith("rmnet")) {
++            return unsupportedPacketUsage();
++        }
++        try {
++            long receiveBytes = TrafficStats.getRxBytes(iface);
++            long transmitBytes = TrafficStats.getTxBytes(iface);
++            if (!isCurrent(epoch) || !before.equals(currentIdentity())) {
++                return unsupportedPacketUsage();
++            }
++            return new M11SehRadioTransport.PacketUsage(0, receiveBytes, transmitBytes);
++        } catch (RuntimeException e) {
++            Rlog.w(TAG, "TrafficStats read failed");
++            return unsupportedPacketUsage();
++        }
++    }
++
++    private static M11SehRadioTransport.PacketUsage unsupportedPacketUsage() {
++        return new M11SehRadioTransport.PacketUsage(PACKET_ERROR_UNSUPPORTED, 0L, 0L);
++    }
++
++    private static String stringAt(Cursor cursor, int column) {
++        String value = cursor.getString(column);
++        return value == null ? "" : value;
++    }
++
++    private final class EpochBackend implements M11SehRadioTransport.Backend {
++        private final long mEpoch;
++
++        EpochBackend(long epoch) {
++            mEpoch = epoch;
++        }
++
++        @Override public boolean current() {
++            return isCurrent(mEpoch);
++        }
++
++        @Override public M11SehApnPolicy.Profile apn(String selection) {
++            try {
++                return readApn(mEpoch, selection);
++            } catch (RuntimeException e) {
++                Rlog.w(TAG, "APN callback failed closed");
++                return M11SehApnPolicy.EMPTY;
++            }
++        }
++
++        @Override public int setting(String key, String table) {
++            try {
++                return readSetting(mEpoch, key, table);
++            } catch (RuntimeException e) {
++                Rlog.w(TAG, "Settings callback failed closed");
++                return -1;
++            }
++        }
++
++        @Override public M11SehRadioTransport.PacketUsage packetUsage(String iface) {
++            try {
++                return readPacketUsage(mEpoch, iface);
++            } catch (RuntimeException e) {
++                Rlog.w(TAG, "Packet callback failed closed");
++                return unsupportedPacketUsage();
++            }
++        }
++
++        @Override public void ignoredIndication(int indicationType) {
++            // Intentionally no radio ACK: stock SemRIL.sendAck() is empty.
++        }
++
++        @Override public void unexpectedResponse() {
++            if (mLoggedUnexpectedResponse.compareAndSet(false, true)) {
++                Rlog.w(TAG, "Ignoring unexpected SEH solicited response");
++            }
++        }
++    }
++
++    private static final class Identity {
++        final int subId;
++        final String operator;
++
++        Identity(int subId, String operator) {
++            this.subId = subId;
++            this.operator = operator;
++        }
++
++        @Override public boolean equals(Object object) {
++            if (!(object instanceof Identity)) return false;
++            Identity other = (Identity) object;
++            return subId == other.subId && operator.equals(other.operator);
++        }
++
++        @Override public int hashCode() {
++            return 31 * subId + operator.hashCode();
++        }
++    }
++
++    private static byte[] hex(String value) {
++        if (value.length() != 64) throw new IllegalArgumentException("Expected SHA-256");
++        byte[] result = new byte[32];
++        for (int i = 0; i < result.length; i++) {
++            int high = Character.digit(value.charAt(i * 2), 16);
++            int low = Character.digit(value.charAt(i * 2 + 1), 16);
++            if (high < 0 || low < 0) throw new IllegalArgumentException("Invalid hash");
++            result[i] = (byte) ((high << 4) | low);
++        }
++        return result;
++    }
++}
+diff --git a/src/java/com/android/internal/telephony/M11SehRadioTransport.java b/src/java/com/android/internal/telephony/M11SehRadioTransport.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c7c95c689d9b5f04384f2124b0accc7dba2294ae
+--- /dev/null
++++ b/src/java/com/android/internal/telephony/M11SehRadioTransport.java
+@@ -0,0 +1,244 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package com.android.internal.telephony;
++
++import android.os.HwBinder;
++import android.os.HwBlob;
++import android.os.HwParcel;
++import android.os.IHwBinder;
++import android.os.IHwInterface;
++import android.os.HidlSupport;
++import android.os.RemoteException;
++import java.util.ArrayList;
++import java.util.Arrays;
++
++/** Clean-room base-2.0 transport; does not send standard Android radio requests. */
++public final class M11SehRadioTransport {
++    public static final String RADIO = "vendor.samsung.hardware.radio@2.0::ISehRadio";
++    public static final String INDICATION = "vendor.samsung.hardware.radio@2.0::ISehRadioIndication";
++    public static final String RESPONSE = "vendor.samsung.hardware.radio@2.0::ISehRadioResponse";
++    public static final String BASE = "android.hidl.base@1.0::IBase";
++
++    public interface Backend {
++        boolean current();
++        M11SehApnPolicy.Profile apn(String selection);
++        int setting(String key, String table);
++        PacketUsage packetUsage(String iface);
++        void ignoredIndication(int indicationType);
++        void unexpectedResponse();
++    }
++
++    public static final class PacketUsage {
++        public final int error;
++        public final long receiveBytes, transmitBytes;
++        public PacketUsage(int error, long receiveBytes, long transmitBytes) {
++            this.error = error;
++            this.receiveBytes = receiveBytes;
++            this.transmitBytes = transmitBytes;
++        }
++    }
++
++    public final IHwBinder response;
++    public final IHwBinder indication;
++
++    /** Hash-chain bytes are supplied from the reviewed stock ABI contract. */
++    public M11SehRadioTransport(Backend backend, byte[][] responseHashes, byte[][] indicationHashes) {
++        response = new Response(backend, responseHashes);
++        indication = new Indication(backend, indicationHashes);
++    }
++
++    public void register(IHwBinder service) throws RemoteException {
++        HwParcel request = new HwParcel();
++        HwParcel reply = new HwParcel();
++        try {
++            request.writeInterfaceToken(RADIO);
++            // The vendor setter clears both callbacks if either argument is null.
++            request.writeStrongBinder(response);
++            request.writeStrongBinder(indication);
++            service.transact(1, request, reply, 0);
++            reply.verifySuccess();
++        } finally {
++            request.releaseTemporaryStorage();
++            reply.release();
++        }
++    }
++
++    private abstract static class Callback extends HwBinder implements IHwInterface {
++        final Backend backend;
++        final String descriptor;
++        private final byte[][] hashes;
++
++        Callback(Backend backend, String descriptor, byte[][] hashes) {
++            if (backend == null || hashes == null || hashes.length != 2) {
++                throw new IllegalArgumentException("Reviewed base-2.0 hash chain required");
++            }
++            this.backend = backend;
++            this.descriptor = descriptor;
++            this.hashes = new byte[hashes.length][];
++            for (int i = 0; i < hashes.length; i++) {
++                if (hashes[i] == null || hashes[i].length != 32) {
++                    throw new IllegalArgumentException("HIDL hash must be 32 bytes");
++                }
++                this.hashes[i] = hashes[i].clone();
++            }
++        }
++
++        @Override public IHwBinder asBinder() { return this; }
++        @Override public boolean linkToDeath(IHwBinder.DeathRecipient recipient, long cookie) {
++            return true; // Local HIDL stub, matching the generated base-2.0 contract.
++        }
++        @Override public boolean unlinkToDeath(IHwBinder.DeathRecipient recipient) {
++            return true;
++        }
++        @Override public IHwInterface queryLocalInterface(String name) {
++            return descriptor.equals(name) ? this : null;
++        }
++
++        static boolean flags(HwParcel reply, boolean oneway, boolean expected) {
++            if (oneway == expected) return true;
++            reply.writeStatus(Integer.MIN_VALUE);
++            reply.send();
++            return false;
++        }
++
++        @Override public void onTransact(int code, HwParcel request, HwParcel reply,
++                int transactionFlags) throws RemoteException {
++            boolean oneway = (transactionFlags & 1) != 0;
++            switch (code) {
++                case 256067662: // IBase.interfaceChain
++                    if (!flags(reply, oneway, false)) return;
++                    request.enforceInterface(BASE);
++                    reply.writeStatus(0);
++                    reply.writeStringVector(new ArrayList<>(Arrays.asList(descriptor, BASE)));
++                    reply.send();
++                    return;
++                case 256131655: // IBase.debug
++                    if (!flags(reply, oneway, false)) return;
++                    request.enforceInterface(BASE);
++                    request.readNativeHandle();
++                    request.readStringVector();
++                    reply.writeStatus(0);
++                    reply.send();
++                    return;
++                case 256136003: // IBase.interfaceDescriptor
++                    if (!flags(reply, oneway, false)) return;
++                    request.enforceInterface(BASE);
++                    reply.writeStatus(0);
++                    reply.writeString(descriptor);
++                    reply.send();
++                    return;
++                case 256398152: // IBase.getHashChain
++                    if (!flags(reply, oneway, false)) return;
++                    request.enforceInterface(BASE);
++                    HwBlob vector = new HwBlob(16);
++                    vector.putInt32(8, hashes.length);
++                    vector.putBool(12, false);
++                    HwBlob child = new HwBlob(hashes.length * 32);
++                    for (int i = 0; i < hashes.length; i++) child.putInt8Array(i * 32, hashes[i]);
++                    vector.putBlob(0, child);
++                    reply.writeStatus(0);
++                    reply.writeBuffer(vector);
++                    reply.send();
++                    return;
++                case 256462420: // IBase.setHALInstrumentation
++                    if (!flags(reply, oneway, true)) return;
++                    request.enforceInterface(BASE);
++                    return;
++                case 256921159: // IBase.ping
++                    if (!flags(reply, oneway, false)) return;
++                    request.enforceInterface(BASE);
++                    reply.writeStatus(0);
++                    reply.send();
++                    return;
++                case 257049926: // IBase.getDebugInfo
++                    if (!flags(reply, oneway, false)) return;
++                    request.enforceInterface(BASE);
++                    HwBlob info = new HwBlob(24);
++                    info.putInt32(0, HidlSupport.getPidIfSharable());
++                    info.putInt64(8, 0);
++                    info.putInt32(16, 0);
++                    reply.writeStatus(0);
++                    reply.writeBuffer(info);
++                    reply.send();
++                    return;
++                case 257120595: // IBase.notifySyspropsChanged
++                    if (!flags(reply, oneway, true)) return;
++                    request.enforceInterface(BASE);
++                    HwBinder.enableInstrumentation();
++                    return;
++                default:
++                    vendorTransaction(code, request, reply, oneway);
++            }
++        }
++
++        abstract void vendorTransaction(int code, HwParcel request, HwParcel reply, boolean oneway);
++    }
++
++    private static final class Response extends Callback {
++        Response(Backend backend, byte[][] hashes) { super(backend, RESPONSE, hashes); }
++        @Override void vendorTransaction(int code, HwParcel request, HwParcel reply, boolean oneway) {
++            if (code < 1 || code > 40) return;
++            if (!flags(reply, oneway, true)) return;
++            request.enforceInterface(RESPONSE);
++            // No SEH solicited operations are issued by this client. Do not touch
++            // AOSP request serials, wakelocks, data setup, or call state.
++            if (backend.current()) backend.unexpectedResponse();
++        }
++    }
++
++    private static final class Indication extends Callback {
++        Indication(Backend backend, byte[][] hashes) { super(backend, INDICATION, hashes); }
++        @Override void vendorTransaction(int code, HwParcel request, HwParcel reply, boolean oneway) {
++            if (code < 1 || code > 27) return;
++            if (code == 22 || code == 23 || code == 27) {
++                if (!flags(reply, oneway, false)) return;
++                request.enforceInterface(INDICATION);
++                reply.writeStatus(0);
++                if (code == 23) {
++                    String key = request.readString();
++                    String table = request.readString();
++                    int value = -1;
++                    try {
++                        if (backend.current()) value = backend.setting(key, table);
++                        if (!backend.current()) value = -1;
++                    } catch (RuntimeException ignored) { value = -1; }
++                    reply.writeInt32(value);
++                } else if (code == 22) {
++                    String selection = request.readString();
++                    M11SehApnPolicy.Profile profile = M11SehApnPolicy.EMPTY;
++                    try {
++                        if (backend.current()) profile = backend.apn(selection);
++                        if (!backend.current()) profile = M11SehApnPolicy.EMPTY;
++                    } catch (RuntimeException ignored) { profile = M11SehApnPolicy.EMPTY; }
++                    if (profile == null) profile = M11SehApnPolicy.EMPTY;
++                    HwBlob blob = new HwBlob(96);
++                    String[] fields = profile.wireFields();
++                    for (int i = 0; i < fields.length; i++) blob.putString(i * 16, fields[i]);
++                    reply.writeBuffer(blob);
++                } else {
++                    String iface = request.readString();
++                    PacketUsage usage = null;
++                    try {
++                        if (backend.current()) usage = backend.packetUsage(iface);
++                        if (!backend.current()) usage = null;
++                    } catch (RuntimeException ignored) { usage = null; }
++                    if (usage == null) usage = new PacketUsage(44, 0, 0);
++                    reply.writeInt32(usage.error);
++                    HwBlob counters = new HwBlob(16);
++                    counters.putInt64(0, usage.receiveBytes);
++                    counters.putInt64(8, usage.transmitBytes);
++                    reply.writeBuffer(counters);
++                }
++                reply.send();
++                return;
++            }
++            // Stock signalLevelInfoChanged / extendedRegistrationState are synchronous void.
++            boolean synchronous = code == 25 || code == 26;
++            if (!flags(reply, oneway, !synchronous)) return;
++            request.enforceInterface(INDICATION);
++            int indicationType = request.readInt32();
++            if (backend.current()) backend.ignoredIndication(indicationType);
++            if (synchronous) { reply.writeStatus(0); reply.send(); }
++            // Stock SemRIL.sendAck() is empty: never send a standard-radio ACK.
++        }
++    }
++}
+diff --git a/src/java/com/android/internal/telephony/PhoneSubInfoController.java b/src/java/com/android/internal/telephony/PhoneSubInfoController.java
+index 3e2e281375dc3bbf2b09fb569bb428eedba7d980..f9bdf3d6431eec34acdcbffdd5898a6b8b3270c2 100644
+--- a/src/java/com/android/internal/telephony/PhoneSubInfoController.java
++++ b/src/java/com/android/internal/telephony/PhoneSubInfoController.java
+@@ -432,6 +432,12 @@ public class PhoneSubInfoController extends IPhoneSubInfo.Stub {
+                 "getGroupIdLevel1", (phone)-> phone.getGroupIdLevel1());
+     }
+ 
++    public String getGroupIdLevel2ForSubscriber(int subId, String callingPackage,
++            String callingFeatureId) {
++        return callPhoneMethodForSubIdWithReadCheck(subId, callingPackage, callingFeatureId,
++                "getGroupIdLevel2", (phone)-> phone.getGroupIdLevel2());
++    }
++
+     /** Below are utility methods that abstracts the flow that many public methods use:
+      *  1. Check permission: pass, throw exception, or fails (returns false).
+      *  2. clearCallingIdentity.
+diff --git a/src/java/com/android/internal/telephony/RIL.java b/src/java/com/android/internal/telephony/RIL.java
+index 70431f6a0c27285bdb31b0c9a7dfdf2c8a83cf75..d4472d766a852cf60a28f18f1eac95df7b181d9a 100644
+--- a/src/java/com/android/internal/telephony/RIL.java
++++ b/src/java/com/android/internal/telephony/RIL.java
+@@ -1132,6 +1132,8 @@ public class RIL extends BaseCommands implements CommandsInterface {
+         if (RILJ_LOGD) {
+             riljLog("Radio HAL version: " + mRadioVersion);
+         }
++        // SEH1: one opt-in Samsung callback owner; no standard-radio requests.
++        if (proxies == null) M11SehRadioBridge.maybeStart(this, mContext, mPhoneId);
+     }
+ 
+     private boolean isRadioVersion2_0() {
+diff --git a/src/java/com/android/internal/telephony/data/DataNetwork.java b/src/java/com/android/internal/telephony/data/DataNetwork.java
+index 48426345749ae143c91a2af61414a19642801edf..3cd6b3c7861fc8b124c36cc9d0c74e3fe6ea2696 100644
+--- a/src/java/com/android/internal/telephony/data/DataNetwork.java
++++ b/src/java/com/android/internal/telephony/data/DataNetwork.java
+@@ -576,6 +576,35 @@ public class DataNetwork extends StateMachine {
+      */
+     private @Nullable DataProfile mHandoverDataProfile;
+ 
++    /** Identity of the in-flight handover; callbacks retain this exact object. */
++    private @Nullable HandoverAttempt mHandoverAttempt;
++
++    private int mHandoverAttemptSerial;
++
++    private static final class HandoverAttempt {
++        final int id;
++        final @TransportType int sourceTransport;
++        final @TransportType int targetTransport;
++        final @Nullable DataHandoverRetryEntry retryEntry;
++
++        HandoverAttempt(int id, @TransportType int sourceTransport,
++                @TransportType int targetTransport,
++                @Nullable DataHandoverRetryEntry retryEntry) {
++            this.id = id;
++            this.sourceTransport = sourceTransport;
++            this.targetTransport = targetTransport;
++            this.retryEntry = retryEntry;
++        }
++
++        @Override
++        public String toString() {
++            return "HandoverAttempt{id=" + id + ", source="
++                    + AccessNetworkConstants.transportTypeToString(sourceTransport)
++                    + ", target="
++                    + AccessNetworkConstants.transportTypeToString(targetTransport) + "}";
++        }
++    }
++
+     /** The network capabilities of this data network. */
+     private @NonNull NetworkCapabilities mNetworkCapabilities;
+ 
+@@ -1139,7 +1168,6 @@ public class DataNetwork extends StateMachine {
+                     // Ignore the events when not in the correct state.
+                     log("Ignored " + eventToString(msg.what));
+                     break;
+-                case EVENT_NOTIFY_HANDOVER_STARTED_RESPONSE:
+                 case EVENT_NOTIFY_HANDOVER_STARTED:
+                     // We reach here if network is not in the right state.
+                     if (msg.obj != null) {
+@@ -1151,6 +1179,11 @@ public class DataNetwork extends StateMachine {
+                     log("Ignore handover to " + AccessNetworkConstants
+                             .transportTypeToString(msg.arg1) + " request.");
+                     break;
++                case EVENT_NOTIFY_HANDOVER_STARTED_RESPONSE:
++                case EVENT_HANDOVER_RESPONSE:
++                    // A timed-out attempt may respond after leaving HandoverState.
++                    logObsoleteHandoverResponse(msg);
++                    break;
+                 case EVENT_RADIO_NOT_AVAILABLE:
+                     mFailCause = DataFailCause.RADIO_NOT_AVAILABLE;
+                     loge(eventToString(msg.what) + ": transition to disconnected state");
+@@ -1347,9 +1380,13 @@ public class DataNetwork extends StateMachine {
+                     log("Notifying source transport "
+                             + AccessNetworkConstants.transportTypeToString(mTransport)
+                             + " that handover is about to start.");
++                    mHandoverAttempt = new HandoverAttempt(++mHandoverAttemptSerial,
++                            mTransport, msg.arg2,
++                            (DataHandoverRetryEntry) msg.obj);
++                    logl("Begin " + mHandoverAttempt + ", sourceCid=" + mCid.get(mTransport));
+                     mDataServiceManagers.get(mTransport).startHandover(mCid.get(mTransport),
+-                            obtainMessage(EVENT_NOTIFY_HANDOVER_STARTED_RESPONSE, 0, msg.arg2,
+-                                    msg.obj));
++                            obtainMessage(EVENT_NOTIFY_HANDOVER_STARTED_RESPONSE,
++                                    mHandoverAttempt));
+                     // We enter handover state here because this is the first action we do for
+                     // handover.
+                     transitionTo(mHandoverState);
+@@ -1394,6 +1431,7 @@ public class DataNetwork extends StateMachine {
+         @Override
+         public void exit() {
+             removeMessages(EVENT_STUCK_IN_TRANSIENT_STATE);
++            mHandoverAttempt = null;
+         }
+ 
+         @Override
+@@ -1428,14 +1466,23 @@ public class DataNetwork extends StateMachine {
+                     deferMessage(msg);
+                     break;
+                 case EVENT_NOTIFY_HANDOVER_STARTED_RESPONSE:
+-                    onStartHandover(msg.arg2, (DataHandoverRetryEntry) msg.obj);
++                    if (msg.obj != mHandoverAttempt || mHandoverAttempt == null) {
++                        logObsoleteHandoverResponse(msg);
++                        break;
++                    }
++                    onStartHandover(mHandoverAttempt.targetTransport,
++                            mHandoverAttempt.retryEntry);
+                     break;
+                 case EVENT_HANDOVER_RESPONSE:
++                    if (msg.obj != mHandoverAttempt || mHandoverAttempt == null) {
++                        logObsoleteHandoverResponse(msg);
++                        break;
++                    }
+                     int resultCode = msg.arg1;
+                     DataCallResponse dataCallResponse =
+                             msg.getData().getParcelable(DataServiceManager.DATA_CALL_RESPONSE);
+                     onHandoverResponse(resultCode, dataCallResponse,
+-                            (DataHandoverRetryEntry) msg.obj);
++                            mHandoverAttempt.retryEntry);
+                     break;
+                 case EVENT_STUCK_IN_TRANSIENT_STATE:
+                     // enable detection only for valid timeout range
+@@ -1449,6 +1496,15 @@ public class DataNetwork extends StateMachine {
+                     int handoverFailureMode =
+                             DataCallResponse.HANDOVER_FAILURE_MODE_NO_FALLBACK_RETRY_SETUP_NORMAL;
+                     mFailCause = DataFailCause.ERROR_UNSPECIFIED;
++                    logl("Timeout " + mHandoverAttempt);
++                    // Release source-side handover state even if the start or target
++                    // service never answered. Late callbacks cannot complete this attempt.
++                    mDataServiceManagers.get(mTransport).cancelHandover(mCid.get(mTransport),
++                            obtainMessage(EVENT_NOTIFY_HANDOVER_CANCELLED_RESPONSE));
++                    if (mHandoverAttempt != null && mHandoverAttempt.retryEntry != null) {
++                        mHandoverAttempt.retryEntry.setState(DataRetryEntry.RETRY_STATE_FAILED);
++                    }
++                    trackHandoverFailure();
+                     mDataNetworkCallback.invokeFromExecutor(
+                             () -> mDataNetworkCallback.onHandoverFailed(DataNetwork.this,
+                                     mFailCause, retry, handoverFailureMode));
+@@ -3142,6 +3198,7 @@ public class DataNetwork extends StateMachine {
+      */
+     private void onStartHandover(@TransportType int targetTransport,
+             @Nullable DataHandoverRetryEntry retryEntry) {
++        logl("Setup target for " + mHandoverAttempt);
+         if (mTransport == targetTransport) {
+             log("onStartHandover: The network is already on "
+                     + AccessNetworkConstants.transportTypeToString(mTransport)
+@@ -3188,7 +3245,7 @@ public class DataNetwork extends StateMachine {
+                 mHandoverDataProfile, isModemRoaming, allowRoaming,
+                 DataService.REQUEST_REASON_HANDOVER, mLinkProperties, mPduSessionId,
+                 mNetworkSliceInfo, mHandoverDataProfile.getTrafficDescriptor(), true,
+-                obtainMessage(EVENT_HANDOVER_RESPONSE, retryEntry));
++                obtainMessage(EVENT_HANDOVER_RESPONSE, mHandoverAttempt));
+     }
+ 
+     /**
+@@ -3201,6 +3258,8 @@ public class DataNetwork extends StateMachine {
+      */
+     private void onHandoverResponse(@DataServiceCallback.ResultCode int resultCode,
+             @Nullable DataCallResponse response, @Nullable DataHandoverRetryEntry retryEntry) {
++        logl("Complete " + mHandoverAttempt + ", result=" + resultCode
++                + ", targetCid=" + (response == null ? -1 : response.getId()));
+         logl("onHandoverResponse: resultCode=" + DataServiceCallback.resultCodeToString(resultCode)
+                 + ", response=" + response);
+         mFailCause = getFailCauseFromDataCallResponse(resultCode, response);
+@@ -3266,6 +3325,17 @@ public class DataNetwork extends StateMachine {
+         mDataCallSessionStats.onHandoverFailure(mFailCause, sourceRat, targetRat);
+     }
+ 
++    private void logObsoleteHandoverResponse(@NonNull Message message) {
++        DataCallResponse response = message.getData().getParcelable(
++                DataServiceManager.DATA_CALL_RESPONSE);
++        logl("Ignore obsolete " + eventToString(message.what) + ": " + message.obj
++                + ", active=" + mHandoverAttempt + ", currentTransport="
++                + AccessNetworkConstants.transportTypeToString(mTransport)
++                + ", targetCid=" + (response == null ? -1 : response.getId()));
++        // A CID can be reused by a newer attempt. Do not deactivate it without
++        // ownership information from the data service/controller.
++    }
++
+     /**
+      * Called when receiving PCO (Protocol Configuration Options) data from the cellular network.
+      *
+diff --git a/src/java/com/android/internal/telephony/data/DataNetworkController.java b/src/java/com/android/internal/telephony/data/DataNetworkController.java
+index b224dd77b136800580aeb22d4ffc45cb4d96ac4d..a23d2e6f03f169099444c9d598d3975652ad2bd0 100644
+--- a/src/java/com/android/internal/telephony/data/DataNetworkController.java
++++ b/src/java/com/android/internal/telephony/data/DataNetworkController.java
+@@ -34,6 +34,8 @@ import android.os.AsyncResult;
+ import android.os.Handler;
+ import android.os.Looper;
+ import android.os.Message;
++import android.os.PersistableBundle;
++import android.telecom.VideoProfile;
+ import android.telephony.AccessNetworkConstants;
+ import android.telephony.AccessNetworkConstants.AccessNetworkType;
+ import android.telephony.AccessNetworkConstants.RadioAccessNetworkType;
+@@ -79,6 +81,7 @@ import android.util.SparseArray;
+ import android.util.SparseBooleanArray;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
++import com.android.internal.telephony.Call;
+ import com.android.internal.telephony.Phone;
+ import com.android.internal.telephony.PhoneConstants;
+ import com.android.internal.telephony.SlidingWindowEventCounter;
+@@ -134,6 +137,11 @@ import java.util.stream.Collectors;
+ public class DataNetworkController extends Handler {
+     private static final boolean VDBG = false;
+ 
++    // Device/carrier opt-in; absent on all other profiles. Keep idle W2L's
++    // fresh-bearer workaround, but permit continuity for an established call.
++    private static final String KEY_M11Q_ACTIVE_CALL_W2L_HANDOVER_BOOL =
++            "m11q_active_call_w2l_handover_bool";
++
+     /** Event for adding a network request. */
+     private static final int EVENT_ADD_NETWORK_REQUEST = 2;
+ 
+@@ -1936,7 +1944,13 @@ public class DataNetworkController extends Handler {
+                             || rule.networkCapabilities.stream()
+                             .anyMatch(capabilities::hasCapability)) {
+                         log("evaluateDataNetworkHandover: Matched " + rule);
+-                        if (rule.type == HandoverRule.RULE_TYPE_DISALLOWED) {
++                        if (rule.type == HandoverRule.RULE_TYPE_DISALLOWED
++                                && isActiveImsCallW2lHandoverAllowed(dataNetwork,
++                                        sourceAccessNetwork, targetAccessNetwork, rule)) {
++                            logl("Active-call W2L: preserving IMS call with HANDOVER on "
++                                    + dataNetwork);
++                            dataEvaluation.addDataAllowedReason(DataAllowedReason.NORMAL);
++                        } else if (rule.type == HandoverRule.RULE_TYPE_DISALLOWED) {
+                             dataEvaluation.addDataDisallowedReason(
+                                     DataDisallowedReason.NOT_ALLOWED_BY_POLICY);
+                         } else {
+@@ -1957,6 +1971,60 @@ public class DataNetworkController extends Handler {
+         return dataEvaluation;
+     }
+ 
++    /**
++     * Carrier-scoped exception to the idle IMS W2L workaround, not to service,
++     * VoPS or state eligibility checks. Use the existing make-before-break
++     * handover pipeline; never replace or re-dial the ongoing call here.
++     */
++    private boolean isActiveImsCallW2lHandoverAllowed(@NonNull DataNetwork dataNetwork,
++            int sourceAccessNetwork, int targetAccessNetwork, @NonNull HandoverRule rule) {
++        if (!dataNetwork.isConnected()
++                || sourceAccessNetwork != AccessNetworkType.IWLAN
++                || targetAccessNetwork != AccessNetworkType.EUTRAN
++                || rule.networkCapabilities.size() != 1
++                || !rule.networkCapabilities.contains(NetworkCapabilities.NET_CAPABILITY_IMS)
++                || !dataNetwork.getNetworkCapabilities().hasCapability(
++                        NetworkCapabilities.NET_CAPABILITY_IMS)
++                || dataNetwork.getNetworkCapabilities().hasCapability(
++                        NetworkCapabilities.NET_CAPABILITY_EIMS)) {
++            return false;
++        }
++
++        CarrierConfigManager configManager = mPhone.getContext().getSystemService(
++                CarrierConfigManager.class);
++        PersistableBundle config = configManager == null ? null
++                : configManager.getConfigForSubId(mPhone.getSubId());
++        if (config == null || !mDataConfigManager.isConfigCarrierSpecific()
++                || !config.getBoolean(KEY_M11Q_ACTIVE_CALL_W2L_HANDOVER_BOOL, false)) {
++            return false;
++        }
++
++        // Check the real WWAN registration, not the composite data RAT (which
++        // can still be IWLAN while LTE remains registered underneath).
++        NetworkRegistrationInfo target = mServiceState.getNetworkRegistrationInfo(
++                NetworkRegistrationInfo.DOMAIN_PS,
++                AccessNetworkConstants.TRANSPORT_TYPE_WWAN);
++        if (target == null || !target.isInService()) {
++            return false;
++        }
++        DataSpecificRegistrationInfo dsri = target.getDataSpecificInfo();
++        if (dsri == null || dsri.getVopsSupportInfo() == null
++                || !dsri.getVopsSupportInfo().isVopsSupported()) {
++            return false;
++        }
++
++        Phone imsPhone = mPhone.getImsPhone();
++        if (imsPhone == null || mPhone.isInEmergencyCall() || mPhone.isInEcm()
++                || imsPhone.isInEmergencyCall() || imsPhone.isInEcm()) {
++            return false;
++        }
++        Call call = imsPhone.getForegroundCall();
++        return call != null && call.getState() == Call.State.ACTIVE
++                && !call.getConnections().isEmpty()
++                && call.getConnections().stream().allMatch(connection
++                        -> connection.getVideoState() == VideoProfile.STATE_AUDIO_ONLY);
++    }
++
+     /**
+      * Get tear down reason from the evaluation result.
+      *
+diff --git a/src/java/com/android/internal/telephony/data/DataProfileManager.java b/src/java/com/android/internal/telephony/data/DataProfileManager.java
+index c7e5433b111e3f05594fb1054a3618c809b7dbe1..bf9bdcd325a41f0f6cacc2666ea9aade93c9fe00 100644
+--- a/src/java/com/android/internal/telephony/data/DataProfileManager.java
++++ b/src/java/com/android/internal/telephony/data/DataProfileManager.java
+@@ -353,6 +353,9 @@ public class DataProfileManager extends Handler {
+             profilesChanged = true;
+         }
+ 
++        // SEH1: immutable snapshot on this handler, including unchanged-profile updates.
++        com.android.internal.telephony.M11SehProfilePublisher.publish(mPhone, mAllDataProfiles);
++
+         updateDataProfilesAtModem();
+         updateInitialAttachDataProfileAtModem(forceUpdateIa);
+ 
+diff --git a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+index 48a863ee8e1ca549a55388552a4509f1f52b6bd3..3fa39b0df65a60713fd7eb1047c724fe307de53c 100644
+--- a/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
++++ b/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java
+@@ -3320,6 +3320,13 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
+                 updatePhoneState();
+                 mPhone.initiateSilentRedial(reasonInfo.getExtraCode() ==
+                         ImsReasonInfo.EXTRA_CODE_CALL_RETRY_EMERGENCY, eccCategory);
++            } else if (imsCall != null && findConnection(imsCall) != null) {
++                // onCallInitiating clears mPendingMO once the call is tracked. Some IMS services
++                // report a later setup failure without a separate onCallTerminated callback.
++                // Clear the tracked connection so Telecom does not remain in DIALING.
++                sendCallStartFailedDisconnect(imsCall, reasonInfo);
++                mMetrics.writeOnImsCallStartFailed(mPhone.getPhoneId(), imsCall.getCallSession(),
++                        reasonInfo);
+             }
+         }
+ 
+diff --git a/tests/telephonytests/src/com/android/internal/telephony/data/DataNetworkTest.java b/tests/telephonytests/src/com/android/internal/telephony/data/DataNetworkTest.java
+index 7bab74d5a8821fb30f26f7197a9adcf93b6f47e9..7b3d8d7b0b8aa8980ad4b4cbfb2e4245775f1cad 100644
+--- a/tests/telephonytests/src/com/android/internal/telephony/data/DataNetworkTest.java
++++ b/tests/telephonytests/src/com/android/internal/telephony/data/DataNetworkTest.java
+@@ -75,6 +75,8 @@ import com.android.internal.telephony.data.DataConfigManager.DataConfigManagerCa
+ import com.android.internal.telephony.data.DataEvaluation.DataAllowedReason;
+ import com.android.internal.telephony.data.DataNetwork.DataNetworkCallback;
+ import com.android.internal.telephony.data.DataNetworkController.NetworkRequestList;
++import com.android.internal.telephony.data.DataRetryManager.DataHandoverRetryEntry;
++import com.android.internal.telephony.data.DataRetryManager.DataRetryEntry;
+ import com.android.internal.telephony.data.LinkBandwidthEstimator.LinkBandwidthEstimatorCallback;
+ import com.android.internal.telephony.metrics.DataCallSessionStats;
+ 
+@@ -1076,6 +1078,123 @@ public class DataNetworkTest extends TelephonyTest {
+         assertThat(mDataNetworkUT.isConnected()).isFalse();
+     }
+ 
++    private List<Message> holdHandoverSetupResponses(DataServiceManager dsm) {
++        List<Message> responses = new ArrayList<>();
++        doAnswer(invocation -> {
++            responses.add((Message) invocation.getArguments()[10]);
++            return null;
++        }).when(dsm).setupDataCall(anyInt(), any(DataProfile.class), anyBoolean(),
++                anyBoolean(), anyInt(), any(), anyInt(), any(), any(), anyBoolean(),
++                any(Message.class));
++        return responses;
++    }
++
++    private void completeHeldHandover(Message message, int cid) {
++        DataCallResponse response = new DataCallResponse.Builder()
++                .setCause(DataFailCause.NONE)
++                .setId(cid)
++                .setLinkStatus(DataCallResponse.LINK_STATUS_ACTIVE)
++                .setProtocolType(ApnSetting.PROTOCOL_IPV4V6)
++                .setInterfaceName("ifname")
++                .setAddresses(Arrays.asList(new LinkAddress(IPV4_ADDRESS + "/32"),
++                        new LinkAddress(IPV6_ADDRESS + "/64")))
++                .setQosBearerSessions(Collections.emptyList())
++                .setTrafficDescriptors(Collections.emptyList())
++                .build();
++        message.getData().putParcelable(DataServiceManager.DATA_CALL_RESPONSE, response);
++        message.arg1 = DataServiceCallback.RESULT_SUCCESS;
++        message.sendToTarget();
++    }
++
++    @Test
++    public void testHandoverTimeoutCancelsSource() throws Exception {
++        setupDataNetwork();
++        doReturn(60_000).when(mDataConfigManager).getNetworkHandoverTimeoutMs();
++        holdHandoverSetupResponses(mMockedWlanDataServiceManager);
++
++        DataHandoverRetryEntry retryEntry = new DataHandoverRetryEntry(mDataNetworkUT, null, 0);
++        mDataNetworkUT.startHandover(AccessNetworkConstants.TRANSPORT_TYPE_WLAN, retryEntry);
++        processAllMessages();
++        assertThat(mDataNetworkUT.isHandoverInProgress()).isTrue();
++
++        mDataNetworkUT.sendMessage(20 /* EVENT_STUCK_IN_TRANSIENT_STATE */);
++        processAllMessages();
++
++        verify(mMockedWwanDataServiceManager).cancelHandover(eq(123), any(Message.class));
++        verify(mDataNetworkCallback).onHandoverFailed(eq(mDataNetworkUT),
++                eq(DataFailCause.ERROR_UNSPECIFIED),
++                eq(DataCallResponse.RETRY_DURATION_UNDEFINED),
++                eq(DataCallResponse.HANDOVER_FAILURE_MODE_NO_FALLBACK_RETRY_SETUP_NORMAL));
++        assertThat(mDataNetworkUT.isConnected()).isTrue();
++        assertThat(mDataNetworkUT.getTransport())
++                .isEqualTo(AccessNetworkConstants.TRANSPORT_TYPE_WWAN);
++        assertThat(mDataNetworkUT.getId()).isEqualTo(123);
++        assertThat(retryEntry.getState()).isEqualTo(DataRetryEntry.RETRY_STATE_FAILED);
++    }
++
++    @Test
++    public void testLateHandoverStartCannotStartNextAttempt() throws Exception {
++        setupDataNetwork();
++        doReturn(60_000).when(mDataConfigManager).getNetworkHandoverTimeoutMs();
++        List<Message> startResponses = new ArrayList<>();
++        doAnswer(invocation -> {
++            startResponses.add((Message) invocation.getArguments()[1]);
++            return null;
++        }).when(mMockedWwanDataServiceManager).startHandover(anyInt(), any(Message.class));
++        setSuccessfulSetupDataResponse(mMockedWlanDataServiceManager, 456);
++
++        mDataNetworkUT.startHandover(AccessNetworkConstants.TRANSPORT_TYPE_WLAN, null);
++        processAllMessages();
++        mDataNetworkUT.sendMessage(20 /* EVENT_STUCK_IN_TRANSIENT_STATE */);
++        processAllMessages();
++        mDataNetworkUT.startHandover(AccessNetworkConstants.TRANSPORT_TYPE_WLAN, null);
++        processAllMessages();
++        assertThat(startResponses).hasSize(2);
++
++        startResponses.get(0).sendToTarget();
++        processAllMessages();
++        verify(mMockedWlanDataServiceManager, never()).setupDataCall(anyInt(),
++                any(DataProfile.class), anyBoolean(), anyBoolean(), anyInt(), any(),
++                anyInt(), any(), any(), anyBoolean(), any(Message.class));
++        assertThat(mDataNetworkUT.isHandoverInProgress()).isTrue();
++
++        startResponses.get(1).sendToTarget();
++        processAllMessages();
++        verify(mDataNetworkCallback).onHandoverSucceeded(eq(mDataNetworkUT));
++        assertThat(mDataNetworkUT.getId()).isEqualTo(456);
++    }
++
++    @Test
++    public void testLateHandoverSuccessCannotCompleteNextAttempt() throws Exception {
++        setupDataNetwork();
++        doReturn(60_000).when(mDataConfigManager).getNetworkHandoverTimeoutMs();
++        List<Message> setupResponses = holdHandoverSetupResponses(mMockedWlanDataServiceManager);
++
++        mDataNetworkUT.startHandover(AccessNetworkConstants.TRANSPORT_TYPE_WLAN, null);
++        processAllMessages();
++        mDataNetworkUT.sendMessage(20 /* EVENT_STUCK_IN_TRANSIENT_STATE */);
++        processAllMessages();
++        mDataNetworkUT.startHandover(AccessNetworkConstants.TRANSPORT_TYPE_WLAN, null);
++        processAllMessages();
++        assertThat(setupResponses).hasSize(2);
++
++        completeHeldHandover(setupResponses.get(0), 456);
++        processAllMessages();
++        verify(mDataNetworkCallback, never()).onHandoverSucceeded(eq(mDataNetworkUT));
++        verify(mMockedWwanDataServiceManager, never()).deactivateDataCall(anyInt(),
++                anyInt(), any());
++        assertThat(mDataNetworkUT.isHandoverInProgress()).isTrue();
++        assertThat(mDataNetworkUT.getTransport())
++                .isEqualTo(AccessNetworkConstants.TRANSPORT_TYPE_WWAN);
++        assertThat(mDataNetworkUT.getId()).isEqualTo(123);
++
++        completeHeldHandover(setupResponses.get(1), 457);
++        processAllMessages();
++        verify(mDataNetworkCallback).onHandoverSucceeded(eq(mDataNetworkUT));
++        assertThat(mDataNetworkUT.isConnected()).isTrue();
++        assertThat(mDataNetworkUT.getId()).isEqualTo(457);
++    }
++
+     @Test
+     public void testAdminAndOwnerUids() throws Exception {
+         doReturn(ADMIN_UID2).when(mCarrierPrivilegesTracker).getCarrierServicePackageUid();

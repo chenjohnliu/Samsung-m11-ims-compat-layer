@@ -1,0 +1,221 @@
+From 9ab7378926a37c4df25d5adc49694ac6e70534ab Mon Sep 17 00:00:00 2001
+From: chenjohnliu <25525820+chenjohnliu@users.noreply.github.com>
+Date: Fri, 9 Oct 2026 14:23:14 +0800
+Subject: [PATCH 2/3] SettingsLib: display phone number from standard
+ subscription sources
+
+---
+ .../android/settingslib/DeviceInfoUtils.java  |  46 +++++--
+ .../settingslib/DeviceInfoUtilsTest.java      | 114 ++++++++++++++++++
+ 2 files changed, 150 insertions(+), 10 deletions(-)
+
+diff --git a/packages/SettingsLib/src/com/android/settingslib/DeviceInfoUtils.java b/packages/SettingsLib/src/com/android/settingslib/DeviceInfoUtils.java
+index ff00fb3282b1ae4455a2eea9526634b659f5ad92..9612496794cada546e563fdac52a5fdf4d2a8522 100644
+--- a/packages/SettingsLib/src/com/android/settingslib/DeviceInfoUtils.java
++++ b/packages/SettingsLib/src/com/android/settingslib/DeviceInfoUtils.java
+@@ -26,6 +26,7 @@ import android.system.Os;
+ import android.system.StructUtsname;
+ import android.telephony.PhoneNumberUtils;
+ import android.telephony.SubscriptionInfo;
++import android.telephony.SubscriptionManager;
+ import android.telephony.TelephonyManager;
+ import android.text.BidiFormatter;
+ import android.text.TextDirectionHeuristics;
+@@ -179,10 +180,10 @@ public class DeviceInfoUtils {
+             SubscriptionInfo subscriptionInfo) {
+         String formattedNumber = null;
+         if (subscriptionInfo != null) {
+-            final TelephonyManager telephonyManager = context.getSystemService(
+-                    TelephonyManager.class);
+-            final String rawNumber = telephonyManager.createForSubscriptionId(
+-                    subscriptionInfo.getSubscriptionId()).getLine1Number();
++            final String rawNumber = getPhoneNumber(
++                    context.getSystemService(SubscriptionManager.class),
++                    context.getSystemService(TelephonyManager.class),
++                    subscriptionInfo.getSubscriptionId());
+             if (!TextUtils.isEmpty(rawNumber)) {
+                 formattedNumber = PhoneNumberUtils.formatNumber(rawNumber);
+             }
+@@ -190,18 +191,43 @@ public class DeviceInfoUtils {
+         return formattedNumber;
+     }
+ 
++    @VisibleForTesting
++    static String getPhoneNumber(SubscriptionManager subscriptionManager,
++            TelephonyManager telephonyManager, int subId) {
++        if (!SubscriptionManager.isUsableSubscriptionId(subId)) {
++            return null;
++        }
++        // Android 13 includes the carrier, UICC and IMS number sources. The
++        // legacy line-1 API alone can be empty even after IMS supplied a number.
++        if (subscriptionManager != null) {
++            try {
++                final String number = subscriptionManager.getPhoneNumber(subId);
++                if (!TextUtils.isEmpty(number)) {
++                    return number;
++                }
++            } catch (IllegalStateException | SecurityException e) {
++                // Service restart or a caller with only legacy permissions.
++            }
++        }
++        if (telephonyManager == null) {
++            return null;
++        }
++        try {
++            return telephonyManager.createForSubscriptionId(subId).getLine1Number();
++        } catch (IllegalStateException | SecurityException e) {
++            return null;
++        }
++    }
++
+     public static String getFormattedPhoneNumbers(Context context,
+             List<SubscriptionInfo> subscriptionInfoList) {
+         StringBuilder sb = new StringBuilder();
+         if (subscriptionInfoList != null) {
+-            final TelephonyManager telephonyManager = context.getSystemService(
+-                    TelephonyManager.class);
+             final int count = subscriptionInfoList.size();
+             for (SubscriptionInfo subscriptionInfo : subscriptionInfoList) {
+-                final String rawNumber = telephonyManager.createForSubscriptionId(
+-                        subscriptionInfo.getSubscriptionId()).getLine1Number();
+-                if (!TextUtils.isEmpty(rawNumber)) {
+-                    sb.append(PhoneNumberUtils.formatNumber(rawNumber)).append("\n");
++                final String formattedNumber = getFormattedPhoneNumber(context, subscriptionInfo);
++                if (!TextUtils.isEmpty(formattedNumber)) {
++                    sb.append(formattedNumber).append("\n");
+                 }
+             }
+         }
+diff --git a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/DeviceInfoUtilsTest.java b/packages/SettingsLib/tests/robotests/src/com/android/settingslib/DeviceInfoUtilsTest.java
+index 4e8af7350f8a4e96a323e9a86f1c4d33e54fbc70..eeaa35416faeaffb13feb73ab48d579a955eb2ec 100644
+--- a/packages/SettingsLib/tests/robotests/src/com/android/settingslib/DeviceInfoUtilsTest.java
++++ b/packages/SettingsLib/tests/robotests/src/com/android/settingslib/DeviceInfoUtilsTest.java
+@@ -17,9 +17,15 @@
+ package com.android.settingslib;
+ 
+ import static com.google.common.truth.Truth.assertThat;
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.verify;
++import static org.mockito.Mockito.verifyNoInteractions;
++import static org.mockito.Mockito.when;
+ 
+ import android.content.Context;
+ import android.system.StructUtsname;
++import android.telephony.SubscriptionManager;
++import android.telephony.TelephonyManager;
+ 
+ import org.junit.Before;
+ import org.junit.Test;
+@@ -71,4 +77,112 @@ public class DeviceInfoUtilsTest {
+ 
+         assertThat(DeviceInfoUtils.formatKernelVersion(mContext, null)).isEqualTo(expected);
+     }
++
++    @Test
++    public void getPhoneNumber_imsOnlyNumber_usesStandardSubscriptionApi() {
++        SubscriptionManager subscriptions = mock(SubscriptionManager.class);
++        TelephonyManager telephony = mock(TelephonyManager.class);
++        when(subscriptions.getPhoneNumber(1)).thenReturn("+15555550123");
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(subscriptions, telephony, 1))
++                .isEqualTo("+15555550123");
++        verifyNoInteractions(telephony);
++    }
++
++    @Test
++    public void getPhoneNumber_emptyModernNumber_fallsBackToSameSubscription() {
++        SubscriptionManager subscriptions = mock(SubscriptionManager.class);
++        TelephonyManager telephony = mock(TelephonyManager.class);
++        TelephonyManager selected = mock(TelephonyManager.class);
++        when(subscriptions.getPhoneNumber(7)).thenReturn("");
++        when(telephony.createForSubscriptionId(7)).thenReturn(selected);
++        when(selected.getLine1Number()).thenReturn("+15555550124");
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(subscriptions, telephony, 7))
++                .isEqualTo("+15555550124");
++        verify(telephony).createForSubscriptionId(7);
++    }
++
++    @Test
++    public void getPhoneNumber_modernPermissionDenied_usesLegacyNumber() {
++        SubscriptionManager subscriptions = mock(SubscriptionManager.class);
++        TelephonyManager telephony = mock(TelephonyManager.class);
++        when(subscriptions.getPhoneNumber(1)).thenThrow(new SecurityException());
++        when(telephony.createForSubscriptionId(1)).thenReturn(telephony);
++        when(telephony.getLine1Number()).thenReturn("+15555550123");
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(subscriptions, telephony, 1))
++                .isEqualTo("+15555550123");
++    }
++
++    @Test
++    public void getPhoneNumber_modernServiceUnavailable_usesLegacyNumber() {
++        SubscriptionManager subscriptions = mock(SubscriptionManager.class);
++        TelephonyManager telephony = mock(TelephonyManager.class);
++        when(subscriptions.getPhoneNumber(1)).thenThrow(new IllegalStateException());
++        when(telephony.createForSubscriptionId(1)).thenReturn(telephony);
++        when(telephony.getLine1Number()).thenReturn("+15555550123");
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(subscriptions, telephony, 1))
++                .isEqualTo("+15555550123");
++    }
++
++    @Test
++    public void getPhoneNumber_invalidSubscription_doesNotReadDefaultSim() {
++        SubscriptionManager subscriptions = mock(SubscriptionManager.class);
++        TelephonyManager telephony = mock(TelephonyManager.class);
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(subscriptions, telephony,
++                SubscriptionManager.INVALID_SUBSCRIPTION_ID)).isNull();
++        verifyNoInteractions(subscriptions, telephony);
++    }
++
++    @Test
++    public void getPhoneNumber_noServices_returnsNull() {
++        assertThat(DeviceInfoUtils.getPhoneNumber(null, null, 1)).isNull();
++    }
++
++    @Test
++    public void getPhoneNumber_defaultSubscription_doesNotReadOtherSim() {
++        SubscriptionManager subscriptions = mock(SubscriptionManager.class);
++        TelephonyManager telephony = mock(TelephonyManager.class);
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(subscriptions, telephony,
++                SubscriptionManager.DEFAULT_SUBSCRIPTION_ID)).isNull();
++        verifyNoInteractions(subscriptions, telephony);
++    }
++
++    @Test
++    public void getPhoneNumber_noSubscriptionService_usesLegacyNumber() {
++        TelephonyManager telephony = mock(TelephonyManager.class);
++        when(telephony.createForSubscriptionId(1)).thenReturn(telephony);
++        when(telephony.getLine1Number()).thenReturn("+15555550123");
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(null, telephony, 1))
++                .isEqualTo("+15555550123");
++    }
++
++    @Test
++    public void getPhoneNumber_bothSourcesUnavailable_returnsNull() {
++        SubscriptionManager subscriptions = mock(SubscriptionManager.class);
++        TelephonyManager telephony = mock(TelephonyManager.class);
++        when(subscriptions.getPhoneNumber(1)).thenReturn("");
++        when(telephony.createForSubscriptionId(1)).thenReturn(telephony);
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(subscriptions, telephony, 1)).isNull();
++    }
++
++    @Test
++    public void getPhoneNumber_legacyPermissionDenied_returnsNull() {
++        TelephonyManager telephony = mock(TelephonyManager.class);
++        when(telephony.createForSubscriptionId(1)).thenReturn(telephony);
++        when(telephony.getLine1Number()).thenThrow(new SecurityException());
++
++        assertThat(DeviceInfoUtils.getPhoneNumber(null, telephony, 1)).isNull();
++    }
++
++    @Test
++    public void getFormattedPhoneNumber_nullSubscription_returnsNull() {
++        assertThat(DeviceInfoUtils.getFormattedPhoneNumber(mContext, null)).isNull();
++    }
+ }
