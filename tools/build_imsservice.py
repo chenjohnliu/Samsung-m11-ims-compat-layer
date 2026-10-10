@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Build or discover strict pins for the M11 IMS APK from exact local inputs.
+"""Build or discover historical intermediate pins for the M11 IMS APK.
 
 This orchestrator never downloads firmware, publishes decoded Samsung files,
 signs a ROM, or invokes an Android ROM build. All decoded/generated material is
-created in a disposable directory beside the requested output.
+created in a disposable directory beside the requested output. Its output is
+not a deployable crDroid IMS APK: it includes the historical BU1 Timer F
+experiment. Use the final LG3 artifact and required product gates for release.
 """
 
 from __future__ import annotations
@@ -31,6 +33,22 @@ DEFAULT_PAYLOAD = ROOT / "devices" / "m11q" / "payload-manifest.tsv"
 DEFAULT_BRIDGE = ROOT / "bridge" / "java"
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 SIGNATURES = {"META-INF/CERT.RSA", "META-INF/CERT.SF", "META-INF/MANIFEST.MF"}
+
+
+def artifact_role_metadata() -> dict:
+    """Label this builder's result without changing its strict-build PASS meaning."""
+    return {
+        "artifact_role": "historical-intermediate",
+        "deployment_eligible": False,
+        "deployment_note": (
+            "Contains the historical BU1 Timer F experiment; use the final LG3 "
+            "artifact for crDroid and run all required product gates."),
+        "required_final_product_gates": [
+            "tools/legacy_seh_apn_trial.py verify-product",
+            "tools/global_wfc_profile_policy.py verify-product",
+            "tools/sa2_telecom_audio_trial.py verify-product",
+        ],
+    }
 
 
 class BuildError(RuntimeError):
@@ -608,6 +626,7 @@ def build(args: argparse.Namespace) -> dict:
 
         common = {
             "schema_version": 1,
+            **artifact_role_metadata(),
             "mode": mode,
             "device": config["device"],
             "inputs": {
@@ -653,7 +672,10 @@ def build(args: argparse.Namespace) -> dict:
 
 
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description=__doc__)
+    result = argparse.ArgumentParser(
+        description=__doc__,
+        epilog=("The published APK is a historical intermediate, not deployment "
+                "eligible. Use final LG3 output and run all required product gates."))
     result.add_argument("--stock-apk", required=True, type=Path)
     result.add_argument("--framework-res-apk", required=True, type=Path)
     result.add_argument("--imsmanager-jar", required=True, type=Path)
@@ -686,7 +708,9 @@ def main(argv=None) -> int:
     except (BuildError, OSError, ValueError, ET.ParseError, zipfile.BadZipFile) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    summary = {"status": payload["status"], "mode": payload["mode"]}
+    summary = {"status": payload["status"], "mode": payload["mode"],
+               "artifact_role": payload["artifact_role"],
+               "deployment_eligible": payload["deployment_eligible"]}
     if payload["mode"] == "strict":
         summary["apk_sha256"] = payload["output"]["apk_sha256"]
     else:

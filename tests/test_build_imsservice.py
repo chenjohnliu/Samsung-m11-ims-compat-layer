@@ -63,6 +63,17 @@ class BuildImsserviceTests(unittest.TestCase):
             ("ba88f7111ea5c678d597dcb0498ee9fc42611fd4f6af12b6312fad05495de78b",
              671422))
 
+    def test_builder_report_marks_output_as_historical_intermediate(self):
+        metadata = MODULE.artifact_role_metadata()
+        self.assertEqual(metadata["artifact_role"], "historical-intermediate")
+        self.assertFalse(metadata["deployment_eligible"])
+        self.assertIn("BU1 Timer F experiment", metadata["deployment_note"])
+        self.assertEqual(metadata["required_final_product_gates"], [
+            "tools/legacy_seh_apn_trial.py verify-product",
+            "tools/global_wfc_profile_policy.py verify-product",
+            "tools/sa2_telecom_audio_trial.py verify-product",
+        ])
+
     def test_repository_bridge_sources_match_manifest(self):
         config = MODULE.load_config(CONFIG)
         sources = MODULE._bridge_sources(MODULE.DEFAULT_BRIDGE, config)
