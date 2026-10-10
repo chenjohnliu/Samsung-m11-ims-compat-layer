@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "handoff_id": "m11q-cherishos-android13-ims-source-handoff",
+  "target": {
+    "rom": "CherishOS",
+    "android_version": 13,
+    "device": "Samsung Galaxy M11 (m11q)",
+    "manifest_revision": null,
+    "base_revision": null,
+    "resolution_status": "unresolved"
+  },
+  "readiness": {
+    "published_source_inventory": "present",
+    "target_integration": "pending",
+    "dependency_closure": false,
+    "port_applied": false,
+    "build_performed": false,
+    "build_runtime_current_port_validated": false,
+    "deployable": false,
+    "note": "The published source inventory is present, but dependency closure is incomplete because the ER1 BoringSSL input provenance is unresolved. The repository pins do not establish compatibility with an unidentified CherishOS manifest or prove that this port builds or runs."
+  },
+  "source_repositories": [
+    {
+      "name": "Samsung-m11-ims-compat-layer",
+      "url": "https://github.com/chenjohnliu/Samsung-m11-ims-compat-layer.git",
+      "ref": "main",
+      "revision": "9b94f710ac189db495326c72d99c1e350c445305",
+      "role": "Public patch series, contracts, compatibility source and reproducibility metadata."
+    },
+    {
+      "name": "android_device_samsung_m11q",
+      "url": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
+      "ref": "m11q-volte",
+      "revision": "0f1da5855d27841d53743cd878ecd2d09679a941",
+      "role": "Device configuration and integration source."
+    },
+    {
+      "name": "proprietary_vendor_samsung_m11q",
+      "url": "https://github.com/chenjohnliu/proprietary_vendor_samsung_m11q.git",
+      "ref": "13-64",
+      "revision": "6a8923918e90b734913cab84bc8ac7022a2dc143",
+      "role": "Vendor repository source."
+    },
+    {
+      "name": "android_packages_services_Telecomm",
+      "url": "https://github.com/chenjohnliu/android_packages_services_Telecomm.git",
+      "ref": "m11q-vowifi-audio-path",
+      "revision": "8e1a9a333a5692343f8bede5a2fe2dcac0d44489",
+      "role": "Android Telecom audio-path source."
+    },
+    {
+      "name": "android_kernel_samsung_sdm450",
+      "url": "https://github.com/chenjohnliu/android_kernel_samsung_sdm450.git",
+      "ref": "lineage-20",
+      "revision": "3936713dfd4d653c2c0cc4852ec412c0b6bd01b3",
+      "role": "Kernel source reference."
+    }
+  ],
+  "compatibility_source": {
+    "framework_patch_checkpoint": "platform/checkpoints/ims-20261010/manifest.json",
+    "systemui_corrective_patch": {
+      "path": "platform/systemui/0001-fix-ims-registration-constant-import-package.patch",
+      "compatibility_repository_commit": "66e8fa9aa43d8c10f8b381542b06c88d9b03c56e",
+      "wsl_source_commit_prefix": "2521273",
+      "wsl_source_commit_full_sha": "2521273c19652476c4ee7392c4c4607ff6949c84",
+      "wsl_source_commit_evidence": "docs/SYSTEMUI_IMS_IMPORT_BUILD_FIX_20261010.md",
+      "sha256": "e44656dd46c3f9518acd4edc7fe1700a42121381bda742855bae2c5c7d6697f2"
+    },
+    "scope": [
+      "Android 13 IMS framework and Telephony patch series",
+      "IMS service source and host-verifiable SMS compatibility helpers",
+      "Samsung SEH APN bridge source",
+      "SystemUI IMS registration icon patch, including the Android 13 import correction"
+    ]
+  },
+  "public_source_inventory": {
+    "ims_framework_sms_and_subscription_compatibility": [
+      "platform/checkpoints/ims-20261010/frameworks__base/0001-m11q-add-Samsung-IMS-framework-compatibility-APIs.patch",
+      "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0001-m11q-integrate-SEH-APN-bridge-and-IMS-handover-recov.patch",
+      "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0002-m11q-support-single-active-IMS-SIM-in-either-slot.patch"
+    ],
+    "seh1_java_sources": [
+      "platform/java/com/android/internal/telephony/M11SehApnPolicy.java",
+      "platform/java/com/android/internal/telephony/M11SehProfilePublisher.java",
+      "platform/java/com/android/internal/telephony/M11SehRadioBridge.java",
+      "platform/java/com/android/internal/telephony/M11SehRadioTransport.java"
+    ],
+    "sa2_telecom_sources": [
+      "platform/telecom/sa2/SamsungImsAudioTransition.java",
+      "platform/telecom/sa2/SamsungImsAudioHandover.java"
+    ],
+    "ims_sms_bridge_java_sources": [
+      "bridge/java/com/sec/internal/google/GoogleModernImsService.java",
+      "bridge/java/com/sec/internal/google/GoogleModernMmTelFeature.java",
+      "bridge/java/com/sec/internal/google/ModernCallRelay.java",
+      "bridge/java/com/sec/internal/google/ModernCallSession.java",
+      "bridge/java/com/sec/internal/google/ModernEventQueue.java",
+      "bridge/java/com/sec/internal/google/ModernSmsBridge.java",
+      "bridge/java/com/sec/internal/google/ModernVoiceContext.java"
+    ],
+    "verifier_and_transform_tools": [
+      "tools/global_wfc_profile_policy.py",
+      "tools/transform_unifiedwfc_sim_mobility.py",
+      "tools/transform_sveservice_media.py",
+      "tools/transform_eris_private_crypto.py",
+      "tools/build_sveservice.py",
+      "tools/legacy_seh_apn_trial.py",
+      "tools/sa2_telecom_audio_trial.py",
+      "tools/verify_payload.py",
+      "tools/verify_framework_abi.py"
+    ],
+    "interpretation": "These are published source paths in this compatibility repository. Their presence does not mean CherishOS patches have been applied or runtime behavior validated."
+  },
+  "dependency_closure": {
+    "complete": false,
+    "status": "blocked_pending_input_provenance",
+    "blocked_input_provenance": [
+      {
+        "contract_path": "devices/m11q/eris-private-crypto-contract.json",
+        "input_name": "libcrypto.so",
+        "input_sha256": "cf6dfdaf8a57730364e2be816c45d4fbdf1d3b196f5467e340e8c998d2631040",
+        "elf_class": 1,
+        "elf_machine": 40,
+        "provenance_status": "unresolved",
+        "provenance_note": "Pinned Android 12 ARM32 BoringSSL input; source checkout and build provenance were not retained.",
+        "cwk3_stock_comparison": {
+          "stock_image_sha256": "9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d",
+          "observed_cwk3_system_library_sha256": "8f92b691991bb0841228cc67a05c079a46065c4d80a43144cb3be6fb4fdc4bc3",
+          "observed_source": "Root-verified debugfs extraction of /system/lib/libcrypto.so from the pinned CWK3 stock system image.",
+          "matches_er1_input_pin": false
+        }
+      },
+      {
+        "contract_path": "devices/m11q/eris-private-crypto-contract.json",
+        "input_name": "libssl.so",
+        "input_sha256": "d8eef149d87bab37c66ade6d39c3ff93d6f922dc0dd4a126a3d4cca08a3dc478",
+        "elf_class": 1,
+        "elf_machine": 40,
+        "provenance_status": "unresolved",
+        "provenance_note": "Pinned Android 12 ARM32 BoringSSL input; source checkout and build provenance were not retained.",
+        "cwk3_stock_comparison": {
+          "stock_image_sha256": "9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d",
+          "observed_cwk3_system_library_sha256": "729df965c522f88554dd278118d8514852ecf5daf97973837fa06745b94bf3ea",
+          "observed_source": "Root-verified debugfs extraction of /system/lib/libssl.so from the pinned CWK3 stock system image.",
+          "matches_er1_input_pin": false
+        }
+      }
+    ],
+    "raw_cwk3_manifest_covers_blocked_inputs": false,
+    "comparison_finding": "The exact ER1 contract inputs differ from the corresponding libraries extracted from the pinned CWK3 stock system image.",
+    "resolution_required": "Decide whether ER1 belongs in the target port. Excluding ER1 changes the port payload and does not establish preservation of ERIS/IPsec behavior; that requires design review and runtime validation. If ER1 is included, resolve the provenance of the exact pinned Android 12 libraries or regenerate the transformation contract from lawful, identified inputs and validate the resulting behavior before claiming a closed input set."
+  },
+  "reproducibility_inventory": {
+    "ims_lg3": {
+      "input_stock_imsservice_sha256": "490e600fa7a8b111de83da6d20d87607f8db68b8447c98cacd2313055fd47f91",
+      "tools": [
+        "tools/build_imsservice.py",
+        "tools/build_imsservice_w2l_trial.py",
+        "tools/build_legacy_wfc_gate.py"
+      ],
+      "sequence": "Pinned stock IMS input -> published IMS source build -> historical BV1 W2L trial base -> LG3 restores the stock 128-second Timer F resource.",
+      "final_unsigned_apk_sha256": "544f4c9974d3a41e2ce541f02e9ab9bda2fc6307609d719fad31656421c17582"
+    },
+    "epdg_lg2": {
+      "input_stock_epdgservice_sha256": "c798cd875f17bcad5ac5181587b09152ed96c453914b6a314d701746b08b8ad7",
+      "tools": [
+        "tools/build_epdgservice_w2l_trial.py",
+        "tools/legacy_epdg_prefix_compat.py"
+      ],
+      "sequence": "Pinned stock EpdgService input -> EC2 source build -> LG2 legacy ePDG prefix compatibility transformation.",
+      "final_unsigned_apk_sha256": "5c9f372867afcee56da55f10851b4c30bd95452bea0720fca68e6e73ac96de27"
+    },
+    "global_wfc_v2": {
+      "tool": "tools/global_wfc_profile_policy.py",
+      "result": "Pinned policy and vendor XML; the contract defines no standalone unsigned APK output."
+    },
+    "limits": "The public builder contracts and raw CWK3 input manifest define the reproducible source chain. They do not perform an Android ROM build, signing, port application, or device runtime validation."
+  },
+  "integration_contract": {
+    "target_manifest_and_base_must_be_resolved_before_porting": true,
+    "expected_source_only_state": "Apply/replay only the pinned source changes onto a clean checkout of the resolved CherishOS Android 13 manifest; record per-project base and resulting revisions, patch hashes and tree hashes.",
+    "required_validation_before_any_deployment_claim": [
+      "Source patch replay and tree verification against the resolved target bases",
+      "Relevant source and product gates on the exact target tree",
+      "Manual Android ROM build and package inspection by the user",
+      "Device runtime validation on the resulting build"
+    ],
+    "behavioral_scope": {
+      "ims_sms": "The compatibility source includes IMS SMS APIs and message/callback bridges. This is a source capability, not proof of SMS runtime success on the future port.",
+      "sms_claim": "Preserve the documented functional IMS SMS and fallback scope; do not interpret it as a guarantee of pure outgoing IMS SMS for every carrier or network.",
+      "sim_scope": "Single active IMS subscription in either SIM slot; dual-active DSDS IMS is not claimed.",
+      "handover_and_timer": "EC2 AP-assisted W2L remains disabled; legacy mode only; stock Timer F remains 128 seconds.",
+      "wfc": "Use the reviewed global WFC v2 profile policy without promoting its source gate into a runtime guarantee."
+    }
+  },
+  "artifact_references": {
+    "historical_unsigned_outputs": [
+      {
+        "id": "LG3-legacy-wfc-startup-gate-final-stock-timer",
+        "contract_path": "devices/m11q/legacy-wfc-gate-build.json",
+        "unsigned_apk_sha256": "544f4c9974d3a41e2ce541f02e9ab9bda2fc6307609d719fad31656421c17582",
+        "classes_dex_sha256": "8dd61436164931a648f49f88b41bb88e2ac71c5d9df7893cbdbbbf10a8924064",
+        "meaning": "Pinned historical package output; not a current CherishOS build artifact or port acceptance result."
+      },
+      {
+        "id": "LG2-legacy-epdg-prefix",
+        "contract_path": "devices/m11q/legacy-epdg-prefix-build.json",
+        "unsigned_apk_sha256": "5c9f372867afcee56da55f10851b4c30bd95452bea0720fca68e6e73ac96de27",
+        "classes_dex_sha256": "3cc23c6af802802859a1644d3d6187c90a4efcd575c285e0a975a0fae37d0c05",
+        "meaning": "Pinned historical package output; not a current CherishOS build artifact or port acceptance result."
+      },
+      {
+        "id": "IMS-service-historical-reference-includes-BU1-trial",
+        "contract_path": "devices/m11q/imsservice-build.json",
+        "unsigned_apk_sha256": "4cf9360b609fcc45329d038835a5913ba9c76844fe4cf59b70c132f904ae0dd1",
+        "meaning": "Historical reference only. This package includes the TWM-specific BU1 Timer F trial and is not the stock-Timer-F output to deploy."
+      }
+    ],
+    "global_wfc_v2": {
+      "policy_path": "devices/m11q/global-wfc-profile-policy.json",
+      "policy": "global-stock-profile-v2",
+      "vendor_xml_sha256": "0f3f343f34e2b9658716e56f961cbc9a80196b76a7dd5e7d5de8d0eaf406423f",
+      "unsigned_apk_sha256": null,
+      "unsigned_apk_note": "No standalone unsigned APK hash is defined by the global WFC v2 policy contract. Do not substitute the historical IMS-service BU1-trial APK hash above."
+    }
+  },
+  "raw_input_policy": {
+    "specification": "devices/m11q/payload-manifest.tsv",
+    "original_inputs_are_in_git": false,
+    "permitted_input_source": "The legally owned raw CWK3 stock inputs specified by the payload manifest.",
+    "forbidden_input_categories": [
+      "other_rom_checkout",
+      "other_rom_outputs",
+      "private_patched_apk",
+      "saved_decoded_tree",
+      "signing_keys_from_other_build"
+    ]
+  },
+  "required_evidence_paths": [
+    "devices/m11q/payload-manifest.tsv",
+    "devices/m11q/global-wfc-profile-policy.json",
+    "devices/m11q/legacy-wfc-gate-build.json",
+    "devices/m11q/legacy-epdg-prefix-build.json",
+    "devices/m11q/imsservice-build.json",
+    "platform/checkpoints/ims-20261010/manifest.json",
+    "platform/systemui/0001-fix-ims-registration-constant-import-package.patch",
+    "docs/SYSTEMUI_IMS_IMPORT_BUILD_FIX_20261010.md",
+    "devices/m11q/eris-private-crypto-contract.json",
+    "devices/m11q/unifiedwfc-sim-mobility-contract.json",
+    "devices/m11q/sveservice-media-contract.json",
+    "devices/m11q/seh-apn-bridge-build.json",
+    "platform/checkpoints/ims-20261010/frameworks__base/0001-m11q-add-Samsung-IMS-framework-compatibility-APIs.patch",
+    "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0001-m11q-integrate-SEH-APN-bridge-and-IMS-handover-recov.patch",
+    "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0002-m11q-support-single-active-IMS-SIM-in-either-slot.patch",
+    "platform/java/com/android/internal/telephony/M11SehApnPolicy.java",
+    "platform/java/com/android/internal/telephony/M11SehProfilePublisher.java",
+    "platform/java/com/android/internal/telephony/M11SehRadioBridge.java",
+    "platform/java/com/android/internal/telephony/M11SehRadioTransport.java",
+    "platform/telecom/sa2/SamsungImsAudioTransition.java",
+    "platform/telecom/sa2/SamsungImsAudioHandover.java",
+    "tools/build_imsservice.py",
+    "tools/build_imsservice_w2l_trial.py",
+    "tools/build_legacy_wfc_gate.py",
+    "tools/build_epdgservice_w2l_trial.py",
+    "tools/legacy_epdg_prefix_compat.py",
+    "tools/global_wfc_profile_policy.py",
+    "tools/transform_unifiedwfc_sim_mobility.py",
+    "tools/transform_sveservice_media.py",
+    "tools/transform_eris_private_crypto.py",
+    "tools/build_sveservice.py",
+    "tools/legacy_seh_apn_trial.py",
+    "tools/sa2_telecom_audio_trial.py",
+    "tools/verify_payload.py",
+    "tools/verify_framework_abi.py",
+    "bridge/java/com/sec/internal/google/GoogleModernImsService.java",
+    "bridge/java/com/sec/internal/google/GoogleModernMmTelFeature.java",
+    "bridge/java/com/sec/internal/google/ModernCallRelay.java",
+    "bridge/java/com/sec/internal/google/ModernCallSession.java",
+    "bridge/java/com/sec/internal/google/ModernEventQueue.java",
+    "bridge/java/com/sec/internal/google/ModernSmsBridge.java",
+    "bridge/java/com/sec/internal/google/ModernVoiceContext.java"
+  ]
+}

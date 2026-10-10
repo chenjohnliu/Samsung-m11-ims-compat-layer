@@ -15,6 +15,15 @@ its pinned firmware inputs, and the runtime scope documented below.
 
 ## Current project status
 
+For the current, independent CherishOS Android 13 source handoff, start with
+[`docs/CHERISH_ANDROID13_IMS_HANDOFF.md`](docs/CHERISH_ANDROID13_IMS_HANDOFF.md)
+and its [machine-readable inventory](devices/m11q/cherish-android13-handoff.json).
+The inventory is **not yet a closed rebuild recipe**: ER1 requires an exact
+two-library input pair whose source/build provenance is unresolved. Raw CWK3
+libraries do not match that pair. The new CherishOS port has not been applied,
+built or runtime-tested. The stage narrative below is historical; its early
+carrier-specific call-disconnection workaround is not the handoff policy.
+
 Stage 3 is the current VoWiFi compatibility and validation stage. It builds on
 Stage 2, which extended the original SIM1 voice bring-up to a **single active
 subscription on either physical slot** and added an Android 13 IMS SMS bridge. Runtime
@@ -104,9 +113,13 @@ fail-closed transformers, contracts, tests, ABI declaration fixtures and
 verification tooling. The bridge inventory and expected hashes are recorded in
 [`devices/m11q/imsservice-build.json`](devices/m11q/imsservice-build.json).
 
-Therefore a fresh public checkout can reproduce the complete project-authored
-logic when the user supplies legally obtained, hash-matching Samsung firmware
-inputs and the documented build toolchain. The pinned IMS bridge source was
+The public checkout provides the project-authored transformations, but a
+complete independent rebuild additionally needs every exact private input.
+Samsung firmware and the documented build toolchain alone are insufficient:
+ER1's two pinned Android 12 ARM32 BoringSSL libraries have unresolved build
+provenance and differ from the raw CWK3 pair. See the
+[ER1 input audit](docs/ER1_ERIS_PRIVATE_CRYPTO.md#cwk3-input-comparison--2026-10-10).
+The pinned IMS bridge source was
 promoted only after two deterministic `PIN_DISCOVERY` runs produced identical
 DEX and unsigned-APK identities. The default strict mode can regenerate and
 publish that exactly pinned unsigned APK. Build reproducibility does not, by
@@ -115,7 +128,10 @@ itself, establish additional VoWiFi runtime behavior. The required private input
 1. the exact stock files listed in
    [`devices/m11q/payload-manifest.tsv`](devices/m11q/payload-manifest.tsv);
 2. the matching Android framework/APK decoding and build tools described in
-   [`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md).
+   [`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md);
+3. the exact ER1 library inputs, with lawful provenance still to be resolved
+   for the independent handoff. Do not substitute arbitrary libraries or use
+   another ROM's private outputs to hide this gap.
 
 Stage 3 stock inputs and locally derived outputs have different handling; see
 [`docs/STAGE3_PAYLOAD_INPUTS.md`](docs/STAGE3_PAYLOAD_INPUTS.md). The public
