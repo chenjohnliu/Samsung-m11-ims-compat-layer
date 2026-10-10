@@ -11,6 +11,7 @@ from pathlib import Path
 
 import build_imsservice_w2l_trial as BV1
 import legacy_wfc_gate_transform as TRANSFORM
+import stock_ims_timer_policy as TIMER
 
 BASE = BV1.BASE
 BuildError = BASE.BuildError
@@ -41,6 +42,7 @@ def verify_apk(apk, pins_path=DEFAULT_PINS):
     primary = hashlib.sha256(entries["classes.dex"]).hexdigest()
     if primary != pins["classes_dex_sha256"] or hashlib.sha256(entries["classes2.dex"]).hexdigest() != BV1.BRIDGE_DEX:
         raise BuildError("LG3 IMS primary/bridge DEX mismatch; do not flash")
+    TIMER.verify_profile(entries.get(TIMER.RESOURCE, b""))
     return {"status": "PASS", "transformation_id": IDENTITY,
             "classes_dex_sha256": primary, "classes2_dex_sha256": BV1.BRIDGE_DEX,
             "runtime_validated": False, "signature_verified": False}
@@ -91,16 +93,21 @@ def build(args):
         BASE._run(command + ["b", str(source), "-o", str(assembled)], "LG3 primary DEX assembly")
         dex = stage / "classes.dex"
         dex.write_bytes(BASE._zip_entries(assembled)["classes.dex"])
+        profile = stage / "imsprofile.json"
+        profile.write_bytes(TIMER.restored_profile(entries[TIMER.RESOURCE]))
         candidate = stage / "candidate.apk"
         ZIPPER = BASE._module("lg3_zipper", "tools/apk_entry_replace.py")
-        zip_report = ZIPPER.build_archive(base, candidate, {"classes.dex": dex}, {})
+        zip_report = ZIPPER.build_archive(base, candidate,
+                                         {"classes.dex": dex, TIMER.RESOURCE: profile}, {})
         after_entries = BASE._zip_entries(candidate)
-        if ({x["entry"] for x in zip_report["changed_entries"]} != {"classes.dex"}
+        if ({x["entry"] for x in zip_report["changed_entries"]} != {"classes.dex", TIMER.RESOURCE}
                 or set(after_entries) != set(entries)
-                or any(after_entries[k] != v for k, v in entries.items() if k != "classes.dex")):
+                or any(after_entries[k] != v for k, v in entries.items()
+                       if k not in ("classes.dex", TIMER.RESOURCE))):
             raise BuildError("LG3 unrelated ZIP entry or bridge DEX changed")
         BASE._run(command + ["d", "-r", str(candidate), "-o", str(final)], "LG3 candidate decode")
         roundtrip = verify_roundtrip(source / "smali", final / "smali")
+        TIMER.verify_profile(after_entries[TIMER.RESOURCE])
         observed = {"schema_version": 1, "transformation_id": IDENTITY,
                     "classes_dex_sha256": BASE.sha256_file(dex),
                     "unsigned_apk_sha256": BASE.sha256_file(candidate)}
@@ -108,6 +115,7 @@ def build(args):
             raise BuildError("LG3 final APK/DEX pin drift")
         payload = {"status": "PASS", "schema_version": 1, "transformation_id": IDENTITY,
                    "mode": "pin-discovery" if discovery else "strict",
+                   "stock_timer_f_ms": 128000,
                    "observed_build_pins": observed, "transformation": transformed,
                    "instruction_roundtrip_validation": roundtrip,
                    "inputs": {"base_apk_sha256": BASE_APK, "base_classes_dex_sha256": BASE_DEX},

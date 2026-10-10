@@ -17,6 +17,13 @@ class LegacyWfcBuilderTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
         self.pins = self.base / "pins.json"
+        self.stock_profile = json.dumps({"profile": [
+            {"name": "default", "timer": "F:128000"},
+            dict(B.TIMER.BU1.PROFILE_IDENTITY,
+                 network=[{"type": "wifi", "services": ["mmtel"]}])]}).encode()
+        stock_pin = patch.object(B.TIMER, "STOCK_SHA", hashlib.sha256(self.stock_profile).hexdigest())
+        stock_pin.start()
+        self.addCleanup(stock_pin.stop)
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -33,6 +40,7 @@ class LegacyWfcBuilderTests(unittest.TestCase):
         with zipfile.ZipFile(apk, "w") as archive:
             archive.writestr("classes.dex", primary)
             archive.writestr("classes2.dex", bridge)
+            archive.writestr(B.TIMER.RESOURCE, self.stock_profile)
             if extra:
                 archive.writestr("classes3.dex", b"unexpected")
         return apk
@@ -68,6 +76,13 @@ class LegacyWfcBuilderTests(unittest.TestCase):
         self.pins.write_text(json.dumps(data), encoding="utf-8")
         with self.assertRaisesRegex(B.BuildError, "promoted"):
             B.load_pins(self.pins)
+
+    def test_stock_profile_is_required_even_when_dex_matches(self):
+        self.pins_for(b"new")
+        self.stock_profile = self.stock_profile.replace(b"F:128000", b"F:16000")
+        with patch.object(B.BV1, "BRIDGE_DEX", hashlib.sha256(b"bridge").hexdigest()):
+            with self.assertRaisesRegex(ValueError, "stock IMS profile"):
+                B.verify_apk(self.archive(), self.pins)
 
     def test_roundtrip_rejects_instruction_changes_in_any_class(self):
         source, final = self.base / "source", self.base / "final"
