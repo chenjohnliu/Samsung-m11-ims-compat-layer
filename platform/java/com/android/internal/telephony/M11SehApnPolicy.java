@@ -40,6 +40,8 @@ public final class M11SehApnPolicy {
         return operator != null && operator.matches("[0-9]{5,6}");
     }
 
+    public static boolean supportedPhone(int phoneId) { return phoneId == 0 || phoneId == 1; }
+
     /** Created on the DataProfileManager handler; only final fields cross Binder threads. */
     public static final class Snapshot {
         public final int phoneId, subscriptionId;
@@ -56,7 +58,7 @@ public final class M11SehApnPolicy {
 
     public static Profile fallback(Snapshot snapshot, int phoneId, int subId,
             String operator, String selection, boolean active) {
-        if (!active || phoneId != 0 || subId < 0 || !validOperator(operator)
+        if (!active || !supportedPhone(phoneId) || subId < 0 || !validOperator(operator)
                 || !IMS_SELECTION.equals(selection) || snapshot == null
                 || snapshot.phoneId != phoneId || snapshot.subscriptionId != subId
                 || !snapshot.operator.equals(operator) || snapshot.soleImsProfile == null

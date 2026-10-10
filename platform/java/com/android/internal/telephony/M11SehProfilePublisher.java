@@ -12,7 +12,7 @@ public final class M11SehProfilePublisher {
 
     public static void publish(Phone phone, List<DataProfile> profiles) {
         int phoneId = phone.getPhoneId();
-        if (!M11SehRadioBridge.isTrialEnabledForPhone(phoneId)) return;
+        if (!M11SehRadioBridge.isEnabledForPhone(phoneId)) return;
         int subId = phone.getSubId();
         M11SehApnPolicy.Profile result = null;
         String operator = "";

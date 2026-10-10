@@ -49,7 +49,12 @@ public final class M11SehTransportHostHarness {
                 M11SehApnPolicy.IMS_SELECTION, true));
         assertEmpty("inactive", M11SehApnPolicy.fallback(snapshot, 0, 7, "46697",
                 M11SehApnPolicy.IMS_SELECTION, false));
-        assertEmpty("slot 1", M11SehApnPolicy.fallback(snapshot, 1, 7, "46697",
+        assertEmpty("other slot snapshot", M11SehApnPolicy.fallback(snapshot, 1, 7, "46697",
+                M11SehApnPolicy.IMS_SELECTION, true));
+        assertSame("SIM2 matching snapshot", ims, M11SehApnPolicy.fallback(
+                new M11SehApnPolicy.Snapshot(1, 7, "46697", ims), 1, 7, "46697",
+                M11SehApnPolicy.IMS_SELECTION, true));
+        assertEmpty("invalid third slot", M11SehApnPolicy.fallback(snapshot, 2, 7, "46697",
                 M11SehApnPolicy.IMS_SELECTION, true));
         assertEmpty("invalid sub", M11SehApnPolicy.fallback(snapshot, 0, -1, "46697",
                 M11SehApnPolicy.IMS_SELECTION, true));

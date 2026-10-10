@@ -49,6 +49,7 @@ public final class M11SehBridgeHostHarness {
                 M11SehBridgeHostHarness::testChangedIdentityAndClose);
         run("profile publisher scope and stale clearing", M11SehBridgeHostHarness::testPublisher);
         run("death invalidates stale epoch and retries", M11SehBridgeHostHarness::testDeathRetry);
+        run("SIM2 registration provider and snapshot isolation", M11SehBridgeHostHarness::testSecondSlot);
         System.out.println("PASS: " + tests + " M11 SEH bridge host tests");
     }
 
@@ -275,6 +276,51 @@ public final class M11SehBridgeHostHarness {
         HwParcel reply = call(indication, 23, request);
         assertReply(reply);
         return reply.readInt32();
+    }
+
+    private static void testSecondSlot() throws Exception {
+        assertTrue("SIM2 product scope", M11SehRadioBridge.isEnabledForPhone(1));
+        assertFalse("invalid negative phone", M11SehRadioBridge.isEnabledForPhone(-1));
+        assertFalse("invalid third phone", M11SehRadioBridge.isEnabledForPhone(2));
+        RecordingService second = new RecordingService();
+        HwBinder.setService(second);
+        M11SehRadioBridge.maybeStart(new RIL(), state.context, 1);
+        Handler.runAll();
+        assertEquals("SIM2 service", "slot2", HwBinder.lastInstance());
+        assertEquals("SIM2 registration", 1, second.registrations);
+        assertHashChain(second.indication, INDICATION_HASH);
+        int queries = state.resolver.queries;
+        assertEmpty("inactive SIM2 no APN", apn(second.indication, SELECTION));
+        assertEquals("inactive SIM2 skips provider", queries, state.resolver.queries);
+        state.subscriptions.setActive(new SubscriptionInfo(9, 1));
+        state.telephony.setSimOperator(9, "46697");
+        assertEmpty("old SIM1 callback rejected after move", apn(state.service.indication, SELECTION));
+        state.resolver.mode = FakeResolver.Mode.ROWS;
+        state.resolver.rows = new String[][] {{"ims-slot2", "IPV4V6", "", "", "0", "IPV4V6"}};
+        assertArrayEquals("SIM2 provider fields", state.resolver.rows[0],
+                providerOrder(profileFields(apn(second.indication, SELECTION))));
+        assertEquals("SIM2 uses its own subId",
+                "content://telephony/carriers/sim_apn_list/filtered/subId/9", state.resolver.lastUri);
+        state.resolver.mode = FakeResolver.Mode.EMPTY;
+        M11SehProfilePublisher.publish(new Phone(state.context, 1, 9), Arrays.asList(
+                dataProfile("ims-slot2-cache", ApnSetting.TYPE_IMS, true, true, 2, 2, "", "", 0)));
+        assertEquals("SIM2 publisher fallback", "ims-slot2-cache",
+                profileFields(apn(second.indication, SELECTION))[0]);
+        M11SehApnPolicy.Profile profile = new M11SehApnPolicy.Profile("ims", "IP", "IP", "", "", "0");
+        assertTrue("wrong slot snapshot rejected", M11SehApnPolicy.fallback(
+                new M11SehApnPolicy.Snapshot(0, 9, "46697", profile), 1, 9, "46697",
+                SELECTION, true) == M11SehApnPolicy.EMPTY);
+        state.resolver.mode = FakeResolver.Mode.ROWS;
+        state.resolver.afterQuery = () -> state.subscriptions.setActive(new SubscriptionInfo(10, 1));
+        assertEmpty("SIM2 subscription changed mid-query", apn(second.indication, SELECTION));
+        state.resolver.afterQuery = null;
+        state.subscriptions.setActive(new SubscriptionInfo(7, 0), new SubscriptionInfo(9, 1));
+        queries = state.resolver.queries;
+        assertEmpty("dual-active SIM1 rejected", apn(state.service.indication, SELECTION));
+        assertEmpty("dual-active SIM2 rejected", apn(second.indication, SELECTION));
+        assertEquals("dual-active skips both queries", queries, state.resolver.queries);
+        state.subscriptions.setActive(new SubscriptionInfo(7, 0));
+        state.telephony.setSimOperator(7, "46697");
     }
 
     private static DataProfile dataProfile(String apn, int types, boolean enabled, boolean lte,

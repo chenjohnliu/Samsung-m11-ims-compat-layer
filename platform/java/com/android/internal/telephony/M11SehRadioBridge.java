@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /**
- * Opt-in owner for the legacy Samsung base-2.0 radio callbacks used by m11q.
+ * Product-configured owner for the legacy Samsung base-2.0 radio callbacks used by m11q.
  *
  * <p>This class does not issue radio requests or mutate telephony state. It only answers the
  * reviewed synchronous callbacks, and fails closed whenever subscription identity changes or the
@@ -43,7 +43,6 @@ public final class M11SehRadioBridge {
             "apn", "protocol", "user", "password", "authtype", "roaming_protocol"
     };
 
-    private static final int SUPPORTED_PHONE_ID = 0;
     private static final int SLOT_COUNT = 2;
     private static final long INITIAL_RETRY_MILLIS = 250L;
     private static final long MAX_RETRY_MILLIS = 10_000L;
@@ -97,7 +96,7 @@ public final class M11SehRadioBridge {
 
     /** Starts the one permitted owner without affecting configurations where the gate is false. */
     public static void maybeStart(RIL owner, Context context, int phoneId) {
-        if (owner == null || context == null || !isTrialEnabledForPhone(phoneId)) {
+        if (owner == null || context == null || !isEnabledForPhone(phoneId)) {
             return;
         }
 
@@ -115,8 +114,8 @@ public final class M11SehRadioBridge {
         }
     }
 
-    public static boolean isTrialEnabledForPhone(int phoneId) {
-        return phoneId == SUPPORTED_PHONE_ID && DEVICE.equals(Build.DEVICE)
+    public static boolean isEnabledForPhone(int phoneId) {
+        return M11SehApnPolicy.supportedPhone(phoneId) && DEVICE.equals(Build.DEVICE)
                 && SystemProperties.getBoolean(ENABLE_PROPERTY, false)
                 && "legacy".equals(SystemProperties.get(IWLAN_MODE_PROPERTY));
     }

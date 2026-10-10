@@ -54,8 +54,13 @@ class SehPackagedAbiTests(unittest.TestCase):
                             signature, name != "M11SehRadioTransport", **kwargs)
                         if name == "M11SehApnPolicy":
                             with mock.patch.object(T.SS1, "OWNER", "Lcom/android/internal/telephony/M11SehApnPolicy;"), mock.patch.object(
-                                    T.SS1, "REQUIRED", {signature: True, "validOperator(Ljava/lang/String;)Z": True}):
+                                    T.SS1, "REQUIRED", {signature: True, "validOperator(Ljava/lang/String;)Z": True,
+                                                        "supportedPhone(I)Z": True}):
                                 data = synthetic_dex()
+                        if name == "M11SehRadioBridge":
+                            with mock.patch.object(T.SS1, "OWNER", "Lcom/android/internal/telephony/M11SehRadioBridge;"), mock.patch.object(
+                                    T.SS1, "REQUIRED", {signature: True, "isEnabledForPhone(I)Z": True}):
+                                data = synthetic_dex(**kwargs)
                         archive.writestr("classes" + ("" if index == 1 else str(index)) + ".dex", data)
 
             write_jar()
