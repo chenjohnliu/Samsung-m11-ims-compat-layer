@@ -8,7 +8,7 @@ PROBE_SECONDS=5
 MAX_INTERFACES=8
 MAX_WAIT_BEFORE_PROBE=30
 MAX_WAIT_AFTER_PROBE=60
-PROBE_VERSION=stock-audio-port-v6
+PROBE_VERSION=stock-audio-port-v7
 AUDIO_TRIAL=false
 HANDOVER_CHECK=false
 if [ "${1:-}" = --start-sae ]; then AUDIO_TRIAL=true; shift; fi
@@ -115,9 +115,9 @@ prepare_audio_trial() {
 }
 prepare_audio_trial
 if [ "$HANDOVER_CHECK" = true ]; then
-    sa2_gate="$(su -c 'getprop persist.sys.m11_ims_audio_port')"
-    if [ "$sa2_gate" != stock1 ]; then printf 'SA2 試驗開關未啟用，停止採集；此腳本不會自行開啟\n' >&2; exit 1; fi
-    printf 'audio_trial=DISABLED\thandover_check=READ_ONLY\tsa2_gate=stock1\n' >>"$COMMAND_LOG"
+    # Integrated SA2 has no opt-in property. APK identity and runtime SA2 logs
+    # establish which code actually ran; the collector never enables a feature.
+    printf 'audio_trial=DISABLED\thandover_check=READ_ONLY\tsa2_gate=NOT_REQUIRED\n' >>"$COMMAND_LOG"
 fi
 
 root_capture() {
@@ -309,7 +309,7 @@ trap 'exit 143' TERM
 
 capture_state baseline
 if [ "$HANDOVER_CHECK" = true ]; then
-    root_capture 'SA2 Telecom identity and gate' 'getprop persist.sys.m11_ims_audio_port; pm path com.android.server.telecom; for f in /system/priv-app/Telecom/Telecom.apk /system_ext/priv-app/Telecom/Telecom.apk; do if [ -f "$f" ]; then sha256sum "$f"; fi; done'
+    root_capture 'SA2 Telecom identity' 'pm path com.android.server.telecom; for f in /system/priv-app/Telecom/Telecom.apk /system_ext/priv-app/Telecom/Telecom.apk; do if [ -f "$f" ]; then sha256sum "$f"; fi; done'
 fi
 write_marker baseline
 start_logcat

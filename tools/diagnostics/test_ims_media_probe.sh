@@ -82,4 +82,7 @@ grep -q '^HANDOVER_CHECK=false$' "$probe_script"
 grep -q '不可混用手動 SAE 與自動切換驗證' "$probe_script"
 grep -q 'W2L_user_wifi_off' "$probe_script"
 grep -q 'W2L_observation_window_complete' "$probe_script"
+! grep -q 'persist.sys.m11_ims_audio_port' "$probe_script"
+grep -q 'sa2_gate=NOT_REQUIRED' "$probe_script"
 printf 'PASS: handover mode is opt-in, mutually exclusive with manual SAE, and has explicit W2L observation markers\n'
+printf 'PASS: integrated audio has no feature-switch prerequisite; collector remains read-only\n'
