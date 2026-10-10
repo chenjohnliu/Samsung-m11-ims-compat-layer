@@ -1,5 +1,29 @@
 # crDroid Android 13 IMS source restoration
 
+Current publication and policy cleanup, 2026-10-10:
+[separate-purpose IMS commits and GitHub publication](IMS_PUBLICATION_AND_POLICY_CLEANUP_20261010.md).
+Only the four obsolete Taiwan framework handover-blocking arrays are removed
+from the active overlay. Audio, phone-number, icon and stock legacy behavior
+are retained. The five upstream-only component repos are published as complete
+tree-verified Git patch series, not pushed to upstream. Older local-only status
+below is historical. Latest policy/icon source changes require a user build.
+
+Current slot-scope update, 2026-10-09:
+[single active SIM in SIM1 or SIM2](IMS_SINGLE_SIM_EITHER_SLOT_20261009.md),
+with a [consolidated user test checklist](SIM1_SIM2_IMS_TEST_CHECKLIST_20261009.md).
+Live WSL audio/APN source is upgraded; dual-active SIM support is not included.
+New product gates reject slot-0-only artifacts. User build/flash and SIM2
+runtime audio acceptance remain pending.
+
+Current integration update, 2026-10-09:
+[SA2 switch removal and experimental-policy audit](IMS_INTEGRATION_CLEANUP_20261009.md).
+The flashed carrier-neutral Telecom APK includes SA2 but its old opt-in
+property was unset, so audio handover was inactive. The phone's old APK was
+enabled for immediate retesting. WSL now removes that runtime test switch,
+restores the exact CWK3 IMS profile (inherited Timer F 128 s), and retains
+single-SIM/call safety checks. User build/flash is required for these source
+changes; historical experiment notes below are not current setup instructions.
+
 Configuration update, 2026-10-09: the extra vendor WFC policy is now
 [global/profile-backed: 93 PLMNs across 33 MCCs](GLOBAL_PROFILE_BACKED_WFC_20261009.md),
 not Taiwan-only. Source and compiled-resource gates pass; a user ROM build/flash
