@@ -104,12 +104,12 @@ class WfcIconHarness {
 
     def test_registration_callback_sets_wfc_only_for_iwlan_or_cross_sim(self):
         self.assertIn(
-            "import static android.telephony.ims.ImsRegistrationImplBase."
+            "import static android.telephony.ims.stub.ImsRegistrationImplBase."
             "REGISTRATION_TECH_IWLAN;",
             self.source,
         )
         self.assertIn(
-            "import static android.telephony.ims.ImsRegistrationImplBase."
+            "import static android.telephony.ims.stub.ImsRegistrationImplBase."
             "REGISTRATION_TECH_CROSS_SIM;",
             self.source,
         )
@@ -125,6 +125,43 @@ class WfcIconHarness {
                 re.S,
             ),
         )
+
+    def test_registration_constants_use_android13_stub_package_in_source_and_patch(self):
+        correct = "android.telephony.ims.stub.ImsRegistrationImplBase"
+        self.assertIn(correct, self.source)
+        self.assertNotIn("android.telephony.ims.ImsRegistrationImplBase", self.source)
+
+    def test_android13_real_api_import_compilation_when_classpath_is_configured(self):
+        """Compile the actual constants import independently of the fake method harness."""
+        classpath = os.environ.get("M11_SYSTEMUI_API_CLASSPATH")
+        if not classpath:
+            self.skipTest("Set M11_SYSTEMUI_API_CLASSPATH to existing Android 13 API jars")
+        javac = shutil.which("javac")
+        if not javac:
+            self.skipTest("Host JDK unavailable")
+        imports = re.findall(
+            r"^import static android\.telephony\.ims(?:\.stub)?\.ImsRegistrationImplBase\."
+            r"REGISTRATION_TECH_(?:IWLAN|CROSS_SIM);$",
+            self.source,
+            re.M,
+        )
+        self.assertEqual(len(imports), 2, "Expected the two registration constant imports")
+        source = """%s
+class WfcRegistrationApiImportCheck {
+    int iwlan = REGISTRATION_TECH_IWLAN;
+    int crossSim = REGISTRATION_TECH_CROSS_SIM;
+}
+""" % "\n".join(imports)
+        with tempfile.TemporaryDirectory(prefix="m11_wfc_api_import_") as temporary:
+            source_file = Path(temporary) / "WfcRegistrationApiImportCheck.java"
+            source_file.write_text(source, encoding="utf-8")
+            compiled = subprocess.run(
+                [javac, "-classpath", classpath, "-d", temporary, str(source_file)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(compiled.returncode, 0, compiled.stderr)
+
 
     def test_registering_and_deregistering_clear_wfc_before_notification(self):
         for callback in ("onRegistering", "onUnregistered"):
@@ -176,6 +213,17 @@ class WfcIconHarness {
         registration_technology = "LTE"
         self.assertEqual(data_rat, "IWLAN")
         self.assertFalse(icon(True, True, registration_technology))
+
+
+class WfcIconPatchContractTest(unittest.TestCase):
+    def test_packaged_patch_uses_android13_stub_import_namespace(self):
+        patch = (Path(__file__).resolve().parents[1]
+                 / "platform/systemui/wfc-registration-icon.patch").read_text(encoding="utf-8")
+        correct = "android.telephony.ims.stub.ImsRegistrationImplBase"
+        incorrect = "android.telephony.ims.ImsRegistrationImplBase"
+        added_lines = "\n".join(line[1:] for line in patch.splitlines() if line.startswith("+"))
+        self.assertIn(correct, added_lines)
+        self.assertNotIn(incorrect, added_lines)
 
 
 if __name__ == "__main__":
