@@ -9,19 +9,25 @@ import tempfile
 import unittest
 
 
-SOURCE = Path(os.environ.get("M11_SYSTEMUI_SOURCE", str(
-    Path(__file__).resolve().parents[2]
-    / "work"
-    / "systemui_wfc_icon_20261010"
-    / "MobileSignalController.java"
-)))
+def source_from_environment(environ):
+    configured = environ.get("M11_SYSTEMUI_SOURCE")
+    return Path(configured) if configured else None
+
+
+SOURCE = source_from_environment(os.environ)
 
 
 class WfcIconSourceContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        if SOURCE is None:
+            raise unittest.SkipTest(
+                "M11_SYSTEMUI_SOURCE is unset; source-body checks need an explicitly configured patched MobileSignalController.java"
+            )
         if not SOURCE.is_file():
-            raise unittest.SkipTest("Set M11_SYSTEMUI_SOURCE to the patched MobileSignalController.java")
+            raise unittest.SkipTest(
+                f"M11_SYSTEMUI_SOURCE does not name a file: {SOURCE}"
+            )
         cls.source = SOURCE.read_text(encoding="utf-8")
 
     def test_extracted_java_callback_sequence(self):
@@ -216,6 +222,13 @@ class WfcRegistrationApiImportCheck {
 
 
 class WfcIconPatchContractTest(unittest.TestCase):
+    def test_source_selection_has_no_implicit_private_checkout_fallback(self):
+        self.assertIsNone(source_from_environment({}))
+        self.assertEqual(
+            source_from_environment({"M11_SYSTEMUI_SOURCE": "public-source/MobileSignalController.java"}),
+            Path("public-source/MobileSignalController.java"),
+        )
+
     def test_packaged_patch_uses_android13_stub_import_namespace(self):
         patch = (Path(__file__).resolve().parents[1]
                  / "platform/systemui/wfc-registration-icon.patch").read_text(encoding="utf-8")
