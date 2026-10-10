@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 from pathlib import Path
 import sys
 import struct
@@ -113,14 +114,24 @@ class GlobalWfcPolicyTests(unittest.TestCase):
         self.assertEqual(G.derive(*data)[0], [])
 
     def test_renderer_preserves_existing_carrier_policy_without_copying_it(self):
-        base = (b'<carrier_config_list><carrier_config mcc="466" mnc="97">'
-                b'<string-array name="iwlan_handover_policy_string_array"><item value="original"/>'
-                b'</string-array></carrier_config></carrier_config_list>\n')
+        array = (b'        <string-array name="iwlan_handover_policy_string_array" num="2">\n'
+                 b'            <item value="source=IWLAN, target=EUTRAN, type=disallowed, capabilities=IMS"/>\n'
+                 b'            <item value="source=GERAN|UTRAN|EUTRAN|NGRAN|IWLAN, target=GERAN|UTRAN|EUTRAN|NGRAN|IWLAN, type=allowed"/>\n'
+                 b'        </string-array>\n')
+        def carrier(mnc):
+            return (f'    <carrier_config mcc="466" mnc="{mnc}">\n'.encode() + array
+                    + b'        <boolean name="carrier_wfc_ims_available_bool" value="true"/>\n'
+                    + b'    </carrier_config>\n')
+        base = b'<carrier_config_list>\n' + b''.join(carrier(mnc) for mnc in ('97', '01', '05', '92')) + b'</carrier_config_list>\n'
         with mock.patch.object(G, 'BASE_SHA', G.sha(base)):
-            result = ET.fromstring(G.render(base, [{'plmn': '46697'}, {'plmn': '23420'}]))
+            result = ET.fromstring(G.render(base, [{'plmn': plmn} for plmn in
+                                                   ('46601', '46605', '46692', '46697', '23420')]))
         existing = result.find("carrier_config[@mcc='466']")
         foreign = result.find("carrier_config[@mcc='234']")
-        self.assertEqual(existing.find('string-array/item').get('value'), 'original')
+        self.assertIsNone(existing.find('string-array'))
+        self.assertEqual(existing.find(f"boolean[@name='{G.WFC}']").get('value'), 'true')
+        self.assertEqual(result.find("carrier_config[@mcc='466'][@mnc='01']").find(
+            f"boolean[@name='{G.WFC}']").get('value'), 'true')
         self.assertIsNone(foreign.find('string-array'))
         self.assertEqual(foreign.find(f"boolean[@name='{G.WFC}']").get('value'), 'true')
         self.assertEqual(foreign.find("boolean[@name='carrier_default_wfc_ims_enabled_bool']").get('value'), 'false')
@@ -134,12 +145,23 @@ class GlobalWfcPolicyTests(unittest.TestCase):
         with mock.patch.object(G, 'BASE_SHA', G.sha(base)), self.assertRaises(ValueError):
             G.render(base, [])
 
-    def test_committed_matrix_has_93_plmns_no_wildcard_enable_and_taiwan_preserved(self):
+    def test_committed_matrix_has_93_plmns_and_only_taiwan_framework_rules_removed(self):
         policy, vendor = G.artifacts()
         tree = ET.fromstring(vendor)
+        self.assertEqual(policy['policy'], 'global-stock-profile-v2')
         self.assertEqual(len(policy['approved']), 93)
         self.assertEqual(len({row['plmn'][:3] for row in policy['approved']}), 33)
         self.assertTrue({'46601', '46605', '46692', '46697'} <= {r['plmn'] for r in policy['approved']})
+        taiwan = {row.get('mnc'): row for row in tree.findall("carrier_config[@mcc='466']")}
+        self.assertEqual(set(taiwan), {'01', '05', '92', '97'})
+        for row in taiwan.values():
+            self.assertIsNone(row.find('string-array'))
+            self.assertEqual(row.find(f"boolean[@name='{G.WFC}']").get('value'), 'true')
+            self.assertEqual(row.find("boolean[@name='carrier_default_wfc_ims_enabled_bool']").get('value'), 'false')
+            self.assertEqual([node.text for node in row.findall('string')], ['com.sec.epdg'] * 3)
+        self.assertFalse(any(row.find('string-array') is not None
+                             for row in tree.findall('carrier_config') if row.get('mcc') != '466'))
+        self.assertEqual(tree.find("carrier_config/boolean[@name='m11q_active_call_w2l_handover_bool']").get('value'), 'false')
         for row in tree.findall('carrier_config'):
             if row.find(f"boolean[@name='{G.WFC}']") is not None:
                 self.assertTrue(row.get('mcc') and row.get('mnc'))
@@ -201,7 +223,8 @@ class GlobalWfcPolicyTests(unittest.TestCase):
                 G.apply(android, backup)
                 self.assertEqual(target.read_bytes(), candidate)
                 self.assertEqual((backup / 'vendor.xml').read_bytes(), original)
-                self.assertEqual(target.stat().st_mode & 0o777, 0o640)
+                if os.name != 'nt':
+                    self.assertEqual(target.stat().st_mode & 0o777, 0o640)
                 G.apply(android, backup)
                 self.assertEqual((backup / 'vendor.xml').read_bytes(), original)
                 target.write_bytes(b'unrelated edit\n')
@@ -209,9 +232,30 @@ class GlobalWfcPolicyTests(unittest.TestCase):
                     G.apply(android, Path(tmp) / 'other')
                 self.assertEqual(target.read_bytes(), b'unrelated edit\n')
 
-    def test_committed_historical_baseline_retains_exact_generation_pin(self):
+    def test_apply_accepts_only_pinned_prior_generated_vendor_for_migration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            android = Path(tmp) / 'android'
+            target = android / G.VENDOR
+            target.parent.mkdir(parents=True)
+            target.write_bytes(bytes.fromhex('3c' * 8))
+            backup = Path(tmp) / 'backup'
+            policy = {'approved': []}
+            with mock.patch.object(G, 'artifacts', return_value=(policy, b'candidate')), \
+                    mock.patch.object(G, 'verify_inputs'), mock.patch.object(G, 'verify_source'):
+                with mock.patch.object(G, 'PRIOR_VENDOR_SHA', G.sha(target.read_bytes())):
+                    G.apply(android, backup)
+            self.assertEqual(target.read_bytes(), b'candidate')
+            self.assertEqual((backup / 'vendor.xml').read_bytes(), bytes.fromhex('3c' * 8))
+            target.write_bytes(b'arbitrary drift')
+            with mock.patch.object(G, 'artifacts', return_value=(policy, b'candidate')), \
+                    mock.patch.object(G, 'verify_inputs'):
+                with self.assertRaises(ValueError):
+                    G.apply(android, Path(tmp) / 'other')
+
+    def test_committed_historical_baseline_retains_exact_generation_pin_and_old_vendor_pin(self):
         baseline = ROOT / 'platform/carrierconfig/taiwan-legacy-baseline-vendor.xml'
         self.assertEqual(G.sha(baseline.read_bytes()), G.BASE_SHA)
+        self.assertEqual(G.PRIOR_VENDOR_SHA, '4d5750cb8c60e67f9d140b40914ac763854a28c039d9c203e71e3b9932f4c38a')
 
     def test_binary_xml_preserves_compiled_string_text_in_both_encodings(self):
         import legacy_iwlan_trial as legacy

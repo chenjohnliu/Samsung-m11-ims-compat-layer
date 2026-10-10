@@ -12,8 +12,10 @@ import zipfile
 from audit_vowifi_carriers import read_apk_json
 
 ROOT = Path(__file__).resolve().parents[1]
-POLICY = 'global-stock-profile-v1'
+POLICY = 'global-stock-profile-v2'
 BASE_SHA = '164515303794e27f4b7bf0ec2c52b20deea504ba52a7fe037dc869c6297cecea'
+# One-time migration source accepted alongside the historical BASE_SHA.
+PRIOR_VENDOR_SHA = '4d5750cb8c60e67f9d140b40914ac763854a28c039d9c203e71e3b9932f4c38a'
 VENDOR = 'device/samsung/m11q/overlay/packages/apps/CarrierConfig/res/xml/vendor.xml'
 APK = 'device/samsung/m11q/ims/proprietary/priv-app/imsservice/imsservice.apk'
 EPDG = 'device/samsung/m11q/ims/proprietary/etc/epdg_apns_conf.xml'
@@ -106,8 +108,30 @@ def render(base, approved):
     text = text.replace(
         '<!-- Force a fresh WWAN IMS bearer after leaving IWLAN. This intentionally\n'
         '         trades active VoWiFi call continuity for clean post-WFC IMS state. -->',
-        '<!-- Retain the historical Taiwan framework fresh-bearer policy. Active\n'
-        '         calls use stock modem-led legacy IWLAN; no policy copied abroad. -->')
+        '<!-- Obsolete Taiwan framework IWLAN-to-EUTRAN blocking rules removed. -->')
+    # Remove only the exact historical two-item framework policy, and only
+    # from the four approved Taiwan carrier selectors. All other config stays.
+    policy_array = re.compile(
+        r'        <string-array name="iwlan_handover_policy_string_array" num="2">\n'
+        r'            <item value="source=IWLAN, target=EUTRAN, type=disallowed, capabilities=IMS"/>\n'
+        r'            <item value="source=GERAN\|UTRAN\|EUTRAN\|NGRAN\|IWLAN, target=GERAN\|UTRAN\|EUTRAN\|NGRAN\|IWLAN, type=allowed"/>\n'
+        r'        </string-array>\n')
+    taiwan_selectors = {'01', '05', '92', '97'}
+    removed = 0
+    carrier_block = re.compile(r'    <carrier_config\b[^>]*>.*?    </carrier_config>', re.S)
+
+    def strip_taiwan_policy(match):
+        nonlocal removed
+        block = match.group(0)
+        attrs = dict(re.findall(r'(mcc|mnc)="([^"]+)"', block.split('>', 1)[0]))
+        if attrs.get('mcc') == '466' and attrs.get('mnc') in taiwan_selectors:
+            block, count = policy_array.subn('', block)
+            removed += count
+        return block
+
+    text = carrier_block.sub(strip_taiwan_policy, text)
+    if removed != 4:
+        raise ValueError('expected exact historical Taiwan policy in four carrier blocks')
     blocks = ['    <!-- Keep AP-assisted experiments off on every SIM; use stock legacy IWLAN. -->',
               '    <carrier_config>', f'        <boolean name="{TRIAL}" value="false"/>',
               '    </carrier_config>']
@@ -215,7 +239,7 @@ def apply(android, backup):
     old = target.read_bytes()
     if old == data:
         return verify_source(root)
-    if sha(old) != BASE_SHA:
+    if sha(old) not in (BASE_SHA, PRIOR_VENDOR_SHA):
         raise ValueError('source baseline drift; no changes made')
     backup.mkdir(exist_ok=False)
     (backup / 'vendor.xml').write_bytes(old)

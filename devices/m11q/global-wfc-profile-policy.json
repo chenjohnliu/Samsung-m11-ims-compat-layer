@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "policy": "global-stock-profile-v1",
+  "policy": "global-stock-profile-v2",
   "stock_firmware": "M115FXXS5CWK3",
   "source_baseline_sha256": "164515303794e27f4b7bf0ec2c52b20deea504ba52a7fe037dc869c6297cecea",
-  "vendor_sha256": "4d5750cb8c60e67f9d140b40914ac763854a28c039d9c203e71e3b9932f4c38a",
+  "vendor_sha256": "0f3f343f34e2b9658716e56f961cbc9a80196b76a7dd5e7d5de8d0eaf406423f",
   "input_resource_sha256": {
     "mnomap": "b441ae8509d8eaaa11b1d5763831177b8eaa9db97da118f914e978d4da5b2600",
     "imsswitch": "8c1fd14cf40b98a78d46f208d9acae0f8387d2a5265dcb0896f3d869fff34c2f",
-    "imsprofile": "856f0a2659769a1868365f3ead337ff099221fca8832d5f32266abce440b2a07",
+    "imsprofile": "eac62efba558d45826fd2951bf5087c65d005cbd2587a0d817891e525e11f937",
     "epdg_apns_conf": "90c167b23baf39cac4fe235a1f1bb726231f1999f017be8975968e7cb8c749b3"
   },
   "approved": [
