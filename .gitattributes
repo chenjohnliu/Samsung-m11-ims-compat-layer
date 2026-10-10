@@ -3,3 +3,9 @@
 
 # Declaration fixtures are compared as text and should remain platform-neutral.
 /bridge/abi/*.txt text eol=lf
+
+# Patch context includes a single space for empty source lines, not code defects.
+# Keep published patch SHA-256 fingerprints stable across Windows/WSL checkouts.
+/platform/systemui/*.patch text eol=lf -whitespace
+/platform/checkpoints/**/*.patch text eol=lf -whitespace
+/platform/checkpoints/**/manifest.json text eol=lf
