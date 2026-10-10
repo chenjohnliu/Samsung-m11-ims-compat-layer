@@ -1,5 +1,10 @@
 # crDroid Android 13 IMS source restoration
 
+Build correction, 2026-10-10:
+[SystemUI IMS constant imports require the `.stub` package](SYSTEMUI_IMS_IMPORT_BUILD_FIX_20261010.md).
+Live WSL source and the current icon patch are corrected; the historical
+published checkpoint needs the linked import-only follow-up patch.
+
 Current publication and policy cleanup, 2026-10-10:
 [separate-purpose IMS commits and GitHub publication](IMS_PUBLICATION_AND_POLICY_CLEANUP_20261010.md).
 Only the four obsolete Taiwan framework handover-blocking arrays are removed

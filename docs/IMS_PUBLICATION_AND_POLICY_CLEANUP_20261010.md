@@ -1,5 +1,10 @@
 # IMS publication and narrow policy cleanup — 2026-10-10
 
+Later user-build finding: the published icon checkpoint had an incorrect
+registration-constant import package. See the
+[import-only correction and checkpoint replay instructions](SYSTEMUI_IMS_IMPORT_BUILD_FIX_20261010.md).
+The successful host tests below did not validate those original Android imports.
+
 This checkpoint supersedes the older local-only publication status. Changes are
 committed separately by purpose; historical experiments remain documentation,
 not instructions to enable them.
