@@ -1,0 +1,46 @@
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/connectivity/MobileSignalController.java b/packages/SystemUI/src/com/android/systemui/statusbar/connectivity/MobileSignalController.java
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/connectivity/MobileSignalController.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/connectivity/MobileSignalController.java
+@@ -16,4 +16,6 @@
+ package com.android.systemui.statusbar.connectivity;
+ 
+ import static android.telephony.TelephonyManager.UNKNOWN_CARRIER_ID;
++import static android.telephony.ims.ImsRegistrationImplBase.REGISTRATION_TECH_CROSS_SIM;
++import static android.telephony.ims.ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN;
+ 
+@@ -144,5 +146,8 @@
+         public void onRegistered(ImsRegistrationAttributes attributes) {
+             Log.d(mTag, "onRegistered: " + "attributes=" + attributes);
+             mCurrentState.imsRegistered = true;
++            int registrationTechnology = attributes.getRegistrationTechnology();
++            mIsVowifiAvailable = registrationTechnology == REGISTRATION_TECH_IWLAN
++                    || registrationTechnology == REGISTRATION_TECH_CROSS_SIM;
+             notifyListenersIfNecessary();
+         }
+@@ -151,4 +154,5 @@
+         public void onRegistering(ImsRegistrationAttributes attr) {
+             mCurrentState.imsRegistered = false;
++            mIsVowifiAvailable = false;
+             notifyListenersIfNecessary();
+         }
+@@ -157,5 +161,6 @@
+         public void onUnregistered(ImsReasonInfo info) {
+             Log.d(mTag, "onDeregistered: " + "info=" + info);
+             mCurrentState.imsRegistered = false;
++            mIsVowifiAvailable = false;
+             notifyListenersIfNecessary();
+         }
+@@ -734,5 +739,3 @@
+     public boolean isVowifiAvailable() {
+-        return mCurrentState.voiceCapable && mCurrentState.imsRegistered
+-                && (getDataNetworkType() == TelephonyManager.NETWORK_TYPE_IWLAN
+-                || mIsVowifiAvailable);
++        return mCurrentState.voiceCapable && mCurrentState.imsRegistered && mIsVowifiAvailable;
+     }
+@@ -743,5 +748,6 @@
+         pw.println("  mSubscription=" + mSubscriptionInfo + ",");
+         pw.println("  mInflateSignalStrengths=" + mInflateSignalStrengths + ",");
+         pw.println("  isDataDisabled=" + isDataDisabled() + ",");
++        pw.println("  mIsVowifiAvailable=" + mIsVowifiAvailable + ",");
+         pw.println("  mNetworkToIconLookup=" + mNetworkToIconLookup + ",");
+         pw.println("  mMobileStatusTracker.isListening=" + mMobileStatusTracker.isListening());
