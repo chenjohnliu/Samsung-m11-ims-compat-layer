@@ -1,0 +1,29 @@
+diff --git a/gpu_tonemapper/glengine.cpp b/gpu_tonemapper/glengine.cpp
+index 35e1932c5af407a94700a1be18aadea83987c2d3..d7f5ac6fbd7fcc37e4986910bdd519e7faef5d07 100644
+--- a/gpu_tonemapper/glengine.cpp
++++ b/gpu_tonemapper/glengine.cpp
+@@ -314,7 +314,8 @@ int engine_blit(int srcFenceFd)
+ void checkGlError(const char *file, int line)
+ //-----------------------------------------------------------------------------
+ {
+-  for (GLint error = glGetError(); error; error = glGetError()) {
++  const GLint error = glGetError();
++  if (error != GL_NO_ERROR) {
+     char *pError;
+     switch (error) {
+       case GL_NO_ERROR:
+@@ -351,12 +352,8 @@ void checkGlError(const char *file, int line)
+ void checkEglError(const char *file, int line)
+ //-----------------------------------------------------------------------------
+ {
+-  for (int i = 0; i < 5; i++) {
+-    const EGLint error = eglGetError();
+-    if (error == EGL_SUCCESS) {
+-      break;
+-    }
+-
++  const EGLint error = eglGetError();
++  if (error != EGL_SUCCESS) {
+     char *pError;
+     switch (error) {
+       case EGL_SUCCESS:

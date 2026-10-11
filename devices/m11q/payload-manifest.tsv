@@ -46,3 +46,5 @@ stock_path	destination	stock_sha256	stock_size	architecture	licensing_class	acti
 /system/lib/libsvejni.so	ims/proprietary/app/sveservice/lib/arm/libsvejni.so	c512bf3b4d71dbb377b7e8ceef66d9432610cb7564338f37a0644800e9bf11d6	142184	arm32-elf	Samsung-proprietary	copy
 /system/lib/libsveservice.so	ims/proprietary/app/sveservice/lib/arm/libsveservice.so	8c78566d19bd0fc121db3cdaa54a7e58e344f93d7c845adfb955d6dc90a1f66c	21332	arm32-elf	Samsung-proprietary	copy
 /system/lib/libvad.so	ims/proprietary/app/sveservice/lib/arm/libvad.so	f6b2d7f33853d371e5ed9303ce22973f8d16aa976751ada1c6d19add9ba81f1f	66976	arm32-elf	Samsung-proprietary	copy
+/system/lib/libcrypto.so	build-inputs/er1/libcrypto.so	8f92b691991bb0841228cc67a05c079a46065c4d80a43144cb3be6fb4fdc4bc3	911300	arm32-elf	Samsung-proprietary	transform-input
+/system/lib/libssl.so	build-inputs/er1/libssl.so	729df965c522f88554dd278118d8514852ecf5daf97973837fa06745b94bf3ea	241444	arm32-elf	Samsung-proprietary	transform-input

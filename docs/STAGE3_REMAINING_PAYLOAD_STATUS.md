@@ -2,6 +2,12 @@
 
 Date: 2026-09-27
 
+Current update (2026-10-12): the ER1 default now uses the identified CWK3
+stock trio, with strict input/output pins and scoped user-reported Cherish
+build, boot and normal-call acceptance. See
+[the current ER1 provenance](ER1_ERIS_PRIVATE_CRYPTO.md). The table and runtime
+discussion below describe the earlier audit, not new VoWiFi acceptance.
+
 This audit compares pinned stock inputs, preserved runtime-validated outputs,
 ZIP/ELF entry identities, decoded research trees, and retained preparation
 scripts. It publishes only project-authored logic and metadata.

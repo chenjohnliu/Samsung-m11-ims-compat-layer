@@ -1,0 +1,48 @@
+diff --git a/config/basicapps.mk b/config/basicapps.mk
+index 495479bed8961d9563a13f55d4f56c73a602a66c..7f89dc6332a8a1b2f6005635daf34543ca96f4d0 100644
+--- a/config/basicapps.mk
++++ b/config/basicapps.mk
+@@ -6,7 +6,8 @@ PRODUCT_PACKAGES += \
+     Dialer \
+     LatinIME \
+     SettingsIntelligenceGoogle \
+-    SoundPickerGoogleRelease
++    SoundPickerGoogleRelease \
++    Jelly
+ 
+ PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS += \
+     vendor/cherish/overlay-aosp
+diff --git a/prebuilt/common/bin/backuptool.sh b/prebuilt/common/bin/backuptool.sh
+index 385a77f5c800299cd50424e0d795330a1ec42c6a..55bf783c4140e402796ae5fd33b0f242bfecc72a 100644
+--- a/prebuilt/common/bin/backuptool.sh
++++ b/prebuilt/common/bin/backuptool.sh
+@@ -3,10 +3,11 @@
+ # Backup and restore addon /system files
+ #
+ 
++export TMPDIR=/tmp
+ export C=/tmp/backupdir
+ export SYSDEV="$(readlink -nf "$2")"
+ export SYSFS="$3"
+-export V=XR
++export V=13
+ 
+ export ADDOND_VERSION=3
+ 
+@@ -47,7 +48,7 @@ if [ ! -r $S/build.prop ]; then
+   echo "Backup/restore is not possible. Partition is probably empty"
+   return 1
+ fi
+-if ! grep -q "^ro.xtended.build.version=$V.*" $S/build.prop; then
++if ! grep -q "^ro.cherish.version.prop=$V.*" $S/build.prop; then
+   echo "Backup/restore is not possible. Incompatible ROM version: $V"
+   return 2
+ fi
+@@ -171,6 +172,7 @@ case "$1" in
+       mkdir -p $C
+       preserve_addon_d
+       run_stages pre-backup backup post-backup
++      umount_extra $all_V3_partitions
+     fi
+     unmount_system
+   ;;

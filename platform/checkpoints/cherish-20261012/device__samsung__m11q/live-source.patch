@@ -1,0 +1,18 @@
+diff --git a/AndroidProducts.mk b/AndroidProducts.mk
+index 5e578bf5320e9db1a85d11c7fa0d8830710cca5d..dbba389929c1a5968cf974c663a1d1163d9f61a8 100644
+--- a/AndroidProducts.mk
++++ b/AndroidProducts.mk
+@@ -13,9 +13,9 @@
+ # limitations under the License.
+ 
+ PRODUCT_MAKEFILES := \
+-    $(LOCAL_DIR)/lineage_m11q.mk
++    $(LOCAL_DIR)/cherish_m11q.mk
+ 
+ COMMON_LUNCH_CHOICES := \
+-    lineage_m11q-userdebug \
+-    lineage_m11q-eng \
+-    lineage_m11q-user
++    cherish_m11q-userdebug \
++    cherish_m11q-eng \
++    cherish_m11q-user

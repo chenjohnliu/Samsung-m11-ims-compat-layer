@@ -14,18 +14,27 @@ def load_handoff():
 
 
 class CherishAndroid13HandoffTests(unittest.TestCase):
-    def test_handoff_is_an_unresolved_source_inventory_not_a_deployment_lock(self):
+    def test_handoff_records_scoped_user_acceptance_not_a_complete_rebuild(self):
         handoff = load_handoff()
         self.assertEqual(handoff["target"]["rom"], "CherishOS")
         self.assertEqual(handoff["target"]["android_version"], 13)
-        self.assertIsNone(handoff["target"]["manifest_revision"])
+        self.assertRegex(handoff["target"]["manifest_revision"], r"^[0-9a-f]{40}$")
         self.assertIsNone(handoff["target"]["base_revision"])
-        self.assertEqual(handoff["target"]["resolution_status"], "unresolved")
+        self.assertEqual(handoff["target"]["resolution_status"], "resolved_project_checkpoint")
         self.assertEqual(handoff["readiness"]["published_source_inventory"], "present")
-        self.assertEqual(handoff["readiness"]["target_integration"], "pending")
-        self.assertFalse(handoff["readiness"]["dependency_closure"])
-        for key in ("port_applied", "build_performed", "build_runtime_current_port_validated", "deployable"):
-            self.assertFalse(handoff["readiness"][key], key)
+        self.assertEqual(handoff["readiness"]["target_integration"], "source_checkpoint_published")
+        self.assertTrue(handoff["readiness"]["dependency_closure"])
+        for key in ("port_applied", "build_performed", "build_runtime_current_port_validated"):
+            self.assertTrue(handoff["readiness"][key], key)
+        self.assertFalse(handoff["readiness"]["deployable"])
+        acceptance = handoff["runtime_acceptance"]
+        self.assertEqual(acceptance["evidence_type"], "user_report")
+        self.assertTrue(acceptance["normal_voice_call_success"])
+        self.assertFalse(acceptance["rom_build_run_by_agent"])
+        self.assertIn("VoWiFi", acceptance["not_newly_verified"])
+        fresh = handoff["reproducibility_inventory"]["fresh_ims_candidate"]
+        self.assertFalse(fresh["historical_canonical_hash_reproduced"])
+        self.assertFalse(fresh["producer_profile_published"])
 
     def test_all_local_evidence_references_exist(self):
         for relative in load_handoff()["required_evidence_paths"]:
@@ -91,33 +100,29 @@ class CherishAndroid13HandoffTests(unittest.TestCase):
         self.assertNotRegex(serialized, r"[a-z]:/[^\"\s]*crdroid")
         self.assertNotIn("/home/user/android/crdroid", serialized)
 
-    def test_er1_input_provenance_gap_is_explicit_and_matches_contract(self):
+    def test_er1_stock_provenance_and_raw_inventory_match_promoted_contract(self):
         handoff = load_handoff()
         closure = handoff["dependency_closure"]
-        self.assertFalse(closure["complete"])
-        self.assertFalse(closure["raw_cwk3_manifest_covers_blocked_inputs"])
+        self.assertTrue(closure["complete"])
+        self.assertTrue(closure["raw_cwk3_manifest_covers_blocked_inputs"])
+        self.assertEqual(closure["blocked_input_provenance"], [])
         contract = json.loads((ROOT / "devices/m11q/eris-private-crypto-contract.json").read_text(encoding="utf-8"))
-        unresolved = {item["input_name"]: item for item in closure["blocked_input_provenance"]}
-        self.assertEqual(set(unresolved), {"libcrypto.so", "libssl.so"})
-        for target in contract["targets"][:2]:
-            item = unresolved[target["input_name"]]
-            with self.subTest(input=target["input_name"]):
-                self.assertEqual(item["input_sha256"], target["input_sha256"])
-                self.assertEqual(item["elf_class"], target["elf_class"])
-                self.assertEqual(item["elf_machine"], target["elf_machine"])
-                self.assertEqual(item["provenance_status"], "unresolved")
-                comparison = item["cwk3_stock_comparison"]
-                self.assertEqual(
-                    comparison["stock_image_sha256"],
-                    "9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d",
-                )
-                self.assertNotEqual(comparison["observed_cwk3_system_library_sha256"], target["input_sha256"])
-                self.assertFalse(comparison["matches_er1_input_pin"])
-        self.assertIn("Excluding ER1 changes the port payload", closure["resolution_required"])
-        self.assertIn("runtime validation", closure["resolution_required"])
-        manifest = (ROOT / "devices/m11q/payload-manifest.tsv").read_text(encoding="utf-8")
-        self.assertNotIn("libcrypto.so", manifest)
-        self.assertNotIn("libssl.so", manifest)
+        provenance = json.loads((ROOT / closure["provenance_path"]).read_text())
+        self.assertEqual(provenance["stock_build"], "M115FXXS5CWK3")
+        self.assertEqual(provenance["stock_image_sha256"],
+                         "9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d")
+        self.assertFalse(provenance["validation"]["eris_ipsec_runtime_verified"])
+        resolved = {item["stock_path"]: item for item in closure["resolved_inputs"]}
+        import csv
+        with (ROOT / "devices/m11q/payload-manifest.tsv").open(newline="") as stream:
+            rows = {row["stock_path"]: row for row in csv.DictReader(stream, delimiter="\t")}
+        for target in contract["targets"]:
+            path = "/system/lib/" + target["input_name"]
+            with self.subTest(input=path):
+                self.assertEqual(resolved[path]["input_sha256"], target["input_sha256"])
+                self.assertEqual(resolved[path]["output_sha256"], target["output_sha256"])
+                self.assertEqual(rows[path]["stock_sha256"], target["input_sha256"])
+                self.assertEqual(rows[path]["action"], "transform-input")
 
     def test_sms_bridge_inventory_matches_the_public_build_contract(self):
         handoff = load_handoff()

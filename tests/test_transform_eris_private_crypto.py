@@ -11,6 +11,16 @@ from unittest import mock
 ROOT = Path(__file__).parents[1]
 TOOL = ROOT / "tools" / "transform_eris_private_crypto.py"
 CANONICAL = ROOT / "devices" / "m11q" / "eris-private-crypto-contract.json"
+HISTORICAL = ROOT / "devices" / "m11q" / "eris-private-crypto-historical-contract.json"
+
+STOCK_PINS = {
+    "libcrypto.so": ("8f92b691991bb0841228cc67a05c079a46065c4d80a43144cb3be6fb4fdc4bc3",
+                     "liberc.so", "11b1be41684274d65274c39e36d01c439d4cdd8f52ac096b49e32f892e36ca5f"),
+    "libssl.so": ("729df965c522f88554dd278118d8514852ecf5daf97973837fa06745b94bf3ea",
+                  "libers.so", "a6257fbdab5dc5771ea93905bbf7375e4b1e2393b9aadcd20655d4b9fd2e149c"),
+    "liberis_strongswan.so": ("38aecec124684f02afd5bea9a98f538913af7b3311d5eb7e62f34429b27bbe49",
+                              "liberis_strongswan.so", "61601e70a15056cb563cdb2cc8651303ffc2b8a1cd9c2fb1ca83fd64fea55dc3"),
+}
 
 
 def load():
@@ -49,6 +59,42 @@ def elf(soname, needed, slack=8):
         struct.pack_into("<II", data, dynamic_off + index * 8, *row)
     data[strtab_off:] = strings
     return bytes(data)
+
+
+class PublicErisContractTests(unittest.TestCase):
+    def test_default_pins_are_exact_stock_contract_and_history_is_retained(self):
+        self.assertEqual(MODULE.EXPECTED_TARGETS, STOCK_PINS)
+        contract = MODULE.load_contract(CANONICAL)
+        self.assertEqual(contract["schema_version"], 1)
+        self.assertEqual(contract["transformation_id"], "ER1-private-crypto-namespace")
+        self.assertEqual({item["input_name"]: (item["input_sha256"], item["output_name"],
+                                                item["output_sha256"])
+                          for item in contract["targets"]}, STOCK_PINS)
+        historical = json.loads(HISTORICAL.read_text(encoding="utf-8"))
+        self.assertEqual(historical["transformation_id"], "ER1-private-crypto-namespace")
+        self.assertEqual({item["input_name"]: (item["input_sha256"], item["output_name"],
+                                                item["output_sha256"])
+                          for item in historical["targets"]}, {
+            "libcrypto.so": ("cf6dfdaf8a57730364e2be816c45d4fbdf1d3b196f5467e340e8c998d2631040",
+                             "liberc.so", "a6c7409533f4e5b2a2a0219f97643ddfefd9c8ffdad2bb26a73be8eff6973ad2"),
+            "libssl.so": ("d8eef149d87bab37c66ade6d39c3ff93d6f922dc0dd4a126a3d4cca08a3dc478",
+                          "libers.so", "b381f0f9a49c48bc74d6c7e50967fb1b146d786c240b7eb78e8608ed91af3aa9"),
+            "liberis_strongswan.so": STOCK_PINS["liberis_strongswan.so"],
+        })
+
+    def test_old_historical_contract_is_rejected_as_default(self):
+        with self.assertRaisesRegex(MODULE.TransformError, "target hash or name contract drift"):
+            MODULE.load_contract(HISTORICAL)
+
+    def test_wrong_stock_and_historical_hash_mix_is_rejected(self):
+        contract = json.loads(CANONICAL.read_text(encoding="utf-8"))
+        contract["targets"][0]["input_sha256"] = (
+            "cf6dfdaf8a57730364e2be816c45d4fbdf1d3b196f5467e340e8c998d2631040")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "wrong-mix.json"
+            path.write_text(json.dumps(contract), encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.TransformError, "target hash or name contract drift"):
+                MODULE.load_contract(path)
 
 
 class ErisPrivateCryptoTests(unittest.TestCase):

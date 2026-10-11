@@ -1,0 +1,40 @@
+diff --git a/src/com/android/mms/service/MmsService.java b/src/com/android/mms/service/MmsService.java
+index 2f3b3aa6da288482b4fcc8a2597b2a97efeeaa7f..75ef9043bcd134ba72a26d08f0c5268c54bcb197 100644
+--- a/src/com/android/mms/service/MmsService.java
++++ b/src/com/android/mms/service/MmsService.java
+@@ -209,7 +209,7 @@ public class MmsService extends Service implements MmsRequest.RequestManager {
+ 
+     private IMms.Stub mStub = new IMms.Stub() {
+         @Override
+-        public void sendMessage(int subId, String callingPkg, Uri contentUri,
++        public void sendMessage(int subId, int callingUser, String callingPkg, Uri contentUri,
+                 String locationUrl, Bundle configOverrides, PendingIntent sentIntent,
+                 long messageId, String attributionTag) {
+             LogUtil.d("sendMessage " + formatCrossStackMessageId(messageId));
+@@ -287,7 +287,7 @@ public class MmsService extends Service implements MmsRequest.RequestManager {
+         }
+ 
+         @Override
+-        public void downloadMessage(int subId, String callingPkg, String locationUrl,
++        public void downloadMessage(int subId, int callingUser, String callingPkg, String locationUrl,
+                 Uri contentUri, Bundle configOverrides, PendingIntent downloadedIntent,
+                 long messageId, String attributionTag) {
+             // If the subId is no longer active it could be caused by an MVNO using multiple
+@@ -429,7 +429,7 @@ public class MmsService extends Service implements MmsRequest.RequestManager {
+         }
+ 
+         @Override
+-        public Uri importMultimediaMessage(String callingPkg, Uri contentUri,
++        public Uri importMultimediaMessage(int callingUser, String callingPkg, Uri contentUri,
+                 String messageId, long timestampSecs, boolean seen, boolean read) {
+             LogUtil.d("importMultimediaMessage");
+             enforceSystemUid();
+@@ -523,7 +523,7 @@ public class MmsService extends Service implements MmsRequest.RequestManager {
+         }
+ 
+         @Override
+-        public Uri addMultimediaMessageDraft(String callingPkg, Uri contentUri)
++        public Uri addMultimediaMessageDraft(int callingUser, String callingPkg, Uri contentUri)
+                 throws RemoteException {
+             LogUtil.d("addMultimediaMessageDraft");
+             enforceSystemUid();

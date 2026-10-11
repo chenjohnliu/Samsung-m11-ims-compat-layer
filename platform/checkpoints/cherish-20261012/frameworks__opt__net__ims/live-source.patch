@@ -1,0 +1,13 @@
+diff --git a/src/java/com/android/ims/MmTelFeatureConnection.java b/src/java/com/android/ims/MmTelFeatureConnection.java
+index 3170d4130540ed71f27f7d91b377e962ee36b98c..7dceb2e65527f78305109e494bd295846f8ecce4 100644
+--- a/src/java/com/android/ims/MmTelFeatureConnection.java
++++ b/src/java/com/android/ims/MmTelFeatureConnection.java
+@@ -572,7 +572,7 @@ public class MmTelFeatureConnection extends FeatureConnection {
+     {
+         synchronized (mLock) {
+             mSupportsEmergencyCalling =
+-                    ((capabilities | ImsService.CAPABILITY_EMERGENCY_OVER_MMTEL) > 0);
++                    ((capabilities & ImsService.CAPABILITY_EMERGENCY_OVER_MMTEL) > 0);
+         }
+     }
+ 

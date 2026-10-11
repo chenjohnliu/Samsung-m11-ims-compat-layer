@@ -1,0 +1,8 @@
+diff --git a/common/public/property.te b/common/public/property.te
+index 72d869483f8fcad6a10a1b9b3538280ad0065632..29e45d3364aae55351e953ca322cc385a10eb1bd 100644
+--- a/common/public/property.te
++++ b/common/public/property.te
+@@ -1,2 +1,2 @@
+ # Aux camera allow/excludelist prop
+-system_vendor_config_prop(vendor_persist_camera_prop)
++#system_vendor_config_prop(vendor_persist_camera_prop)

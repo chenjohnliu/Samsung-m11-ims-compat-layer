@@ -4,9 +4,9 @@
   "targets": [
     {
       "input_name": "libcrypto.so",
-      "input_sha256": "cf6dfdaf8a57730364e2be816c45d4fbdf1d3b196f5467e340e8c998d2631040",
+      "input_sha256": "8f92b691991bb0841228cc67a05c079a46065c4d80a43144cb3be6fb4fdc4bc3",
       "output_name": "liberc.so",
-      "output_sha256": "a6c7409533f4e5b2a2a0219f97643ddfefd9c8ffdad2bb26a73be8eff6973ad2",
+      "output_sha256": "11b1be41684274d65274c39e36d01c439d4cdd8f52ac096b49e32f892e36ca5f",
       "elf_class": 1,
       "elf_machine": 40,
       "soname_before": "libcrypto.so",
@@ -19,9 +19,9 @@
     },
     {
       "input_name": "libssl.so",
-      "input_sha256": "d8eef149d87bab37c66ade6d39c3ff93d6f922dc0dd4a126a3d4cca08a3dc478",
+      "input_sha256": "729df965c522f88554dd278118d8514852ecf5daf97973837fa06745b94bf3ea",
       "output_name": "libers.so",
-      "output_sha256": "b381f0f9a49c48bc74d6c7e50967fb1b146d786c240b7eb78e8608ed91af3aa9",
+      "output_sha256": "a6257fbdab5dc5771ea93905bbf7375e4b1e2393b9aadcd20655d4b9fd2e149c",
       "elf_class": 1,
       "elf_machine": 40,
       "soname_before": "libssl.so",

@@ -9,3 +9,9 @@
 /platform/systemui/*.patch text eol=lf -whitespace
 /platform/checkpoints/**/*.patch text eol=lf -whitespace
 /platform/checkpoints/**/manifest.json text eol=lf
+# Preserve the byte-identical repo manifest snapshot, including blank-line spaces.
+/platform/checkpoints/**/base-manifest.xml text eol=lf -whitespace
+
+# These helper assets are hash-pinned; shell scripts also require Unix endings.
+/tools/**/*.smali text eol=lf
+/tools/**/*.sh text eol=lf

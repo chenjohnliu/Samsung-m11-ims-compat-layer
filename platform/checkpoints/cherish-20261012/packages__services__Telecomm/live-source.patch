@@ -1,0 +1,584 @@
+diff --git a/res/values/config.xml b/res/values/config.xml
+index 501e76e64d065c788be7415d6c7e42858f459869..673fdf1c018311b9df05681cb36d62f783d85a41 100644
+--- a/res/values/config.xml
++++ b/res/values/config.xml
+@@ -73,4 +73,8 @@
+     <!-- When set, Telecom will attempt to bind to the {@link CallDiagnosticService} implementation
+          defined by the app with this package name. -->
+     <string name="call_diagnostic_service_package_name"></string>
++    <!-- Whether an incoming Wi-Fi call should start Samsung's ePDG audio path after Telecom sets
++         MODE_IN_CALL. Only enable this on devices whose secims service provides the matching
++         changeAudioPathForSlot binder ABI. -->
++    <bool name="config_enable_samsung_mt_vowifi_audio_path">false</bool>
+ </resources>
+diff --git a/src/com/android/server/telecom/CallAudioManager.java b/src/com/android/server/telecom/CallAudioManager.java
+index 1863cdebc725e710278837739ca8ed253e028c14..b38baef2e61ee4e9a7db8e1f77b114dcf1e28d6e 100644
+--- a/src/com/android/server/telecom/CallAudioManager.java
++++ b/src/com/android/server/telecom/CallAudioManager.java
+@@ -19,9 +19,16 @@ package com.android.server.telecom;
+ import android.annotation.NonNull;
+ import android.media.IAudioService;
+ import android.media.ToneGenerator;
++import android.os.IBinder;
++import android.os.Parcel;
++import android.os.RemoteException;
++import android.os.ServiceManager;
+ import android.telecom.CallAudioState;
++import android.telecom.Connection;
+ import android.telecom.Log;
++import android.telecom.PhoneAccountHandle;
+ import android.telecom.VideoProfile;
++import android.telephony.SubscriptionManager;
+ import android.util.SparseArray;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
+@@ -40,6 +47,11 @@ public class CallAudioManager extends CallsManagerListenerBase {
+         IAudioService getAudioService();
+     }
+ 
++    private static final String SAMSUNG_IMS_SERVICE = "secims";
++    private static final String SAMSUNG_IMS_INTERFACE = "com.sec.ims.IImsService";
++    private static final int SAMSUNG_IMS_CHANGE_AUDIO_PATH_FOR_SLOT_TRANSACTION = 0x5a;
++    private static final int SAMSUNG_IMS_AUDIO_PATH_DIRECTION_START = 0;
++
+     private final String LOG_TAG = CallAudioManager.class.getSimpleName();
+ 
+     private final LinkedHashSet<Call> mActiveDialingOrConnectingCalls;
+@@ -58,6 +70,18 @@ public class CallAudioManager extends CallsManagerListenerBase {
+     private final RingbackPlayer mRingbackPlayer;
+     private final DtmfLocalTonePlayer mDtmfLocalTonePlayer;
+ 
++    // SA2: call-scoped stock Telecom audio transition, not a Wi-Fi broadcast hook.
++    private final SamsungImsAudioHandover mSamsungImsAudioHandover =
++            new SamsungImsAudioHandover();
++    private final Call.Listener mSamsungImsAudioListener = new Call.ListenerBase() {
++        @Override public void onConnectionPropertiesChanged(Call call, boolean didRttChange) {
++            onSamsungImsAudioCallChanged(call);
++        }
++        @Override public void onExtrasChanged(Call call, int source, android.os.Bundle extras) {
++            onSamsungImsAudioCallChanged(call);
++        }
++    };
++
+     private Call mForegroundCall;
+     private boolean mIsTonePlaying = false;
+     private boolean mIsDisconnectedTonePlaying = false;
+@@ -163,6 +187,7 @@ public class CallAudioManager extends CallsManagerListenerBase {
+         }
+         updateForegroundCall();
+         mCalls.add(call);
++        call.addListener(mSamsungImsAudioListener);
+         sendCallStatusToBluetoothStateReceiver();
+ 
+         onCallEnteringState(call, call.getState());
+@@ -180,6 +205,7 @@ public class CallAudioManager extends CallsManagerListenerBase {
+ 
+         updateForegroundCall();
+         mCalls.remove(call);
++        call.removeListener(mSamsungImsAudioListener);
+         sendCallStatusToBluetoothStateReceiver();
+ 
+         onCallLeavingState(call, call.getState());
+@@ -731,6 +757,7 @@ public class CallAudioManager extends CallsManagerListenerBase {
+ 
+     @NonNull
+     private CallAudioModeStateMachine.MessageArgs makeArgsForModeStateMachine() {
++        observeSamsungImsAudioCall();
+         return new Builder()
+                 .setHasActiveOrDialingCalls(mActiveDialingOrConnectingCalls.size() > 0)
+                 .setHasRingingCalls(mRingingCalls.size() > 0)
+@@ -742,6 +769,128 @@ public class CallAudioManager extends CallsManagerListenerBase {
+                 .setSession(Log.createSubsession()).build();
+     }
+ 
++    private void onSamsungImsAudioCallChanged(Call call) {
++        if (call != mForegroundCall || !SamsungImsAudioHandover.enabled()) return;
++        mCallAudioModeStateMachine.sendMessageWithArgs(
++                CallAudioModeStateMachine.FOREGROUND_VOIP_MODE_CHANGE,
++                makeArgsForModeStateMachine());
++    }
++
++    private void observeSamsungImsAudioCall() {
++        Call call = mForegroundCall;
++        boolean allowed = call != null && mCalls.size() == 1 && mCalls.contains(call)
++                && call.getState() == CallState.ACTIVE && !call.isEmergencyCall()
++                && !call.isConference() && call.getParentCall() == null
++                && !call.isSelfManaged() && !call.isExternalCall()
++                && !VideoProfile.isVideo(call.getVideoState()) && !call.getIsVoipAudioMode();
++        boolean wifi = call != null && call.hasProperty(Connection.PROPERTY_WIFI);
++        int phoneId = -1;
++        int subId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
++        if (allowed) {
++            PhoneAccountHandle account = call.getTargetPhoneAccount();
++            subId = account == null ? SubscriptionManager.INVALID_SUBSCRIPTION_ID
++                    : mCallsManager.getPhoneAccountRegistrar().getSubscriptionIdForPhoneAccount(account);
++            phoneId = SubscriptionManager.getPhoneId(subId);
++            allowed = account != null && "com.android.phone".equals(
++                    account.getComponentName().getPackageName())
++                    && SubscriptionManager.isValidSubscriptionId(subId)
++                    && SamsungImsAudioHandover.singleSubscriptionMatches(
++                            mCallsManager.getContext(), phoneId, subId);
++            // Never infer an LTE source merely from "not Wi-Fi". Phone reports the call RAT.
++            if (allowed && !wifi && !mSamsungImsAudioHandover.owns(call, phoneId, subId)) {
++                allowed = call.getExtras() != null && call.getExtras().getInt(
++                        android.telecom.TelecomManager.EXTRA_CALL_NETWORK_TYPE,
++                        android.telephony.TelephonyManager.NETWORK_TYPE_UNKNOWN)
++                        == android.telephony.TelephonyManager.NETWORK_TYPE_LTE;
++            }
++        }
++        mSamsungImsAudioHandover.observe(call, allowed, wifi, phoneId, subId);
++    }
++
++    boolean setSamsungImsHandoverAudioMode(android.media.AudioManager audio, int mode) {
++        return mSamsungImsAudioHandover.setMode(audio, mode, mCallsManager.getContext());
++    }
++
++    void finishSamsungImsHandoverAudioMode(android.media.AudioManager audio) {
++        mSamsungImsAudioHandover.finish(audio);
++    }
++
++    /**
++     * Starts Samsung's ePDG audio path for an incoming Wi-Fi call after Telecom has put the
++     * platform audio service into {@link android.media.AudioManager#MODE_IN_CALL}.
++     *
++     * <p>Samsung's stock Telecom performs this callback immediately after setting the audio
++     * mode. The vendor IMS service otherwise accepts an earlier request but does not create the
++     * media channels. The resource gate must only be overlaid on devices whose {@code secims}
++     * service implements the matching binder ABI.</p>
++     */
++    void onSimCallAudioModeSet() {
++        if (!mCallsManager.getContext().getResources().getBoolean(
++                R.bool.config_enable_samsung_mt_vowifi_audio_path)) {
++            return;
++        }
++
++        Call call = mForegroundCall;
++        if (call == null || !call.isIncoming()
++                || !call.hasProperty(Connection.PROPERTY_WIFI)) {
++            return;
++        }
++
++        PhoneAccountHandle accountHandle = call.getTargetPhoneAccount();
++        if (accountHandle == null) {
++            Log.w(LOG_TAG, "Cannot start Samsung MT VoWiFi audio path without a phone account");
++            return;
++        }
++
++        int subId = mCallsManager.getPhoneAccountRegistrar()
++                .getSubscriptionIdForPhoneAccount(accountHandle);
++        int phoneId = SubscriptionManager.getPhoneId(subId);
++        if (!SubscriptionManager.isValidPhoneId(phoneId)) {
++            Log.w(LOG_TAG, "Cannot start Samsung MT VoWiFi audio path for invalid phoneId %d",
++                    phoneId);
++            return;
++        }
++
++        requestSamsungImsAudioPath(phoneId);
++    }
++
++    private void requestSamsungImsAudioPath(int phoneId) {
++        IBinder secIms;
++        try {
++            secIms = ServiceManager.checkService(SAMSUNG_IMS_SERVICE);
++        } catch (RuntimeException e) {
++            Log.e(LOG_TAG, e, "Failed to find Samsung IMS service");
++            return;
++        }
++
++        if (secIms == null) {
++            Log.w(LOG_TAG, "Samsung IMS service is unavailable; MT VoWiFi audio path not started");
++            return;
++        }
++
++        Parcel data = Parcel.obtain();
++        Parcel reply = Parcel.obtain();
++        try {
++            data.writeInterfaceToken(SAMSUNG_IMS_INTERFACE);
++            data.writeInt(phoneId);
++            data.writeInt(SAMSUNG_IMS_AUDIO_PATH_DIRECTION_START);
++            if (!secIms.transact(SAMSUNG_IMS_CHANGE_AUDIO_PATH_FOR_SLOT_TRANSACTION,
++                    data, reply, 0)) {
++                Log.w(LOG_TAG, "Samsung IMS rejected MT VoWiFi audio path transaction");
++                return;
++            }
++            reply.readException();
++            Log.i(LOG_TAG, "Requested Samsung MT VoWiFi audio path after MODE_IN_CALL"
++                    + " for phoneId %d", phoneId);
++        } catch (RemoteException | RuntimeException e) {
++            Log.e(LOG_TAG, e, "Failed to start Samsung MT VoWiFi audio path for phoneId %d",
++                    phoneId);
++        } finally {
++            reply.recycle();
++            data.recycle();
++        }
++    }
++
+     /**
+      * Determines if a {@link Call} is a VOIP call for audio purposes.
+      * For top level calls, we get this from {@link Call#getIsVoipAudioMode()}.  A {@link Call}
+@@ -760,7 +909,7 @@ public class CallAudioManager extends CallsManagerListenerBase {
+             Call firstChild = call.getChildCalls().get(0);
+             return firstChild.getIsVoipAudioMode();
+         }
+-        return call.getIsVoipAudioMode();
++        return call.getIsVoipAudioMode() || mSamsungImsAudioHandover.isVoip(call);
+     }
+ 
+     private HashSet<Call> getBinForCall(Call call) {
+diff --git a/src/com/android/server/telecom/CallAudioModeStateMachine.java b/src/com/android/server/telecom/CallAudioModeStateMachine.java
+index a1c5f4bddc815b61ccc33242ee762d583878f410..3ebbdcbcbb9b84300bde45c147a7165343d970a9 100644
+--- a/src/com/android/server/telecom/CallAudioModeStateMachine.java
++++ b/src/com/android/server/telecom/CallAudioModeStateMachine.java
+@@ -237,6 +237,7 @@ public class CallAudioModeStateMachine extends StateMachine {
+             mLocalLog.log("Enter UNFOCUSED");
+             if (mIsInitialized) {
+                 mCallAudioManager.setCallAudioRouteFocusState(CallAudioRouteStateMachine.NO_FOCUS);
++                mCallAudioManager.finishSamsungImsHandoverAudioMode(mAudioManager);
+                 mAudioManager.setMode(AudioManager.MODE_NORMAL);
+                 mLocalLog.log("Mode MODE_NORMAL");
+                 mMostRecentMode = AudioManager.MODE_NORMAL;
+@@ -473,7 +474,11 @@ public class CallAudioModeStateMachine extends StateMachine {
+             mLocalLog.log("Enter SIM_CALL");
+             mAudioManager.requestAudioFocusForCall(AudioManager.STREAM_VOICE_CALL,
+                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+-            mAudioManager.setMode(AudioManager.MODE_IN_CALL);
++            // SA2: preserve Telecom ownership and stock STOP/mode/engine ordering.
++            if (!mCallAudioManager.setSamsungImsHandoverAudioMode(mAudioManager, AudioManager.MODE_IN_CALL)) {
++                mAudioManager.setMode(AudioManager.MODE_IN_CALL);
++            }
++            mCallAudioManager.onSimCallAudioModeSet();
+             mLocalLog.log("Mode MODE_IN_CALL");
+             mMostRecentMode = AudioManager.MODE_IN_CALL;
+             mCallAudioManager.setCallAudioRouteFocusState(CallAudioRouteStateMachine.ACTIVE_FOCUS);
+@@ -556,7 +561,10 @@ public class CallAudioModeStateMachine extends StateMachine {
+             mLocalLog.log("Enter VOIP_CALL");
+             mAudioManager.requestAudioFocusForCall(AudioManager.STREAM_VOICE_CALL,
+                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+-            mAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
++            // SA2: preserve Telecom ownership and stock STOP/mode/engine ordering.
++            if (!mCallAudioManager.setSamsungImsHandoverAudioMode(mAudioManager, AudioManager.MODE_IN_COMMUNICATION)) {
++                mAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
++            }
+             mLocalLog.log("Mode MODE_IN_COMMUNICATION");
+             mMostRecentMode = AudioManager.MODE_IN_COMMUNICATION;
+             mCallAudioManager.setCallAudioRouteFocusState(CallAudioRouteStateMachine.ACTIVE_FOCUS);
+diff --git a/src/com/android/server/telecom/SamsungImsAudioHandover.java b/src/com/android/server/telecom/SamsungImsAudioHandover.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f27dc1b0aafe9c82527aa51794ad9dfb7c72ba3a
+--- /dev/null
++++ b/src/com/android/server/telecom/SamsungImsAudioHandover.java
+@@ -0,0 +1,172 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package com.android.server.telecom;
++
++import android.media.AudioManager;
++import android.content.Context;
++import android.os.IBinder;
++import android.os.ServiceManager;
++import android.os.SystemProperties;
++import android.util.Log;
++import android.telephony.SubscriptionInfo;
++import android.telephony.SubscriptionManager;
++import dalvik.system.PathClassLoader;
++import java.io.File;
++import java.lang.reflect.Array;
++import java.lang.reflect.Method;
++import java.util.List;
++
++/** Stock-derived Telecom audio adapter; M11 single-SIM scope, independent of carrier. */
++final class SamsungImsAudioHandover {
++    private static final String TAG = "M11StockAudioPort";
++    private final SamsungImsAudioTransition policy = new SamsungImsAudioTransition();
++    private int lastCallState; // Only state actually written by this adapter, not another call's state.
++
++    static boolean enabled() {
++        return "m11q".equals(SystemProperties.get("ro.product.device"))
++                && "legacy".equals(SystemProperties.get("ro.telephony.iwlan_operation_mode"))
++                && SamsungImsAudioTransition.singleSimPhone(
++                        SystemProperties.get("gsm.sim.operator.numeric")) >= 0;
++    }
++
++    static boolean singleSubscriptionMatches(Context context, int phoneId, int subId) {
++        try {
++            if (!SamsungImsAudioTransition.supportedPhone(phoneId)
++                    || !SubscriptionManager.isValidSubscriptionId(subId)
++                    || SamsungImsAudioTransition.singleSimPhone(
++                            SystemProperties.get("gsm.sim.operator.numeric")) != phoneId) return false;
++            SubscriptionManager manager = context.getSystemService(SubscriptionManager.class);
++            List<SubscriptionInfo> active = manager == null ? null : manager.getActiveSubscriptionInfoList();
++            return active != null && active.size() == 1
++                    && active.get(0).getSubscriptionId() == subId
++                    && active.get(0).getSimSlotIndex() == phoneId
++                    && SubscriptionManager.getPhoneId(subId) == phoneId;
++        } catch (RuntimeException e) { return false; }
++    }
++
++    void observe(Object call, boolean allowed, boolean wifi, int phoneId, int subId) {
++        policy.observe(call, allowed && enabled(), wifi, phoneId, subId);
++    }
++
++    boolean isVoip(Object call) { return enabled() && policy.isVoip(call); }
++    boolean owns(Object call, int phoneId, int subId) { return enabled() && policy.owns(call, phoneId, subId); }
++
++    void finish(AudioManager audio) {
++        // Stock enterUnfocusedState -> resetAudioMode -> setOffAudioParam.
++        // Cleanup remains necessary even if applicability changes after our write.
++        int off = lastCallState == 32 ? 16 : lastCallState == 2 ? 1 : 0;
++        if (off != 0) {
++            lastCallState = 0;
++            try {
++                audio.setParameters("g_call_state=" + off);
++                Log.i(TAG, "SA2 unfocused g_call_state=" + off);
++            } catch (RuntimeException e) {
++                Log.e(TAG, "SA2 parameter cleanup failed; Telecom still resets its mode", e);
++            }
++        }
++    }
++
++    private static Object getter(Object value, String name) throws Exception {
++        return value.getClass().getMethod(name).invoke(value);
++    }
++
++    boolean setMode(AudioManager audio, int mode, Context context) {
++        if (!enabled()) return false;
++        boolean[] modeWritten = {false};
++        String[] stage = {"preflight"};
++        try {
++            SamsungImsAudioTransition.Plan plan = policy.take(mode, audio.getMode());
++            if (plan == null) return false;
++            if (!singleSubscriptionMatches(context, plan.phoneId, plan.subscriptionId))
++                throw new IllegalStateException("Subscription changed before audio transition");
++            Log.i(TAG, "SA2 integrated stock audio");
++            Log.i(TAG, "SA2 single-SIM either-slot scope phone=" + plan.phoneId);
++            // Use the phone's typed client, as in the successful one-shot test.
++            IBinder binder = ServiceManager.checkService("secims");
++            if (binder == null || !"com.sec.ims.IImsService".equals(binder.getInterfaceDescriptor()))
++                throw new IllegalStateException("Unexpected secims descriptor");
++            String jar = null;
++            for (String path : new String[] {"/system_ext/framework/imsmanager.jar",
++                    "/system/system_ext/framework/imsmanager.jar", "/system/framework/imsmanager.jar"})
++                if (new File(path).isFile()) { jar = path; break; }
++            if (jar == null) throw new IllegalStateException("No installed imsmanager client");
++            ClassLoader loader = new PathClassLoader(jar, getClass().getClassLoader());
++            Class<?> api = loader.loadClass("com.sec.ims.IImsService");
++            Object service = loader.loadClass("com.sec.ims.IImsService$Stub")
++                    .getMethod("asInterface", IBinder.class).invoke(null, binder);
++            Method counts = api.getMethod("getCallCount", int.class);
++            Method audioPath = api.getMethod("changeAudioPathForSlot", int.class, int.class);
++            requireCounts(service, counts, plan.phoneId);
++            Object regs = api.getMethod("getRegistrationInfoByPhoneId", int.class)
++                    .invoke(service, plan.phoneId);
++            boolean matched = false;
++            if (regs != null) for (int i = 0; i < Array.getLength(regs); i++) {
++                Object reg = Array.get(regs, i);
++                if (reg == null) continue;
++                Object profile = getter(reg, "getImsProfile");
++                if (profile == null) continue;
++                int rat = (Integer) getter(reg, "getCurrentRat");
++                boolean epdg = (Boolean) getter(reg, "getEpdgStatus");
++                boolean mmtel = (Boolean) reg.getClass().getMethod("hasService", String.class)
++                        .invoke(reg, "mmtel");
++                boolean normal = SamsungImsAudioTransition.normalRegistration(
++                        plan.phoneId,
++                        (Integer) getter(reg, "getPhoneId"), rat, mmtel,
++                        (Boolean) getter(profile, "hasEmergencySupport"),
++                        (Integer) getter(profile, "getCmcType"));
++                matched |= normal;
++                if (normal) Log.i(TAG, "SA2 normal registration rat=" + rat + " epdg=" + epdg
++                        + " (call transport drives selection)");
++            }
++            if (!matched) throw new IllegalStateException("No normal LTE/IWLAN IMS registration");
++            requireCounts(service, counts, plan.phoneId);
++            SamsungImsAudioTransition.run(plan.toWifi, new SamsungImsAudioTransition.Operations() {
++                private void check(String next) {
++                    stage[0] = next;
++                    if (!enabled() || !policy.current(plan)
++                            || !singleSubscriptionMatches(context, plan.phoneId, plan.subscriptionId))
++                        throw new IllegalStateException("Call/transport changed; no further audio writes");
++                }
++                public void audioPath(int direction) throws Exception {
++                    check("audioPath=" + direction);
++                    requireCounts(service, counts, plan.phoneId);
++                    audioPath.invoke(service, plan.phoneId, direction);
++                    Log.i(TAG, "SA2 audioPath=" + direction + " phone=" + plan.phoneId + " generation=" + plan.generation);
++                }
++                public void simSlot() {
++                    check("simSlot=" + plan.phoneId);
++                    String parameter = SamsungImsAudioTransition.simSlotParameter(plan.phoneId);
++                    audio.setParameters(parameter);
++                    Log.i(TAG, "SA2 " + parameter);
++                }
++                public void parameter(int value) {
++                    check("g_call_state=" + value);
++                    audio.setParameters("g_call_state=" + value);
++                    lastCallState = value == 32 || value == 2 ? value : 0;
++                    Log.i(TAG, "SA2 g_call_state=" + value);
++                }
++                public void mode(int value) {
++                    check("mode=" + value);
++                    audio.setMode(value);
++                    modeWritten[0] = true;
++                    Log.i(TAG, "SA2 mode=" + value);
++                }
++            });
++            policy.complete(plan);
++            Log.i(TAG, "SA2 sequence returned " + (plan.toWifi ? "L2W" : "W2L")
++                    + " (not proof of audible continuity)");
++            return true;
++        } catch (Exception | LinkageError e) {
++            Log.e(TAG, "SA2 aborted at " + stage[0] + "; no automatic retry", e);
++            // If a partial stock reset wrote NORMAL, let Telecom finish its requested mode.
++            // No invented audio-engine rollback or retry is issued.
++            try { return modeWritten[0] && audio.getMode() == mode; }
++            catch (RuntimeException ignored) { return false; }
++        }
++    }
++
++    private static void requireCounts(Object service, Method method, int phoneId) throws Exception {
++        if (!SamsungImsAudioTransition.ordinaryCounts(phoneId,
++                (int[]) method.invoke(service, phoneId), (int[]) method.invoke(service, 1 - phoneId)))
++            throw new IllegalStateException("Outside single ordinary selected-slot voice scope");
++    }
++}
+diff --git a/src/com/android/server/telecom/SamsungImsAudioTransition.java b/src/com/android/server/telecom/SamsungImsAudioTransition.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..396533eaa7dd351fa475e68e1b1d976413990931
+--- /dev/null
++++ b/src/com/android/server/telecom/SamsungImsAudioTransition.java
+@@ -0,0 +1,136 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package com.android.server.telecom;
++import java.util.Arrays;
++
++/** Call-scoped stock audio transition policy. No Android, Binder, timers or network operations. */
++final class SamsungImsAudioTransition {
++    private Object call;
++    private int phoneId = -1, subscriptionId = -1;
++    private boolean eligible, wifi, sawLte;
++    private int selectedMode;
++    private long generation, attempted = -1;
++
++    static int singleSimPhone(String value) {
++        if (value == null) return -1;
++        String[] slots = value.split(",", -1);
++        if (slots.length > 2) return -1;
++        int phone = -1;
++        for (int i = 0; i < slots.length; i++) {
++            if (slots[i].isEmpty()) continue;
++            if (!slots[i].matches("[0-9]{5,6}") || phone != -1) return -1;
++            phone = i;
++        }
++        return phone;
++    }
++
++    static boolean supportedPhone(int phone) { return phone == 0 || phone == 1; }
++
++    static String simSlotParameter(int phone) {
++        if (phone == 0) return "g_call_sim_slot=0x01";
++        if (phone == 1) return "g_call_sim_slot=0x02";
++        throw new IllegalArgumentException("Unsupported SIM slot");
++    }
++
++    static boolean ordinaryCounts(int phone, int[] selected, int[] other) {
++        return supportedPhone(phone) && Arrays.equals(selected, new int[] {1, 0, 0, 0})
++                && Arrays.equals(other, new int[] {0, 0, 0, 0});
++    }
++
++    synchronized void observe(Object identity, boolean allowed, boolean onWifi, int phone, int subId) {
++        if (!allowed || identity == null || !supportedPhone(phone) || subId < 0) {
++            call = null;
++            phoneId = subscriptionId = -1;
++            eligible = sawLte = false;
++            selectedMode = 0;
++            generation++;
++            return;
++        }
++        if (call != identity || phoneId != phone || subscriptionId != subId) {
++            call = identity;
++            phoneId = phone;
++            subscriptionId = subId;
++            sawLte = false;
++            selectedMode = 0;
++            generation++;
++        }
++        if (!eligible || wifi != onWifi) generation++;
++        eligible = true;
++        wifi = onWifi;
++        // Initial IWLAN calls stay on their existing path, including BT1/MT handling.
++        if (!wifi && !sawLte) {
++            sawLte = true;
++            selectedMode = 2;
++        }
++    }
++
++    synchronized boolean isVoip(Object identity) {
++        return eligible && call == identity && sawLte && wifi;
++    }
++
++    synchronized boolean owns(Object identity, int phone, int subId) {
++        return eligible && sawLte && call == identity && phoneId == phone && subscriptionId == subId;
++    }
++
++    static boolean normalRegistration(int expectedPhone, int phone, int rat,
++            boolean mmtel, boolean emergency, int cmc) {
++        // Stock selects the engine from the CALL's new transport, before IMS registration
++        // necessarily finishes changing RAT/ePDG status. A normal source registration is valid.
++        return supportedPhone(expectedPhone) && phone == expectedPhone
++                && (rat == 13 || rat == 18) && mmtel && !emergency && cmc == 0;
++    }
++
++    synchronized Plan take(int targetMode, int currentMode) {
++        int desired = wifi ? 3 : 2;
++        if (!eligible || !sawLte || targetMode != desired || selectedMode == desired
++                || selectedMode != currentMode || attempted == generation) return null;
++        attempted = generation;
++        return new Plan(call, generation, wifi, phoneId, subscriptionId);
++    }
++
++    synchronized boolean current(Plan plan) {
++        return eligible && call == plan.call && generation == plan.generation
++                && wifi == plan.toWifi && phoneId == plan.phoneId && subscriptionId == plan.subscriptionId;
++    }
++
++    synchronized void complete(Plan plan) {
++        if (current(plan)) selectedMode = plan.toWifi ? 3 : 2;
++    }
++
++    static final class Plan {
++        final Object call;
++        final long generation;
++        final boolean toWifi;
++        final int phoneId, subscriptionId;
++        Plan(Object call, long generation, boolean toWifi, int phoneId, int subId) {
++            this.call = call; this.generation = generation; this.toWifi = toWifi;
++            this.phoneId = phoneId; this.subscriptionId = subId;
++        }
++    }
++
++    interface Operations {
++        void simSlot() throws Exception;
++        void audioPath(int direction) throws Exception;
++        void parameter(int value) throws Exception;
++        void mode(int mode) throws Exception;
++    }
++
++    /** Order derived from stock Samsung Telecom; integer parameters are g_call_state values. */
++    static void run(boolean toWifi, Operations ops) throws Exception {
++        if (toWifi) {
++            ops.audioPath(2);  // STOP current engine before changing MODE_IN_CALL.
++            ops.parameter(1); // CP voice/video OFF.
++            ops.mode(0);
++            ops.parameter(32); // SEC_WIFI_CALL_ON.
++            ops.mode(3);
++            ops.audioPath(0);  // SAE, after communication mode is set.
++            ops.audioPath(7);  // Stock INFORM maps to DELAYED_MEDIA in IMS.
++        } else {
++            ops.simSlot(); // Stock setAudioParametersForVsid(MODE_IN_CALL), selected slot.
++            ops.audioPath(1);  // CPVE before turning off the Wi-Fi audio mode.
++            ops.parameter(16); // SEC_WIFI_CALL_OFF.
++            ops.mode(0);
++            ops.parameter(2); // CP_VOICE_CALL_ON.
++            ops.mode(2);
++        }
++    }
++}

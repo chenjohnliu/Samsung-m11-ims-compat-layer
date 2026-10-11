@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-12",
+  "evidence_type": "user_report",
+  "rom": "CherishOS 4.12 / Android 13",
+  "device": "Samsung Galaxy M11 (m11q)",
+  "build_success": true,
+  "boot_success": true,
+  "normal_voice_call_success": true,
+  "installation_note": "The initial boot returned to recovery with enablefilecrypto_failed after switching from crDroid with Wipe only. Format Data was followed by successful boot and user-reported normal calls.",
+  "not_newly_verified": [
+    "VoWiFi",
+    "ERIS/IPsec execution",
+    "SMS",
+    "SIM2",
+    "handover",
+    "emergency calling"
+  ],
+  "rom_build_run_by_agent": false,
+  "device_capture_for_this_acceptance": false
+}

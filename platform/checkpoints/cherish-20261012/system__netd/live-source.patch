@@ -1,0 +1,317 @@
+diff --git a/server/NetdNativeService.cpp b/server/NetdNativeService.cpp
+index 466d8ba789f3d5bd5c56617fa1980fc4dcaf98cb..130d24bbb4769bfb44b8fc8317860e7ee5e9187a 100644
+--- a/server/NetdNativeService.cpp
++++ b/server/NetdNativeService.cpp
+@@ -129,6 +129,11 @@ NetdNativeService::NetdNativeService() {
+ }
+ 
+ status_t NetdNativeService::start() {
++    // Instantiate the OEM listener before publishing netd. Its constructor
++    // prepares the legacy Samsung ePDG data endpoints before system_server can
++    // ask netd to configure an IPv6 address on one of them.
++    com::android::internal::net::OemNetdListener::getListener();
++
+     IPCThreadState::self()->disableBackgroundScheduling(true);
+     const status_t ret = BinderService<NetdNativeService>::publish();
+     if (ret != android::OK) {
+diff --git a/server/OemNetdListener.cpp b/server/OemNetdListener.cpp
+index 9c44cf234a7b13b2c8f127bdfba13dec47ccf1a6..fea6a30bda1bb7de86ad2f98f398ceb41c638e7b 100644
+--- a/server/OemNetdListener.cpp
++++ b/server/OemNetdListener.cpp
+@@ -18,11 +18,114 @@
+ 
+ #include "OemNetdListener.h"
+ 
++#include "NetdConstants.h"
++
++#include <errno.h>
++#include <fcntl.h>
++#include <linux/if_tun.h>
++#include <net/if.h>
++#include <spawn.h>
++#include <string.h>
++#include <sys/ioctl.h>
++#include <sys/wait.h>
++#include <unistd.h>
++
++#include <cctype>
++#include <string>
++#include <vector>
++
++#include <log/log.h>
++#include <utils/String8.h>
++
++namespace {
++
++constexpr const char* kTcPath = "/system/bin/tc";
++constexpr const char* kEpdgDataPrefix = "epdg_data";
++constexpr int kEpdgDataInterfaceCount = 8;
++
++bool isValidInterfaceName(const std::string& iface) {
++    if (iface.empty() || iface.size() >= IFNAMSIZ) return false;
++    for (const unsigned char c : iface) {
++        if (!std::isalnum(c) && c != '_' && c != '-' && c != '.') return false;
++    }
++    return true;
++}
++
++int createTunInterface(const std::string& iface, ::android::base::unique_fd* tunFd) {
++    ::android::base::unique_fd fd(open("/dev/tun", O_RDWR | O_CLOEXEC | O_NONBLOCK));
++    if (fd.get() < 0) return -errno;
++
++    ifreq request{};
++    request.ifr_flags = IFF_TUN | IFF_NO_PI;
++    strlcpy(request.ifr_name, iface.c_str(), sizeof(request.ifr_name));
++    if (ioctl(fd.get(), TUNSETIFF, &request) < 0) return -errno;
++
++    *tunFd = std::move(fd);
++    return 0;
++}
++
++int runTc(const std::vector<std::string>& arguments) {
++    std::vector<std::string> storage;
++    storage.reserve(arguments.size() + 1);
++    storage.emplace_back(kTcPath);
++    storage.insert(storage.end(), arguments.begin(), arguments.end());
++
++    std::vector<char*> argv;
++    argv.reserve(storage.size() + 1);
++    for (std::string& argument : storage) argv.push_back(argument.data());
++    argv.push_back(nullptr);
++
++    pid_t pid;
++    const int spawnResult =
++            posix_spawn(&pid, kTcPath, nullptr, nullptr, argv.data(), environ);
++    if (spawnResult != 0) return -spawnResult;
++
++    int status;
++    pid_t waitResult;
++    do {
++        waitResult = waitpid(pid, &status, 0);
++    } while (waitResult < 0 && errno == EINTR);
++    if (waitResult < 0) return -errno;
++    if (!WIFEXITED(status)) return -EIO;
++    return WEXITSTATUS(status) == 0 ? 0 : -EIO;
++}
++
++void deleteTcRule(const std::vector<std::string>& arguments) {
++    const int result = runTc(arguments);
++    if (result != 0) {
++        ALOGD("Ignoring ePDG tc cleanup failure (%d)", result);
++    }
++}
++
++}  // namespace
++
+ namespace com {
+ namespace android {
+ namespace internal {
+ namespace net {
+ 
++OemNetdListener::OemNetdListener() {
++    // Samsung's legacy IWLAN service derives a mobile-looking interface from
++    // the ePDG CID. Keep those endpoints separate from modem-owned rmnet_data*
++    // interfaces so a WWAN reconnect cannot erase IWLAN IPv6 state. These must
++    // be layer-3 TUN devices: tc redirects their raw IP packets into the ERIS
++    // TUN, whose reader rejects Ethernet-framed packets from dummy interfaces.
++    // Keep every descriptor open for netd's lifetime so the devices persist.
++    mEpdgTunFds.reserve(kEpdgDataInterfaceCount);
++    for (int index = 0; index < kEpdgDataInterfaceCount; ++index) {
++        const std::string iface = kEpdgDataPrefix + std::to_string(index);
++        ::android::base::unique_fd tunFd;
++        const int result = createTunInterface(iface, &tunFd);
++        if (result != 0) {
++            ALOGE("Failed to create ePDG TUN interface %s: %s", iface.c_str(),
++                  strerror(-result));
++        } else {
++            ALOGI("ePDG TUN interface ready: %s", iface.c_str());
++            mEpdgTunFds.emplace_back(std::move(tunFd));
++        }
++    }
++}
++
+ ::android::sp<::android::IBinder> OemNetdListener::getListener() {
+     // Thread-safe initialization.
+     static ::android::sp<OemNetdListener> listener = ::android::sp<OemNetdListener>::make();
+@@ -42,6 +145,111 @@ namespace net {
+     return ::android::binder::Status::ok();
+ }
+ 
++::android::binder::Status OemNetdListener::modifyEpdg(
++        bool enable, const ::android::String16& mobileInterface16,
++        const ::android::String16& tunnelingInterface16, bool deleteSkip) {
++    const ::android::String8 mobileInterface8(mobileInterface16);
++    const ::android::String8 tunnelingInterface8(tunnelingInterface16);
++    const std::string mobileInterface(mobileInterface8.c_str());
++    const std::string tunnelingInterface(tunnelingInterface8.c_str());
++
++    if (!isValidInterfaceName(mobileInterface) ||
++        !isValidInterfaceName(tunnelingInterface)) {
++        return ::android::binder::Status::fromServiceSpecificError(
++                EINVAL, "Invalid ePDG interface name");
++    }
++
++    std::lock_guard lock(mEpdgMutex);
++    ALOGI("modifyEpdg enable=%d mobile=%s tunnel=%s deleteSkip=%d", enable,
++          mobileInterface.c_str(), tunnelingInterface.c_str(), deleteSkip);
++
++    if (!enable) {
++        // Teardown is deliberately idempotent: recoveryCheck() calls this for stale
++        // persisted CIDs whose interfaces may already have disappeared.
++        deleteTcRule({"qdisc", "del", "dev", mobileInterface, "root", "handle", "1:",
++                      "prio"});
++        deleteTcRule({"qdisc", "del", "dev", tunnelingInterface, "handle", "ffff:",
++                      "ingress"});
++        return ::android::binder::Status::ok();
++    }
++
++    if (if_nametoindex(mobileInterface.c_str()) == 0 ||
++        if_nametoindex(tunnelingInterface.c_str()) == 0) {
++        return ::android::binder::Status::fromServiceSpecificError(
++                ENODEV, "ePDG interface does not exist");
++    }
++
++    if (!deleteSkip) {
++        // Match Samsung's stock pre-install cleanup. Failure is harmless when no
++        // previous qdisc exists.
++        deleteTcRule({"qdisc", "del", "dev", mobileInterface, "root", "handle", "1:",
++                      "prio"});
++        deleteTcRule({"qdisc", "del", "dev", tunnelingInterface, "root", "handle",
++                      "1:0", "htb", "default", "10"});
++    }
++
++    int result = runTc({"qdisc", "add", "dev", mobileInterface, "root", "handle", "1:",
++                        "prio"});
++    if (result == 0) {
++        result = runTc({"filter", "add", "dev", mobileInterface, "parent", "1:",
++                        "protocol", "all", "prio", "10", "basic", "action", "mirred",
++                        "egress", "redirect", "dev", tunnelingInterface});
++    }
++    if (result == 0) {
++        result = runTc({"qdisc", "add", "dev", tunnelingInterface, "handle", "ffff:",
++                        "ingress"});
++    }
++    if (result == 0) {
++        result = runTc({"filter", "add", "dev", tunnelingInterface, "parent", "ffff:",
++                        "protocol", "all", "prio", "10", "basic", "action", "mirred",
++                        "ingress", "redirect", "dev", mobileInterface});
++    }
++
++    if (result != 0) {
++        deleteTcRule({"qdisc", "del", "dev", mobileInterface, "root", "handle", "1:",
++                      "prio"});
++        deleteTcRule({"qdisc", "del", "dev", tunnelingInterface, "handle", "ffff:",
++                      "ingress"});
++        return ::android::binder::Status::fromServiceSpecificError(
++                EIO, "Failed to install ePDG traffic-control redirects");
++    }
++
++    return ::android::binder::Status::ok();
++}
++
++::android::binder::Status OemNetdListener::setEpdgInterfaceDropRule(
++        const ::android::String16& iface16, bool add) {
++    const ::android::String8 iface8(iface16);
++    const std::string iface(iface8.c_str());
++    if (!isValidInterfaceName(iface)) {
++        return ::android::binder::Status::fromServiceSpecificError(
++                EINVAL, "Invalid ePDG interface name");
++    }
++
++    std::lock_guard lock(mEpdgMutex);
++    const bool installed = mEpdgDropIfaces.count(iface) != 0;
++    if (add == installed) return ::android::binder::Status::ok();
++
++    const std::string operation = add ? "-I" : "-D";
++    const std::string commands = "*filter\n" + operation + " oem_out -o " + iface +
++            " -j DROP\nCOMMIT\n";
++    const int result = execIptablesRestore(V4V6, commands);
++    if (result != 0) {
++        ALOGE("setEpdgInterfaceDropRule add=%d iface=%s failed: %d", add,
++              iface.c_str(), result);
++        return ::android::binder::Status::fromServiceSpecificError(
++                EIO, "Failed to update ePDG interface drop rule");
++    }
++
++    if (add) {
++        mEpdgDropIfaces.insert(iface);
++    } else {
++        mEpdgDropIfaces.erase(iface);
++    }
++    ALOGI("setEpdgInterfaceDropRule add=%d iface=%s", add, iface.c_str());
++    return ::android::binder::Status::ok();
++}
++
+ void OemNetdListener::registerOemUnsolicitedEventListenerInternal(
+         const ::android::sp<IOemNetdUnsolicitedEventListener>& listener) {
+     std::lock_guard lock(mOemUnsolicitedMutex);
+diff --git a/server/OemNetdListener.h b/server/OemNetdListener.h
+index b94827b3780fa6a0f52ec096e4552b19f6543e30..adad7cdb105a600327cb48754f2b2d73708a8625 100644
+--- a/server/OemNetdListener.h
++++ b/server/OemNetdListener.h
+@@ -19,8 +19,13 @@
+ 
+ #include <map>
+ #include <mutex>
++#include <set>
++#include <string>
++#include <vector>
+ 
++#include <android-base/unique_fd.h>
+ #include <android-base/thread_annotations.h>
++#include <utils/String16.h>
+ #include "com/android/internal/net/BnOemNetd.h"
+ #include "com/android/internal/net/IOemNetdUnsolicitedEventListener.h"
+ 
+@@ -34,18 +39,27 @@ class OemNetdListener : public BnOemNetd {
+     using OemUnsolListenerMap = std::map<const ::android::sp<IOemNetdUnsolicitedEventListener>,
+                                          const ::android::sp<::android::IBinder::DeathRecipient>>;
+ 
+-    OemNetdListener() = default;
++    OemNetdListener();
+     ~OemNetdListener() = default;
+     static ::android::sp<::android::IBinder> getListener();
+ 
+     ::android::binder::Status isAlive(bool* alive) override;
+     ::android::binder::Status registerOemUnsolicitedEventListener(
+             const ::android::sp<IOemNetdUnsolicitedEventListener>& listener) override;
++    ::android::binder::Status modifyEpdg(bool enable,
++                                        const ::android::String16& mobileInterface,
++                                        const ::android::String16& tunnelingInterface,
++                                        bool deleteSkip) override;
++    ::android::binder::Status setEpdgInterfaceDropRule(
++            const ::android::String16& iface, bool add) override;
+ 
+   private:
+     std::mutex mOemUnsolicitedMutex;
++    std::mutex mEpdgMutex;
++    std::vector<::android::base::unique_fd> mEpdgTunFds;
+ 
+     OemUnsolListenerMap mOemUnsolListenerMap GUARDED_BY(mOemUnsolicitedMutex);
++    std::set<std::string> mEpdgDropIfaces GUARDED_BY(mEpdgMutex);
+ 
+     void registerOemUnsolicitedEventListenerInternal(
+             const ::android::sp<IOemNetdUnsolicitedEventListener>& listener)
+diff --git a/server/binder/com/android/internal/net/IOemNetd.aidl b/server/binder/com/android/internal/net/IOemNetd.aidl
+index bd55106de1a47944216afcb8b165a49b9a5b7135..44d3ebef019aa710e621563d5605c1b80022b2cd 100644
+--- a/server/binder/com/android/internal/net/IOemNetd.aidl
++++ b/server/binder/com/android/internal/net/IOemNetd.aidl
+@@ -30,5 +30,17 @@ interface IOemNetd {
+     *
+     * @param listener oem unsolicited event listener to register
+     */
+-    void registerOemUnsolicitedEventListener(IOemNetdUnsolicitedEventListener listener);
++   void registerOemUnsolicitedEventListener(IOemNetdUnsolicitedEventListener listener);
++
++   /**
++    * Install or remove Samsung-compatible ePDG traffic-control redirects.
++    *
++    * This interface is intentionally OEM-only and unstable. The framework-facing
++    * permission check lives in NetworkManagementService.
++    */
++   void modifyEpdg(boolean enable, String mobileInterface, String tunnelingInterface,
++           boolean deleteSkip);
++
++   /** Temporarily block or unblock traffic on an ePDG cellular PDN interface. */
++   void setEpdgInterfaceDropRule(String iface, boolean add);
+ }

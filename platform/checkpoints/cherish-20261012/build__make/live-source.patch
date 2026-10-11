@@ -1,0 +1,13 @@
+diff --git a/tools/releasetools/non_ab_ota.py b/tools/releasetools/non_ab_ota.py
+index f7b263b4595c9125de9318078f289c34a0112640..3640e76917937a1b2b752625c67fe07821f6ac4c 100644
+--- a/tools/releasetools/non_ab_ota.py
++++ b/tools/releasetools/non_ab_ota.py
+@@ -258,6 +258,8 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
+     sysmount = "/system"
+ 
+   if OPTIONS.backuptool:
++    script.AppendExtra('package_extract_dir("install", "/tmp/install");')
++    script.AppendExtra('set_metadata_recursive("/tmp/install", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0755);')
+     script.Print("BackupTools: starting backup script")
+     script.RunBackup("backup", sysmount, target_info.get('use_dynamic_partitions') == "true")
+     script.Print("BackupTools: DONE! Now real installation will begin")

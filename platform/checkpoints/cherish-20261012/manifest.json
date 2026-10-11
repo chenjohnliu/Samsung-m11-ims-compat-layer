@@ -1,0 +1,328 @@
+{
+  "format_version": 1,
+  "status": "user_build_and_voice_call_validated",
+  "rom_build_ran_by_agent": false,
+  "user_reported_build_success": true,
+  "user_reported_boot_success": true,
+  "user_reported_normal_voice_call_success": true,
+  "runtime_scope_note": "User reported normal calls; VoWiFi, SMS, dual-slot and handover not newly tested.",
+  "created_utc": "2026-10-11T17:28:36.874914+00:00",
+  "projects": [
+    {
+      "path": "frameworks/base",
+      "source_url": "https://github.com/CherishOS/android_frameworks_base",
+      "manifest_revision": "bd837f94b5e87a4c4fbc9f40e0c0f597f74baf78",
+      "base_commit": "bd837f94b5e87a4c4fbc9f40e0c0f597f74baf78",
+      "base_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+      "patched_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+      "patch": "frameworks__base/live-source.patch",
+      "sha256": "baed90c07dd789377ee0cdafaca1935a2c60ce56bb476fe3156db029979dc99c",
+      "changed_paths": [
+        "core/java/android/database/sqlite/SQLiteTokenizer.java",
+        "core/java/android/os/Build.java",
+        "core/java/android/os/INetworkManagementService.aidl",
+        "core/java/android/os/SemHqmManager.java",
+        "core/java/android/os/SemSystemProperties.java",
+        "core/java/android/os/UserHandle.java",
+        "core/java/com/android/internal/telephony/TelephonyFeatures.java",
+        "core/java/com/samsung/android/emergencymode/SemEmergencyConstants.java",
+        "core/java/com/samsung/android/emergencymode/SemEmergencyManager.java",
+        "core/java/com/samsung/android/feature/IFloatingFeature.java",
+        "core/java/com/samsung/android/feature/SemCarrierFeature.java",
+        "core/java/com/samsung/android/feature/SemCscFeature.java",
+        "core/java/com/samsung/android/feature/SemFloatingFeature.java",
+        "core/java/com/samsung/android/feature/SemGateConfig.java",
+        "core/java/com/samsung/android/ims/ISemEpdgListener.java",
+        "core/java/com/samsung/android/ims/SemAutoConfigListener.java",
+        "core/java/com/samsung/android/ims/SemImsDmConfigListener.java",
+        "core/java/com/samsung/android/ims/SemImsRegiListener.java",
+        "core/java/com/samsung/android/ims/SemImsRegistration.java",
+        "core/java/com/samsung/android/ims/SemImsRegistrationError.java",
+        "core/java/com/samsung/android/ims/SemImsService.java",
+        "core/java/com/samsung/android/ims/SemSimMobStatusListener.java",
+        "core/java/com/samsung/android/ims/cmc/ISemCmcRecordingListener.java",
+        "core/java/com/samsung/android/ims/cmc/SemCmcRecordingInfo.java",
+        "core/java/com/samsung/android/ims/ft/SemImsFtListener.java",
+        "core/java/com/samsung/android/ims/options/SemCapabilities.java",
+        "core/java/com/samsung/android/ims/options/SemCapabilityServiceEventListener.java",
+        "core/java/com/samsung/android/ims/options/SemImsCapabilityService.java",
+        "core/java/com/samsung/android/ims/settings/SemImsProfile.java",
+        "core/java/com/samsung/android/ims/util/SemImsUri.java",
+        "core/java/com/samsung/android/wifi/SemWifiManager.java",
+        "core/res/AndroidManifest.xml",
+        "mms/java/android/telephony/MmsManager.java",
+        "mms/java/com/android/internal/telephony/IMms.aidl",
+        "packages/SettingsLib/src/com/android/settingslib/DeviceInfoUtils.java",
+        "packages/SettingsLib/tests/robotests/src/com/android/settingslib/DeviceInfoUtilsTest.java",
+        "packages/SystemUI/src/com/android/systemui/statusbar/connectivity/MobileSignalController.java",
+        "services/core/Android.bp",
+        "services/core/java/com/android/server/MmsServiceBroker.java",
+        "services/core/java/com/android/server/NetworkManagementService.java",
+        "services/core/java/com/android/server/enterprise/content/SecContentProvider2.java",
+        "telephony/common/com/android/internal/telephony/TelephonyPermissions.java",
+        "telephony/java/android/telephony/ServiceState.java",
+        "telephony/java/android/telephony/TelephonyManager.java",
+        "telephony/java/com/android/internal/telephony/IPhoneSubInfo.aidl"
+      ],
+      "role": "core",
+      "replay_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+      "reverse_tree": "766293228a269161c782d365ab3ba86f2db070c9"
+    },
+    {
+      "path": "frameworks/opt/net/ims",
+      "source_url": "https://github.com/CherishOS/android_frameworks_opt_net_ims",
+      "manifest_revision": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+      "base_commit": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+      "base_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+      "patched_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97",
+      "patch": "frameworks__opt__net__ims/live-source.patch",
+      "sha256": "15ae3f9fd562feca1d57c7295dc61b73312a01648eeba0c95e5e9f6919151209",
+      "changed_paths": [
+        "src/java/com/android/ims/MmTelFeatureConnection.java"
+      ],
+      "role": "core",
+      "replay_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97",
+      "reverse_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8"
+    },
+    {
+      "path": "frameworks/opt/telephony",
+      "source_url": "https://github.com/CherishOS/android_frameworks_opt_telephony",
+      "manifest_revision": "d8ea3f40256b74d228f98448c4e75a15db547921",
+      "base_commit": "d8ea3f40256b74d228f98448c4e75a15db547921",
+      "base_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+      "patched_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
+      "patch": "frameworks__opt__telephony/live-source.patch",
+      "sha256": "8a801395b1a0018f1e5040f2be508c1e9e4d5666bfd85359fa59e8f0bb962d47",
+      "changed_paths": [
+        "src/java/com/android/internal/telephony/M11SehApnPolicy.java",
+        "src/java/com/android/internal/telephony/M11SehProfilePublisher.java",
+        "src/java/com/android/internal/telephony/M11SehRadioBridge.java",
+        "src/java/com/android/internal/telephony/M11SehRadioTransport.java",
+        "src/java/com/android/internal/telephony/PhoneSubInfoController.java",
+        "src/java/com/android/internal/telephony/RIL.java",
+        "src/java/com/android/internal/telephony/data/DataNetwork.java",
+        "src/java/com/android/internal/telephony/data/DataNetworkController.java",
+        "src/java/com/android/internal/telephony/data/DataProfileManager.java",
+        "src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java",
+        "tests/telephonytests/src/com/android/internal/telephony/data/DataNetworkTest.java"
+      ],
+      "role": "core",
+      "replay_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
+      "reverse_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843"
+    },
+    {
+      "path": "packages/services/Telephony",
+      "source_url": "https://github.com/CherishOS/android_packages_services_Telephony",
+      "manifest_revision": "abbe1d49d26bf05ed6287eaad07a3e94136377d9",
+      "base_commit": "abbe1d49d26bf05ed6287eaad07a3e94136377d9",
+      "base_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+      "patched_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401",
+      "patch": "packages__services__Telephony/live-source.patch",
+      "sha256": "1f8cfe987136571abb83e850ae5428970d1494d0d7fca2a066fa06493bd69ff5",
+      "changed_paths": [
+        "res/values/config.xml",
+        "src/com/android/phone/CarrierConfigLoader.java",
+        "src/com/android/phone/TelephonyShellCommand.java"
+      ],
+      "role": "core",
+      "replay_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401",
+      "reverse_tree": "636fcf82853a4a8bb0f364082251305f57cceb15"
+    },
+    {
+      "path": "system/netd",
+      "source_url": "https://github.com/CherishOS/android_system_netd",
+      "manifest_revision": "0a1e4b250e798479cafc3297a4b8a22c5158da29",
+      "base_commit": "0a1e4b250e798479cafc3297a4b8a22c5158da29",
+      "base_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+      "patched_tree": "ba89c15b79d86144876f596de94cd579221d152e",
+      "patch": "system__netd/live-source.patch",
+      "sha256": "455eaa8530913030c27d4bb5fa71e95b381f1d7630cf0b9ce5034e48d8656a16",
+      "changed_paths": [
+        "server/NetdNativeService.cpp",
+        "server/OemNetdListener.cpp",
+        "server/OemNetdListener.h",
+        "server/binder/com/android/internal/net/IOemNetd.aidl"
+      ],
+      "role": "core",
+      "replay_tree": "ba89c15b79d86144876f596de94cd579221d152e",
+      "reverse_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522"
+    },
+    {
+      "path": "packages/services/Telecomm",
+      "source_url": "https://github.com/CherishOS/android_packages_services_Telecomm",
+      "manifest_revision": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+      "base_commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+      "base_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+      "patched_tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+      "patch": "packages__services__Telecomm/live-source.patch",
+      "sha256": "cf1f8f93a764ad422d60e0abeff23778d5c790e376f642b67a8bdc3504d706be",
+      "changed_paths": [
+        "res/values/config.xml",
+        "src/com/android/server/telecom/CallAudioManager.java",
+        "src/com/android/server/telecom/CallAudioModeStateMachine.java",
+        "src/com/android/server/telecom/SamsungImsAudioHandover.java",
+        "src/com/android/server/telecom/SamsungImsAudioTransition.java"
+      ],
+      "role": "core",
+      "replay_tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+      "reverse_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7"
+    },
+    {
+      "path": "packages/services/Mms",
+      "source_url": "https://android.googlesource.com/platform/packages/services/Mms",
+      "manifest_revision": "88c00908f6f248edc300e38044cb88e08eea942e",
+      "base_commit": "88c00908f6f248edc300e38044cb88e08eea942e",
+      "base_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+      "patched_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+      "patch": "packages__services__Mms/live-source.patch",
+      "sha256": "bca6c53efaa605d3ffb8df2003193c1ec46969bacec616158cd0da553d2cd733",
+      "changed_paths": [
+        "src/com/android/mms/service/MmsService.java"
+      ],
+      "role": "core",
+      "replay_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+      "reverse_tree": "e162822c92303dea0d3896a2da025838125e0cb9"
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/audio",
+      "source_url": "https://github.com/LineageOS/android_hardware_qcom_audio",
+      "manifest_revision": "b6b4b95176283ccd966e3cf388ec2fc2acbe4ef6",
+      "base_commit": "b6b4b95176283ccd966e3cf388ec2fc2acbe4ef6",
+      "base_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+      "patched_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5",
+      "patch": "hardware__qcom-caf__msm8953__audio/live-source.patch",
+      "sha256": "4ed43e3e20725b79e0bc8ddc6bb39b7f2ba90a6f5ec2a7ee0ffb2498504a5d28",
+      "changed_paths": [
+        "hal/Android.mk"
+      ],
+      "role": "core",
+      "replay_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5",
+      "reverse_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf"
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/display",
+      "source_url": "https://github.com/LineageOS/android_hardware_qcom_display",
+      "manifest_revision": "6fe03b204444745439fe8d164dc78ee0a5576ca8",
+      "base_commit": "6fe03b204444745439fe8d164dc78ee0a5576ca8",
+      "base_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+      "patched_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b",
+      "patch": "hardware__qcom-caf__msm8953__display/live-source.patch",
+      "sha256": "f1f3a5e0b2631b3da7a401b499c44463ecb9c019ac6d10086cd8b0ccd6c4768c",
+      "changed_paths": [
+        "gpu_tonemapper/glengine.cpp"
+      ],
+      "role": "core",
+      "replay_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b",
+      "reverse_tree": "48ca22cad17b7691231605378d9ca2fc438247dc"
+    },
+    {
+      "path": "vendor/qcom/opensource/commonsys-intf/display",
+      "source_url": "https://github.com/CherishOS/android_vendor_qcom_opensource_display-commonsys-intf",
+      "manifest_revision": "ba6b55fdd5e13290a9e97a0f947fd21ee2f228af",
+      "base_commit": "ba6b55fdd5e13290a9e97a0f947fd21ee2f228af",
+      "base_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+      "patched_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356",
+      "patch": "vendor__qcom__opensource__commonsys-intf__display/live-source.patch",
+      "sha256": "a41904cbc416dc67715bfc44d065f684778167d34299c009568396fadc13484c",
+      "changed_paths": [
+        "gralloc/gralloc_priv.h"
+      ],
+      "role": "core",
+      "replay_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356",
+      "reverse_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac"
+    },
+    {
+      "path": "device/cherish/sepolicy",
+      "source_url": "https://github.com/CherishOS/android_device_cherish_sepolicy",
+      "manifest_revision": "c6ecfded4535af0ea163bfd1ff1c9f131f6c2507",
+      "base_commit": "c6ecfded4535af0ea163bfd1ff1c9f131f6c2507",
+      "base_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+      "patched_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d",
+      "patch": "device__cherish__sepolicy/live-source.patch",
+      "sha256": "ce264761086cf69c7097b60a33896f900f7d6accd6e2a4465643ded05f4864a7",
+      "changed_paths": [
+        "common/public/property.te"
+      ],
+      "role": "core",
+      "replay_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d",
+      "reverse_tree": "993bc0a8b3a721c379b73391016310c04072409c"
+    },
+    {
+      "path": "device/samsung/m11q",
+      "source_url": "https://github.com/chenjohnliu/android_device_samsung_m11q",
+      "manifest_revision": "0f1da5855d27841d53743cd878ecd2d09679a941",
+      "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+      "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+      "patched_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
+      "patch": "device__samsung__m11q/live-source.patch",
+      "sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299",
+      "changed_paths": [
+        "AndroidProducts.mk"
+      ],
+      "role": "product",
+      "replay_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
+      "reverse_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a"
+    },
+    {
+      "path": "vendor/cherish",
+      "source_url": "https://github.com/CherishOS/android_vendor_cherish",
+      "manifest_revision": "4b061ffab32779b72e10249fddb1f69a6561d777",
+      "base_commit": "4b061ffab32779b72e10249fddb1f69a6561d777",
+      "base_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+      "patched_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec",
+      "patch": "vendor__cherish/live-source.patch",
+      "sha256": "89b5870a368a5c5f5ee61f89309d33be70b5ca924341146dd4f831e3fb80e0f8",
+      "changed_paths": [
+        "config/basicapps.mk",
+        "prebuilt/common/bin/backuptool.sh"
+      ],
+      "role": "optional",
+      "replay_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec",
+      "reverse_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08"
+    },
+    {
+      "path": "build/make",
+      "source_url": "https://github.com/CherishOS/android_build",
+      "manifest_revision": "a74a178b502303584cc55ecbf6d2d7d3ae22c8b2",
+      "base_commit": "a74a178b502303584cc55ecbf6d2d7d3ae22c8b2",
+      "base_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+      "patched_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1",
+      "patch": "build__make/live-source.patch",
+      "sha256": "74db0fd1eab3e08c74bd3917722d59e0cb0cfeb0ed89ab7b3a096ba0336f7fb0",
+      "changed_paths": [
+        "tools/releasetools/non_ab_ota.py"
+      ],
+      "role": "optional",
+      "replay_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1",
+      "reverse_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884"
+    }
+  ],
+  "base_manifest": {
+    "path": "base-manifest.xml",
+    "sha256": "97b3720d7d89623effec96cbd5533a1069d93837e22635dc5db530ed5de3d188",
+    "project_count": 1200
+  },
+  "validation": {
+    "project_count": 14,
+    "project_heads_match_resolved_manifest": true,
+    "all_fetch_urls_public_https": true,
+    "temporary_index_per_project": true,
+    "real_head_index_and_status_preserved": true,
+    "patch_replay_tree_match_count": 14,
+    "patch_reverse_tree_match_count": 14,
+    "changed_path_count": 78
+  },
+  "evidence": {
+    "observed": [
+      "14 authorized source project worktrees have source/config changes only; untracked files are Java helpers in the first 11 projects.",
+      "The first 13 current HEADs match the supplied previous live-application/build-fix report commits; all 14 current HEADs match the latest customized manifest revisions.",
+      "Per-project patch replay reproduced the expected tree; reverse replay restored the exact base tree.",
+      "Actual HEADs, real index digests, and worktree status were unchanged after export.",
+      "The build/make edit is tools/releasetools/non_ab_ota.py from selected ota_survival2.patch; its file hash matches the recorded selection result."
+    ],
+    "inference": [
+      "The reported successful build, boot, and normal voice call validate this reported source state at the level the user described.",
+      "No conclusion is drawn about VoWiFi, SMS, dual-slot, or handover behavior because those were not newly tested."
+    ]
+  }
+}

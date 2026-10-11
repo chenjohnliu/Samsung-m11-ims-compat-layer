@@ -185,6 +185,20 @@ string table, preserves file sizes, validates the post-transform ELF graph,
 and emits only hashes and public change counts in its report. See
 `docs/ER1_ERIS_PRIVATE_CRYPTO.md`.
 
+On 2026-10-12 the strict ER1 default was promoted to the identified CWK3 stock
+trio after user-reported fresh Cherish build, boot and normal-call acceptance.
+The transformer, canonical contract and stock input inventory share those
+pins. `devices/m11q/eris-private-crypto-provenance.json` records the image hash,
+extraction paths and scoped acceptance; the former contract is archived as
+`eris-private-crypto-historical-contract.json`. This does not newly prove
+ERIS/IPsec or VoWiFi execution.
+
+The Cherish target source checkpoint at `platform/checkpoints/cherish-20261012`
+records the adapted framework and Telecom integrations, missing MmsService API
+companion, four build prerequisites, product selection and optional user
+customizations. Every project is tied to a base commit, patch hash and result
+tree. It supplements the historical checkpoint without changing its evidence.
+
 ## Never publish
 
 - Stock, intermediate or patched APK/JAR/DEX/class files.

@@ -1,0 +1,13 @@
+diff --git a/hal/Android.mk b/hal/Android.mk
+index dfb76bb19b84563c259247fe1b945089082b3fbc..445608ac7fdd65035e6c0472a5ce2edcb93dddd1 100644
+--- a/hal/Android.mk
++++ b/hal/Android.mk
+@@ -371,7 +371,7 @@ ifeq ($(strip $(AUDIO_FEATURE_ENABLED_GCOV)),true)
+ endif
+ 
+ LOCAL_SHARED_LIBRARIES += libbase libhidlbase libutils android.hardware.power@1.2 liblog
+-LOCAL_SHARED_LIBRARIES += android.hardware.power-ndk_platform
++#LOCAL_SHARED_LIBRARIES += android.hardware.power-ndk_platform
+ LOCAL_SHARED_LIBRARIES += libbinder_ndk
+ LOCAL_SRC_FILES += audio_perf.cpp
+ 

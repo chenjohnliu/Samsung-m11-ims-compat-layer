@@ -1,0 +1,14 @@
+diff --git a/gralloc/gralloc_priv.h b/gralloc/gralloc_priv.h
+index 7d9019db2b75a724ea61a2676ec2ee283a0fb07b..73fa3150f1e70ca5b187e3b285471174511fb235 100644
+--- a/gralloc/gralloc_priv.h
++++ b/gralloc/gralloc_priv.h
+@@ -74,7 +74,8 @@
+ 
+ #define ROUND_UP_PAGESIZE(x) roundUpToPageSize(x)
+ inline size_t roundUpToPageSize(size_t x) {
+-  return (x + (getpagesize() - 1)) & ~(getpagesize() - 1);
++  const size_t page_size = static_cast<size_t>(getpagesize());
++  return (x + (page_size - 1)) & ~(page_size - 1);
+ }
+ 
+ /* Legacy gralloc1 definitions */

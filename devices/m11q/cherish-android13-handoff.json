@@ -5,19 +5,20 @@
     "rom": "CherishOS",
     "android_version": 13,
     "device": "Samsung Galaxy M11 (m11q)",
-    "manifest_revision": null,
+    "manifest_revision": "327f31acac15efa57f4c0a759a7079f3955839ad",
     "base_revision": null,
-    "resolution_status": "unresolved"
+    "resolution_status": "resolved_project_checkpoint",
+    "source_manifest_path": "platform/checkpoints/cherish-20261012/base-manifest.xml"
   },
   "readiness": {
     "published_source_inventory": "present",
-    "target_integration": "pending",
-    "dependency_closure": false,
-    "port_applied": false,
-    "build_performed": false,
-    "build_runtime_current_port_validated": false,
+    "target_integration": "source_checkpoint_published",
+    "dependency_closure": true,
+    "port_applied": true,
+    "build_performed": true,
+    "build_runtime_current_port_validated": true,
     "deployable": false,
-    "note": "The published source inventory is present, but dependency closure is incomplete because the ER1 BoringSSL input provenance is unresolved. The repository pins do not establish compatibility with an unidentified CherishOS manifest or prove that this port builds or runs."
+    "note": "Source patches are locked and replayable; the user reported successful build, boot and normal calls. This is scoped user acceptance, not agent-observed VoWiFi/SMS/ERIS validation. Current ER1 input provenance is closed by CWK3 stock. The fresh IMS APK differs from historical whole-artifact pins, so an independently verified end-to-end strict APK rebuild recipe is not claimed."
   },
   "source_repositories": [
     {
@@ -71,7 +72,9 @@
       "IMS service source and host-verifiable SMS compatibility helpers",
       "Samsung SEH APN bridge source",
       "SystemUI IMS registration icon patch, including the Android 13 import correction"
-    ]
+    ],
+    "cherish_target_checkpoint": "platform/checkpoints/cherish-20261012/manifest.json",
+    "replay_policy": "Use the combined Cherish checkpoint instead of layering the historical checkpoint, separate SystemUI patch or SA2 renderer on top."
   },
   "public_source_inventory": {
     "ims_framework_sms_and_subscription_compatibility": [
@@ -109,46 +112,41 @@
       "tools/verify_payload.py",
       "tools/verify_framework_abi.py"
     ],
-    "interpretation": "These are published source paths in this compatibility repository. Their presence does not mean CherishOS patches have been applied or runtime behavior validated."
+    "interpretation": "Historical donor sources and the combined target checkpoint are published. Fresh build, boot and normal calls are user-reported; other runtime scopes remain separate.",
+    "cherish_checkpoint_and_replay": [
+      "platform/checkpoints/cherish-20261012/manifest.json",
+      "platform/checkpoints/cherish-20261012/base-manifest.xml",
+      "tools/replay_cherish_source_checkpoint.py"
+    ]
   },
   "dependency_closure": {
-    "complete": false,
-    "status": "blocked_pending_input_provenance",
-    "blocked_input_provenance": [
+    "complete": true,
+    "status": "er1_stock_input_provenance_resolved",
+    "blocked_input_provenance": [],
+    "raw_cwk3_manifest_covers_blocked_inputs": true,
+    "resolved_inputs": [
       {
-        "contract_path": "devices/m11q/eris-private-crypto-contract.json",
-        "input_name": "libcrypto.so",
-        "input_sha256": "cf6dfdaf8a57730364e2be816c45d4fbdf1d3b196f5467e340e8c998d2631040",
-        "elf_class": 1,
-        "elf_machine": 40,
-        "provenance_status": "unresolved",
-        "provenance_note": "Pinned Android 12 ARM32 BoringSSL input; source checkout and build provenance were not retained.",
-        "cwk3_stock_comparison": {
-          "stock_image_sha256": "9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d",
-          "observed_cwk3_system_library_sha256": "8f92b691991bb0841228cc67a05c079a46065c4d80a43144cb3be6fb4fdc4bc3",
-          "observed_source": "Root-verified debugfs extraction of /system/lib/libcrypto.so from the pinned CWK3 stock system image.",
-          "matches_er1_input_pin": false
-        }
+        "stock_path": "/system/lib/libcrypto.so",
+        "input_sha256": "8f92b691991bb0841228cc67a05c079a46065c4d80a43144cb3be6fb4fdc4bc3",
+        "output_name": "liberc.so",
+        "output_sha256": "11b1be41684274d65274c39e36d01c439d4cdd8f52ac096b49e32f892e36ca5f"
       },
       {
-        "contract_path": "devices/m11q/eris-private-crypto-contract.json",
-        "input_name": "libssl.so",
-        "input_sha256": "d8eef149d87bab37c66ade6d39c3ff93d6f922dc0dd4a126a3d4cca08a3dc478",
-        "elf_class": 1,
-        "elf_machine": 40,
-        "provenance_status": "unresolved",
-        "provenance_note": "Pinned Android 12 ARM32 BoringSSL input; source checkout and build provenance were not retained.",
-        "cwk3_stock_comparison": {
-          "stock_image_sha256": "9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d",
-          "observed_cwk3_system_library_sha256": "729df965c522f88554dd278118d8514852ecf5daf97973837fa06745b94bf3ea",
-          "observed_source": "Root-verified debugfs extraction of /system/lib/libssl.so from the pinned CWK3 stock system image.",
-          "matches_er1_input_pin": false
-        }
+        "stock_path": "/system/lib/libssl.so",
+        "input_sha256": "729df965c522f88554dd278118d8514852ecf5daf97973837fa06745b94bf3ea",
+        "output_name": "libers.so",
+        "output_sha256": "a6257fbdab5dc5771ea93905bbf7375e4b1e2393b9aadcd20655d4b9fd2e149c"
+      },
+      {
+        "stock_path": "/system/lib/liberis_strongswan.so",
+        "input_sha256": "38aecec124684f02afd5bea9a98f538913af7b3311d5eb7e62f34429b27bbe49",
+        "output_name": "liberis_strongswan.so",
+        "output_sha256": "61601e70a15056cb563cdb2cc8651303ffc2b8a1cd9c2fb1ca83fd64fea55dc3"
       }
     ],
-    "raw_cwk3_manifest_covers_blocked_inputs": false,
-    "comparison_finding": "The exact ER1 contract inputs differ from the corresponding libraries extracted from the pinned CWK3 stock system image.",
-    "resolution_required": "Decide whether ER1 belongs in the target port. Excluding ER1 changes the port payload and does not establish preservation of ERIS/IPsec behavior; that requires design review and runtime validation. If ER1 is included, resolve the provenance of the exact pinned Android 12 libraries or regenerate the transformation contract from lawful, identified inputs and validate the resulting behavior before claiming a closed input set."
+    "provenance_path": "devices/m11q/eris-private-crypto-provenance.json",
+    "comparison_finding": "The CWK3 trio now defines the strict ER1 default. The former unmatched pair remains archival metadata and is no longer a required input.",
+    "resolution_required": "No unresolved ER1 input provenance remains. This input closure does not establish an end-to-end strict APK rebuild or untested ERIS/IPsec runtime behavior."
   },
   "reproducibility_inventory": {
     "ims_lg3": {
@@ -174,7 +172,17 @@
       "tool": "tools/global_wfc_profile_policy.py",
       "result": "Pinned policy and vendor XML; the contract defines no standalone unsigned APK output."
     },
-    "limits": "The public builder contracts and raw CWK3 input manifest define the reproducible source chain. They do not perform an Android ROM build, signing, port application, or device runtime validation."
+    "limits": "The combined checkpoint reproduces the platform source changes. Historical APK contracts retain their exact pins; the fresh IMS primary DEX/whole APK differs. Raw-input closure, source replay, exact APK reproduction and runtime acceptance are distinct.",
+    "fresh_ims_candidate": {
+      "acceptance": "user_reported_build_boot_and_normal_calls",
+      "unsigned_apk_sha256": "4508e6c4b0899d230d488a7a6b797193733abdf54517eb6d3dd04cdc3e89150d",
+      "classes_dex_sha256": "778642ddb5ee419b8b03e08722b0042325ab71d021acb68f4cfd9cabe569bae8",
+      "bridge_dex_sha256": "b9d57c1a1aab37fd88a5443bde177c710897b1603481350e8037cf332ce0d325",
+      "historical_canonical_hash_reproduced": false,
+      "historical_contracts_modified": false,
+      "source_content_validation": "All 5451 class round-trips, target class pins, bridge references, unrelated ZIP entries and stock Timer F (128 seconds) checked before manual build.",
+      "producer_profile_published": false
+    }
   },
   "integration_contract": {
     "target_manifest_and_base_must_be_resolved_before_porting": true,
@@ -278,6 +286,32 @@
     "bridge/java/com/sec/internal/google/ModernCallSession.java",
     "bridge/java/com/sec/internal/google/ModernEventQueue.java",
     "bridge/java/com/sec/internal/google/ModernSmsBridge.java",
-    "bridge/java/com/sec/internal/google/ModernVoiceContext.java"
-  ]
+    "bridge/java/com/sec/internal/google/ModernVoiceContext.java",
+    "platform/checkpoints/cherish-20261012/manifest.json",
+    "platform/checkpoints/cherish-20261012/base-manifest.xml",
+    "tools/replay_cherish_source_checkpoint.py",
+    "devices/m11q/eris-private-crypto-provenance.json",
+    "devices/m11q/eris-private-crypto-historical-contract.json",
+    "devices/m11q/cherish-20261012-user-acceptance.json"
+  ],
+  "runtime_acceptance": {
+    "date": "2026-10-12",
+    "evidence_type": "user_report",
+    "rom": "CherishOS 4.12 / Android 13",
+    "device": "Samsung Galaxy M11 (m11q)",
+    "build_success": true,
+    "boot_success": true,
+    "normal_voice_call_success": true,
+    "installation_note": "The initial boot returned to recovery with enablefilecrypto_failed after switching from crDroid with Wipe only. Format Data was followed by successful boot and user-reported normal calls.",
+    "not_newly_verified": [
+      "VoWiFi",
+      "ERIS/IPsec execution",
+      "SMS",
+      "SIM2",
+      "handover",
+      "emergency calling"
+    ],
+    "rom_build_run_by_agent": false,
+    "device_capture_for_this_acceptance": false
+  }
 }

@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "profile": "cwk3-stock",
+  "status": "promoted_after_user_reported_build_boot_and_voice_call_acceptance",
+  "stock_build": "M115FXXS5CWK3",
+  "stock_image_sha256": "9136dc82d36367b09ff373af3b1adbfa75cedd1bf06f8648bf82069bc6f21b8d",
+  "extraction": {
+    "method": "read-only debugfs extraction from the hash-verified stock system image"
+  },
+  "contract_path": "devices/m11q/eris-private-crypto-contract.json",
+  "historical_contract_path": "devices/m11q/eris-private-crypto-historical-contract.json",
+  "inputs": [
+    {
+      "stock_path": "/system/lib/libcrypto.so",
+      "input_sha256": "8f92b691991bb0841228cc67a05c079a46065c4d80a43144cb3be6fb4fdc4bc3",
+      "output_name": "liberc.so",
+      "output_sha256": "11b1be41684274d65274c39e36d01c439d4cdd8f52ac096b49e32f892e36ca5f"
+    },
+    {
+      "stock_path": "/system/lib/libssl.so",
+      "input_sha256": "729df965c522f88554dd278118d8514852ecf5daf97973837fa06745b94bf3ea",
+      "output_name": "libers.so",
+      "output_sha256": "a6257fbdab5dc5771ea93905bbf7375e4b1e2393b9aadcd20655d4b9fd2e149c"
+    },
+    {
+      "stock_path": "/system/lib/liberis_strongswan.so",
+      "input_sha256": "38aecec124684f02afd5bea9a98f538913af7b3311d5eb7e62f34429b27bbe49",
+      "output_name": "liberis_strongswan.so",
+      "output_sha256": "61601e70a15056cb563cdb2cc8651303ffc2b8a1cd9c2fb1ca83fd64fea55dc3"
+    }
+  ],
+  "validation": {
+    "strict_transform_replayed": true,
+    "all_three_product_hashes_match": true,
+    "user_acceptance": {
+      "date": "2026-10-12",
+      "evidence_type": "user_report",
+      "rom": "CherishOS 4.12 / Android 13",
+      "device": "Samsung Galaxy M11 (m11q)",
+      "build_success": true,
+      "boot_success": true,
+      "normal_voice_call_success": true,
+      "installation_note": "The initial boot returned to recovery with enablefilecrypto_failed after switching from crDroid with Wipe only. Format Data was followed by successful boot and user-reported normal calls.",
+      "not_newly_verified": [
+        "VoWiFi",
+        "ERIS/IPsec execution",
+        "SMS",
+        "SIM2",
+        "handover",
+        "emergency calling"
+      ],
+      "rom_build_run_by_agent": false,
+      "device_capture_for_this_acceptance": false
+    },
+    "eris_ipsec_runtime_verified": false
+  }
+}

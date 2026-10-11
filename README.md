@@ -18,11 +18,17 @@ its pinned firmware inputs, and the runtime scope documented below.
 For the current, independent CherishOS Android 13 source handoff, start with
 [`docs/CHERISH_ANDROID13_IMS_HANDOFF.md`](docs/CHERISH_ANDROID13_IMS_HANDOFF.md)
 and its [machine-readable inventory](devices/m11q/cherish-android13-handoff.json).
-The inventory is **not yet a closed rebuild recipe**: ER1 requires an exact
-two-library input pair whose source/build provenance is unresolved. Raw CWK3
-libraries do not match that pair. The new CherishOS port has not been applied,
-built or runtime-tested. The stage narrative below is historical; its early
-carrier-specific call-disconnection workaround is not the handoff policy.
+The new port's source changes have been applied and exported in the
+[2026-10-12 Cherish source checkpoint](docs/CHERISH_SOURCE_CHECKPOINT.md),
+including the missing MMS API companion and build prerequisites. Source
+replay is verified against locked bases. The user reported a successful ROM
+build, boot after Format Data, and normal calls. ER1 now uses the identified
+CWK3 stock trio, with matching tool and contract pins. This is scoped user
+acceptance; it does not newly establish VoWiFi, SMS or ERIS/IPsec execution.
+The inventory is **not yet a closed strict APK rebuild recipe**: the fresh IMS
+candidate differs from historical whole-artifact pins, whose producer contracts
+remain unchanged. The stage narrative below is historical; its early carrier-specific
+call-disconnection workaround is not the handoff policy.
 
 Stage 3 is the current VoWiFi compatibility and validation stage. It builds on
 Stage 2, which extended the original SIM1 voice bring-up to a **single active
@@ -115,10 +121,12 @@ verification tooling. The bridge inventory and expected hashes are recorded in
 
 The public checkout provides the project-authored transformations, but a
 complete independent rebuild additionally needs every exact private input.
-Samsung firmware and the documented build toolchain alone are insufficient:
-ER1's two pinned Android 12 ARM32 BoringSSL libraries have unresolved build
-provenance and differ from the raw CWK3 pair. See the
-[ER1 input audit](docs/ER1_ERIS_PRIVATE_CRYPTO.md#cwk3-input-comparison--2026-10-10).
+The current ER1 inputs are now the three hash-pinned raw CWK3 stock libraries.
+Their provenance and generated outputs are recorded in the
+[ER1 stock contract](docs/ER1_ERIS_PRIVATE_CRYPTO.md). The former pair remains
+historical metadata and is no longer a required input. Exact APK reproduction
+remains a separate boundary: the new Cherish IMS candidate's primary DEX and
+whole-APK hashes differ from the historical strict contracts.
 The pinned IMS bridge source was
 promoted only after two deterministic `PIN_DISCOVERY` runs produced identical
 DEX and unsigned-APK identities. The default strict mode can regenerate and
@@ -129,9 +137,8 @@ itself, establish additional VoWiFi runtime behavior. The required private input
    [`devices/m11q/payload-manifest.tsv`](devices/m11q/payload-manifest.tsv);
 2. the matching Android framework/APK decoding and build tools described in
    [`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md);
-3. the exact ER1 library inputs, with lawful provenance still to be resolved
-   for the independent handoff. Do not substitute arbitrary libraries or use
-   another ROM's private outputs to hide this gap.
+3. the exact stock ER1 library inputs now included in the raw-input manifest.
+   Do not substitute arbitrary libraries or use another ROM's private outputs.
 
 Stage 3 stock inputs and locally derived outputs have different handling; see
 [`docs/STAGE3_PAYLOAD_INPUTS.md`](docs/STAGE3_PAYLOAD_INPUTS.md). The public
