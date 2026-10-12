@@ -22,10 +22,16 @@ class CherishAndroid13HandoffTests(unittest.TestCase):
         self.assertIsNone(handoff["target"]["base_revision"])
         self.assertEqual(handoff["target"]["resolution_status"], "resolved_project_checkpoint")
         self.assertEqual(handoff["readiness"]["published_source_inventory"], "present")
-        self.assertEqual(handoff["readiness"]["target_integration"], "source_checkpoint_published")
+        self.assertEqual(handoff["readiness"]["target_integration"], "source_checkpoint_and_ims_supplement_published")
         self.assertTrue(handoff["readiness"]["dependency_closure"])
-        for key in ("port_applied", "build_performed", "build_runtime_current_port_validated"):
+        for key in ("port_applied", "build_performed"):
             self.assertTrue(handoff["readiness"][key], key)
+        self.assertFalse(handoff["readiness"]["build_runtime_current_port_validated"])
+        supplement_path = handoff["compatibility_source"]["cherish_ims_supplement"]
+        supplement = json.loads((ROOT / supplement_path).read_text(encoding="utf-8"))
+        self.assertEqual(supplement["status"], "source_verified_awaiting_manual_build")
+        self.assertFalse(supplement["rom_build_ran_by_agent"])
+        self.assertFalse(supplement["new_source_runtime_validated"])
         self.assertFalse(handoff["readiness"]["deployable"])
         acceptance = handoff["runtime_acceptance"]
         self.assertEqual(acceptance["evidence_type"], "user_report")

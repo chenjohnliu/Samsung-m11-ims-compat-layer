@@ -10,6 +10,13 @@ its [manifest](../platform/checkpoints/cherish-20261012/manifest.json).
 The [machine-readable handoff](../devices/m11q/cherish-android13-handoff.json)
 records current readiness, historical artifacts and remaining limits.
 
+After that baseline, apply the
+[IMS local-patch supplement](CHERISH_LOCAL_IMS_PATCHES_20261012.md): the Telecom
+permission declaration and emergency capability unit-test hunk. The MMS copy
+in that inventory is already included in the baseline and must not be applied
+again. The prior build/normal-call acceptance predates these two additions;
+the latest source state is verified without an Android build.
+
 ## Locked source inputs
 
 The [baseline manifest](../platform/checkpoints/cherish-20261012/base-manifest.xml)

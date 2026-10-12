@@ -12,13 +12,13 @@
   },
   "readiness": {
     "published_source_inventory": "present",
-    "target_integration": "source_checkpoint_published",
+    "target_integration": "source_checkpoint_and_ims_supplement_published",
     "dependency_closure": true,
     "port_applied": true,
     "build_performed": true,
-    "build_runtime_current_port_validated": true,
+    "build_runtime_current_port_validated": false,
     "deployable": false,
-    "note": "Source patches are locked and replayable; the user reported successful build, boot and normal calls. This is scoped user acceptance, not agent-observed VoWiFi/SMS/ERIS validation. Current ER1 input provenance is closed by CWK3 stock. The fresh IMS APK differs from historical whole-artifact pins, so an independently verified end-to-end strict APK rebuild recipe is not claimed."
+    "note": "The baseline source checkpoint has user-reported build, boot and normal-call acceptance. The later Telecom permission and capability-test additions are source-verified and applied, but the latest source state awaits manual build and runtime validation. Current ER1 input provenance is closed by CWK3 stock. Fresh IMS APK producer adaptation remains a separate open boundary."
   },
   "source_repositories": [
     {
@@ -74,6 +74,8 @@
       "SystemUI IMS registration icon patch, including the Android 13 import correction"
     ],
     "cherish_target_checkpoint": "platform/checkpoints/cherish-20261012/manifest.json",
+    "cherish_ims_supplement": "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
+    "supplement_application_policy": "After the combined baseline checkpoint, apply only the two new Telecom permission and emergency-capability test hunks once. The separate MMS companion copy is already included in the baseline. Non-IMS microG/Play Integrity changes remain separate public donor changes.",
     "replay_policy": "Use the combined Cherish checkpoint instead of layering the historical checkpoint, separate SystemUI patch or SA2 renderer on top."
   },
   "public_source_inventory": {
@@ -113,6 +115,14 @@
       "tools/verify_framework_abi.py"
     ],
     "interpretation": "Historical donor sources and the combined target checkpoint are published. Fresh build, boot and normal calls are user-reported; other runtime scopes remain separate.",
+    "cherish_ims_supplement": [
+      "devices/m11q/cherish-ims-supplement-source-verification.json",
+      "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
+      "platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Mms/mms-service-compat.patch",
+      "platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch",
+      "platform/checkpoints/cherish-20261012-ims-supplement/frameworks__opt__net__ims/emergency-capability-test.patch",
+      "docs/CHERISH_LOCAL_IMS_PATCHES_20261012.md"
+    ],
     "cherish_checkpoint_and_replay": [
       "platform/checkpoints/cherish-20261012/manifest.json",
       "platform/checkpoints/cherish-20261012/base-manifest.xml",
@@ -292,7 +302,10 @@
     "tools/replay_cherish_source_checkpoint.py",
     "devices/m11q/eris-private-crypto-provenance.json",
     "devices/m11q/eris-private-crypto-historical-contract.json",
-    "devices/m11q/cherish-20261012-user-acceptance.json"
+    "devices/m11q/cherish-20261012-user-acceptance.json",
+    "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
+    "docs/CHERISH_LOCAL_IMS_PATCHES_20261012.md",
+    "devices/m11q/cherish-ims-supplement-source-verification.json"
   ],
   "runtime_acceptance": {
     "date": "2026-10-12",

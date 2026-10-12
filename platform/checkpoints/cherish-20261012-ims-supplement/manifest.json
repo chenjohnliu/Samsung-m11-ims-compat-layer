@@ -1,0 +1,78 @@
+{
+  "format_version": 1,
+  "status": "source_verified_awaiting_manual_build",
+  "audit_date": "2026-10-12",
+  "parent_manifest": "../cherish-20261012/manifest.json",
+  "parent_publication_commit": "3b254f2c77ce6f7bcd3402643a44276a6f69337d",
+  "rom_build_ran_by_agent": false,
+  "android_unit_tests_ran": false,
+  "new_source_runtime_validated": false,
+  "source_scope": "Three local IMS-related source patch copies, byte-for-byte verified against their WSL originals. The MMS patch is included here for inventory only because it is already part of the parent checkpoint.",
+  "local_inventory": {
+    "regular_file_count": 14,
+    "patch_count": 13,
+    "ims_related_patch_count": 3,
+    "non_ims_patch_count": 10,
+    "symlinks_followed": false,
+    "local_copies_deleted": false
+  },
+  "projects": [
+    {
+      "path": "packages/services/Mms",
+      "source_url": "https://android.googlesource.com/platform/packages/services/Mms",
+      "source_provenance_commit": "88c00908f6f248edc300e38044cb88e08eea942e",
+      "source_change_publication_commit": "3b254f2c77ce6f7bcd3402643a44276a6f69337d",
+      "patch": "packages__services__Mms/mms-service-compat.patch",
+      "patch_sha256": "fc13a3939a5047b65d26b8a1253ec297982cddfcd40988f68861cd9a3a73dff7",
+      "base_commit": "88c00908f6f248edc300e38044cb88e08eea942e",
+      "base_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+      "parent_patched_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+      "after_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+      "already_in_parent_checkpoint": true,
+      "action": "reference_only_do_not_reapply",
+      "source_commit_note": "The patch's upstream source base commit is recorded; the local change is already represented by the parent checkpoint tree."
+    },
+    {
+      "path": "packages/services/Telecomm",
+      "source_url": "https://github.com/CherishOS/android_packages_services_Telecomm",
+      "source_provenance_commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+      "donor_repository": "https://github.com/chenjohnliu/android_packages_services_Telecomm.git",
+      "donor_branch": "m11q-vowifi-audio-path",
+      "donor_commit": "66d3d91d238436c9a04cd4b653f3db02db4f901e",
+      "patch": "packages__services__Telecomm/secims-permission.patch",
+      "patch_sha256": "66f6e96678a5c0cc0a1000c88284cf0770b04b3c62c22657706b861b07be31cc",
+      "base_commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+      "base_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+      "before_tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+      "after_tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd",
+      "already_in_parent_checkpoint": false,
+      "action": "apply_once_after_parent_checkpoint",
+      "newly_changed_paths": ["AndroidManifest.xml"]
+    },
+    {
+      "path": "frameworks/opt/net/ims",
+      "source_url": "https://github.com/CherishOS/android_frameworks_opt_net_ims",
+      "source_provenance_commit": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+      "donor_repository": "https://github.com/chenjohnliu/android_frameworks_opt_net_ims.git",
+      "donor_branch": "m11q-emergency-capability-mask",
+      "donor_commit": "1b1a32269a62de0e82e3ede53bf2c44751307f18",
+      "patch": "frameworks__opt__net__ims/emergency-capability-test.patch",
+      "patch_sha256": "653cfc1ce53444f8564e0ab3f9026810c704cd80d3c4488200321e1f4fc8a06a",
+      "base_commit": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+      "base_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+      "before_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97",
+      "after_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8",
+      "already_in_parent_checkpoint": false,
+      "action": "apply_once_after_parent_checkpoint",
+      "newly_changed_paths": ["tests/src/com/android/ims/MmTelFeatureConnectionTest.java"],
+      "test_scope": "Simulated capability-mask assertions; no telephone call is originated."
+    }
+  ],
+  "verification": {
+    "original_wsl_patch_hashes_matched": true,
+    "patches_are_source_only_java_or_xml": true,
+    "parent_checkpoint_modified": false,
+    "private_binaries_or_device_captures_included": false,
+    "source_replay_report": "devices/m11q/cherish-ims-supplement-source-verification.json"
+  }
+}

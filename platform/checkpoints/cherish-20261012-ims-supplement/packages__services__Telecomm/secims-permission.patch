@@ -1,0 +1,11 @@
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 0000000..0000000 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -23,3 +23,6 @@
+     <uses-permission android:name="android.permission.HIDE_NON_SYSTEM_OVERLAY_WINDOWS"/>
+ 
++    <!-- Required by Samsung's secims changeAudioPathForSlot binder call. -->
++    <uses-permission android:name="com.sec.imsservice.PERMISSION"/>
++
+     <!-- Prevents the activity manager from delaying any activity-start

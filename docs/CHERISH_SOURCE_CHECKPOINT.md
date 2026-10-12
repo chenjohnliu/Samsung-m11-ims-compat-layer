@@ -7,6 +7,13 @@ with the framework API change. On 2026-10-12 the user reported a successful
 ROM build, boot after Format Data, and normal calls. This is user-reported
 voice acceptance; VoWiFi, SMS, handover and ERIS/IPsec were not newly verified.
 
+This is the validated baseline snapshot. The later
+[IMS source supplement](CHERISH_LOCAL_IMS_PATCHES_20261012.md) adds the missing
+Telecom permission declaration and emergency capability regression test.
+Apply those two patches once after this checkpoint. Its separate MMS patch
+is a reference copy of the companion already included here. The supplement
+has source verification, but no subsequent user build or runtime acceptance.
+
 The authoritative patch list is
 [`platform/checkpoints/cherish-20261012/manifest.json`](../platform/checkpoints/cherish-20261012/manifest.json).
 Each project has an exact base commit, a patch SHA-256, and the expected Git

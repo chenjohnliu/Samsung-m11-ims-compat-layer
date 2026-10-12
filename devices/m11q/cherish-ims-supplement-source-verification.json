@@ -1,0 +1,80 @@
+{
+  "format_version": 1,
+  "audit_date": "2026-10-12",
+  "status": "PASS",
+  "parent_publication_commit": "3b254f2c77ce6f7bcd3402643a44276a6f69337d",
+  "temporary_git_indexes_used": true,
+  "source_head_and_real_index_unchanged": true,
+  "rom_build_ran_by_agent": false,
+  "android_unit_tests_ran": false,
+  "new_source_runtime_validated": false,
+  "projects": [
+    {
+      "path": "packages/services/Mms",
+      "base_commit": "88c00908f6f248edc300e38044cb88e08eea942e",
+      "patch_sha256": "fc13a3939a5047b65d26b8a1253ec297982cddfcd40988f68861cd9a3a73dff7",
+      "before_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+      "after_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+      "reverse_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+      "verified_files": [
+        {
+          "path": "src/com/android/mms/service/MmsService.java",
+          "sha256": "74f12d7219683baa1fc150025b67168be01c1350010724eb085214b409e2bec6"
+        }
+      ]
+    },
+    {
+      "path": "packages/services/Telecomm",
+      "base_commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+      "patch_sha256": "66f6e96678a5c0cc0a1000c88284cf0770b04b3c62c22657706b861b07be31cc",
+      "before_tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+      "after_tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd",
+      "reverse_tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+      "verified_files": [
+        {
+          "path": "res/values/config.xml",
+          "sha256": "cbe319fb23c9338da42758623caf3bf80d25cceb1ac93cc25ef19c91fb2c73be"
+        },
+        {
+          "path": "src/com/android/server/telecom/CallAudioManager.java",
+          "sha256": "965b69dd13ef215c8b88d48d782dbba4fa90f775a4ec158fb01850b083624b19"
+        },
+        {
+          "path": "src/com/android/server/telecom/CallAudioModeStateMachine.java",
+          "sha256": "20e6074ed2423f17a4866e14f32f8281da15770a703f9deebf9b1f985a1fa3a7"
+        },
+        {
+          "path": "src/com/android/server/telecom/SamsungImsAudioHandover.java",
+          "sha256": "990419965435e2f444771c3f02183fef21756703b78d6af7096488aa6ec02cbc"
+        },
+        {
+          "path": "src/com/android/server/telecom/SamsungImsAudioTransition.java",
+          "sha256": "40dd5fa206fa1f54be201dd2e7eb17b39119df1750b270dd3f945be3bdb93079"
+        },
+        {
+          "path": "AndroidManifest.xml",
+          "sha256": "c307c078dba1cd357a9f09da23c8b5faf5275157c26a8b40893d33d44d699320"
+        }
+      ]
+    },
+    {
+      "path": "frameworks/opt/net/ims",
+      "base_commit": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+      "patch_sha256": "653cfc1ce53444f8564e0ab3f9026810c704cd80d3c4488200321e1f4fc8a06a",
+      "before_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97",
+      "after_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8",
+      "reverse_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97",
+      "verified_files": [
+        {
+          "path": "src/java/com/android/ims/MmTelFeatureConnection.java",
+          "sha256": "df0fa7371cfee9b641f04cb1f36f6d7f8c9b6c8ba97895f2df6e4a287beb29b9"
+        },
+        {
+          "path": "tests/src/com/android/ims/MmTelFeatureConnectionTest.java",
+          "sha256": "3dbeab0617648037227517a93057b4ed27933821cb1ac960b55e0339911e7935"
+        }
+      ]
+    }
+  ],
+  "verified_file_count": 9
+}

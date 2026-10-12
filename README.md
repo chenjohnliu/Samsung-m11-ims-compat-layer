@@ -18,6 +18,10 @@ its pinned firmware inputs, and the runtime scope documented below.
 For the current, independent CherishOS Android 13 source handoff, start with
 [`docs/CHERISH_ANDROID13_IMS_HANDOFF.md`](docs/CHERISH_ANDROID13_IMS_HANDOFF.md)
 and its [machine-readable inventory](devices/m11q/cherish-android13-handoff.json).
+The later [local IMS patch supplement](docs/CHERISH_LOCAL_IMS_PATCHES_20261012.md)
+publishes the MMS companion copy, missing Telecom permission, and capability
+regression test. Apply its two new hunks after the validated baseline checkpoint;
+their new source state awaits the user's manual build.
 The new port's source changes have been applied and exported in the
 [2026-10-12 Cherish source checkpoint](docs/CHERISH_SOURCE_CHECKPOINT.md),
 including the missing MMS API companion and build prerequisites. Source
