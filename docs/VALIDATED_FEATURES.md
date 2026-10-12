@@ -18,7 +18,7 @@ The ROM releases contain their own installation instructions:
 [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) and
 [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid).
 
-## Accepted behavior
+## Feature scope and validation
 
 | Behavior | CherishOS | crDroid |
 | --- | --- | --- |
@@ -30,8 +30,11 @@ The ROM releases contain their own installation instructions:
 | Ongoing call moves from Wi-Fi to LTE | PASS | PASS |
 | Ongoing call moves from LTE to Wi-Fi | PASS | PASS |
 | Weak-Wi-Fi departure preserves the ongoing call | PASS | PASS |
+| ViLTE (IMS video calling) | Not supported | Not supported |
+| Concurrent dual-SIM/DSDS IMS | Not supported | Not supported |
+| Emergency calling over LTE or Wi-Fi | Not validated | Not validated |
 
-The latest CherishOS acceptance followed application of the remaining companion changes and a successful manual ROM build. The maintainer reported successful boot after Format Data, the features above, and microG Self-Check. On returning to Wi-Fi coverage, the tested call switched back to VoWiFi after approximately 120 seconds. This is an observed result, not a fixed deadline.
+The latest CherishOS acceptance followed application of the remaining companion changes and a successful manual ROM build. The maintainer reported successful boot after Format Data, the supported behaviors above, and microG Self-Check. On returning to Wi-Fi coverage, the tested call switched back to VoWiFi after approximately 120 seconds. This is an observed result, not a fixed deadline.
 
 Incoming IMS SMS was also checked through a read-only device trace on 2026-10-13: Android's IMS SMS dispatcher received the segments, the inbound handler assembled the message, and it was saved to the messaging inbox. Private SMS contents and subscriber details are not published.
 
@@ -48,7 +51,7 @@ For crDroid, the [2026-10-10 hotspot handover record](CRDROID_HOTSPOT_HANDOVER_P
 
 - Two active IMS subscriptions / concurrent DSDS IMS are not supported. Success in each physical slot is single-active-SIM support.
 - Actual emergency call completion has not been tested. The emergency capability regression test uses simulated masks; it does not call 110, 119 or any emergency number.
-- ViLTE, alternate audio accessories, other firmware/model variants and general carrier compatibility are outside the reported validation scope.
+- ViLTE (IMS video calling) is not supported. Alternate audio accessories, other firmware/model variants and general carrier compatibility are outside the reported validation scope.
 - VoWiFi depends on carrier provisioning and ePDG connectivity. Wi-Fi networks can produce different results; return timing and brief audio interruptions can vary.
 - The accepted ROM contains the stock-derived ER1 dependencies. Their use does not separately establish every ERIS/IPsec execution path.
 

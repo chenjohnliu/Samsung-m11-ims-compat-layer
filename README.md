@@ -8,24 +8,25 @@ The port was developed with **ChatGPT/Codex assistance**. The maintainer built a
 
 [繁體中文](README.zh-TW.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md)
 
-## What works
+## Feature support
 
-Validated on the tested M11/Taiwan Mobile setup, using **one active SIM at a time**:
+Supported functions below were validated on the tested M11/Taiwan Mobile setup, using **one active SIM at a time**. Unsupported functions and functions without actual device validation are listed separately in the same table.
 
 | Feature | CherishOS 4.12 | crDroid 9.20 |
 | --- | --- | --- |
-| IMS registration with the active SIM in SIM1 or SIM2 | Passed | Passed |
-| Outgoing and incoming VoLTE calls | Passed | Passed |
-| Outgoing and incoming Wi-Fi Calling (VoWiFi) | Passed | Passed |
-| Two-way call audio and normal hang-up | Passed | Passed |
-| SMS sending and receiving, including the IMS SMS bridge | Passed | Passed |
-| Wi-Fi Calling → VoLTE during an ongoing call | Passed | Passed |
-| VoLTE → Wi-Fi Calling during an ongoing call | Passed | Passed |
-| Leaving weak Wi-Fi coverage without dropping the call | Passed | Passed |
+| IMS registration with the active SIM in SIM1 or SIM2 | Supported | Supported |
+| Outgoing and incoming VoLTE calls | Supported | Supported |
+| Outgoing and incoming Wi-Fi Calling (VoWiFi) | Supported | Supported |
+| Two-way call audio and normal hang-up | Supported | Supported |
+| SMS sending and receiving, including the IMS SMS bridge | Supported | Supported |
+| Wi-Fi Calling → VoLTE during an ongoing call | Supported | Supported |
+| VoLTE → Wi-Fi Calling during an ongoing call | Supported | Supported |
+| Leaving weak Wi-Fi coverage without dropping the call | Supported | Supported |
+| ViLTE (IMS video calling) | Not supported | Not supported |
+| Concurrent dual-SIM/DSDS IMS | Not supported | Not supported |
+| Emergency calling over LTE or Wi-Fi | Not validated | Not validated |
 
 SIM1 and SIM2 were tested separately. This does **not** support two active IMS subscriptions together. On the latest CherishOS test, the ongoing call returned to Wi-Fi Calling about **two minutes** after Wi-Fi coverage returned; that timing can vary.
-
-The accepted ROMs also include the corrected VoWiFi status icon and restricted microG signature spoofing. These are companion Android/ROM changes; this repository does not install microG.
 
 ## Scope and limitations
 
@@ -33,7 +34,7 @@ The accepted ROMs also include the corrected VoWiFi status icon and restricted m
 - Runtime results are from **Taiwan Mobile** and the tested Wi-Fi environments. Stock-backed carrier profiles provide wider configuration coverage, but other carriers and models are not runtime-certified.
 - **Concurrent dual-SIM/DSDS IMS is unsupported.**
 - **Actual emergency calling has not been tested**, including emergency calls over Wi-Fi. The capability regression test does not place a call.
-- ViLTE and other audio accessories are outside the reported validation scope. Brief audio pauses can occur during handover.
+- **ViLTE (IMS video calling) is unsupported.** Other audio accessories are outside the reported validation scope. Brief audio pauses can occur during handover.
 
 See [current validation details](docs/VALIDATED_FEATURES.md) for the evidence and limits. Older failure captures and retired experiments remain in the documentation as development history.
 
