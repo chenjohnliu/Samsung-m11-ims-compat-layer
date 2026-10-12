@@ -1,5 +1,13 @@
 # Samsung Galaxy M11 Android 13 IMS ROM bring-up
 
+> **Current reader note (2026-10-13):** This is a historical bring-up snapshot.
+> See [`VALIDATED_FEATURES.md`](VALIDATED_FEATURES.md) for the latest feature
+> acceptance and [`CHERISH_ANDROID13_IMS_HANDOFF.md`](CHERISH_ANDROID13_IMS_HANDOFF.md)
+> for the current Cherish source-application entry point. The old
+> `d11cbe58` carrier-specific fresh-bearer policy, which could disconnect an
+> active call, is retired and is not a current recipe; current validated
+> Wi-Fi/LTE handover calls remained connected.
+
 2026-10-09 update: this bring-up guide retains the historical restoration
 recipe. For the active modem-led legacy handover, successful stock audio
 adaptation and newly carrier-neutral SA2/SEH1 source scope, use the
@@ -17,7 +25,7 @@ can currently be built from one command or that all carriers have working IMS.
 | ROM / target | Validated result | Still unverified or failing |
 |---|---|---|
 | CherishOS 4.12 / Android 13, M11 `SM-M115F`, CWK3 stock inputs, Taiwan Mobile | With one active SIM at a time and SELinux Enforcing: outgoing/incoming VoLTE with two-way audio; SMS send/receive; SIM1 hot-swap recovery; outgoing VoWiFi to 188; incoming VoWiFi with sustained two-way audio after BT1. | Concurrent DSDS, emergency calls, ViLTE, handover, alternate audio routes, other carriers/firmware/models. Pure IMS transport for outgoing SMS is not claimed. |
-| crDroid 13 / Android 13, same device and BT1 payload | Direct-LTE 188, outgoing VoWiFi and incoming VoWiFi succeeded with audible media and normal teardown. Incoming media additionally requires the m11q-gated post-`MODE_IN_CALL` Telecom callback published as [`66d3d91d`](https://github.com/chenjohnliu/android_packages_services_Telecomm/commit/66d3d91d238436c9a04cd4b653f3db02db4f901e) and [`29fc1533`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/29fc1533c06fe54ef80d3808698d33edd93caed8). The source audit found all nine known production patch groups from the public CherishOS forks in the local crDroid source trees. | Before the workaround, an allowed IWLAN-to-LTE handover led to an INVITE rejected with SIP 487; the policy in [`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4) now forces a fresh bearer and restores calling on PLMN 46697. The UE-versus-carrier cause of the 487 remains unresolved. Turning Wi-Fi off during an active VoWiFi call intentionally drops that call. Other configured PLMNs, concurrent DSDS, emergency calls and alternate audio routes are not runtime-validated. |
+| crDroid 13 / Android 13, same device and BT1 payload | Direct-LTE 188, outgoing VoWiFi and incoming VoWiFi succeeded with audible media and normal teardown. Incoming media additionally requires the m11q-gated post-`MODE_IN_CALL` Telecom callback published as [`66d3d91d`](https://github.com/chenjohnliu/android_packages_services_Telecomm/commit/66d3d91d238436c9a04cd4b653f3db02db4f901e) and [`29fc1533`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/29fc1533c06fe54ef80d3808698d33edd93caed8). The source audit found all nine known production patch groups from the public CherishOS forks in the local crDroid source trees. | Historical snapshot: before the retired workaround, an allowed IWLAN-to-LTE handover led to an INVITE rejected with SIP 487; the policy in [`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4) then forced a fresh bearer and restored calling on PLMN 46697, but could disconnect an active VoWiFi call. This policy is retired and is not the current handover recipe. The UE-versus-carrier cause of the 487 remains unresolved. Other configured PLMNs, concurrent DSDS, emergency calls and alternate audio routes were not runtime-validated in this snapshot. |
 
 The detailed source map and log interpretation are in
 [`CRDROID_ANDROID13_IMS_RESTORATION.md`](CRDROID_ANDROID13_IMS_RESTORATION.md).
@@ -126,13 +134,12 @@ Git.
 
 ## 3. Integrate the M11 device tree
 
-Use the public M11 device-tree `m11q-volte` branch at `d11cbe58` or a later
-revision. Its IMS integration history is present through `97206c0e`;
+Use the public M11 device-tree `m11q-volte` branch at the revision specified by
+the current port handoff. Its IMS integration history is present through `97206c0e`;
 [`9aebafe`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/9aebafee57492a75cadd115ae80ea21db378a760)
-updates the payload verifier and generation instructions, and
-[`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4)
-adds the stable fresh-bearer policy in
-`overlay/packages/apps/CarrierConfig/res/xml/vendor.xml`. Read that tree's
+updates the payload verifier and generation instructions. The historical
+`d11cbe58` policy described below is retired; do not select it as the current
+Wi-Fi/LTE handover implementation. Read that tree's
 `ims/README.md` and follow its Integration section to install the `ims`
 directory and apply the `device.mk` and `BoardConfig.mk` fragments. Run its
 `ims/verify_payload.ps1` after private outputs are in place.
@@ -252,20 +259,22 @@ After flashing, verify each stage separately under SELinux Enforcing:
 4. **VoWiFi:** wait for IWLAN registration, call 188, then test an incoming
    call from another handset. Verify sustained audio in both directions and
    normal teardown, not only call setup.
-5. **Idle Wi-Fi-to-LTE transition:** for the M11/Taiwan Mobile overlay, test
-   after Wi-Fi is disabled and the status returns to VoLTE. On PLMN 46697 the
-   configured disallow rule should tear down IWLAN and establish a fresh WWAN
-   IMS bearer. This avoids the handover continuity path associated with the
-   reproduced SIP 487; the precise UE-versus-carrier cause remains unresolved.
-6. **Active-call transition:** document that the same policy disconnects an
-   active VoWiFi call when Wi-Fi is turned off. This is the configured tradeoff,
-   not successful handover.
+5. **Historical, retired workaround:** the former M11/Taiwan Mobile policy was
+   tested on PLMN 46697 for an idle Wi-Fi-to-LTE transition. It tore down IWLAN
+   and established a fresh WWAN IMS bearer, avoiding the reproduced SIP 487;
+   the UE-versus-carrier cause remained unresolved.
+6. **Historical, retired tradeoff:** that same policy disconnected an active
+   VoWiFi call when Wi-Fi was turned off. Do not apply it as the current
+   handover implementation. Current validated Wi-Fi/LTE handover calls
+   remained connected.
 
-The policy from device-tree commit `d11cbe58` is present for PLMNs 46601,
-46605, 46692, and 46697, but only 46697 has runtime validation. The attempted
-native active-W2L experiment was reverted; this CarrierConfig rule is the
-current implementation. Recheck carrier registration and call behavior before
-claiming support for the other three or another operator.
+**Historical, retired workaround:** device-tree commit `d11cbe58` configured the
+policy for PLMNs 46601, 46605, 46692, and 46697; only 46697 had runtime
+validation at that time. It forced a fresh bearer for an idle transition and
+could disconnect an active VoWiFi call. This CarrierConfig rule is retired and
+must not be used as the current implementation. Current validated Wi-Fi/LTE
+handover calls continued without interruption; other carriers and models are
+not generalized by that result.
 
 ## 6. Remaining reproducibility work before claiming general bring-up
 

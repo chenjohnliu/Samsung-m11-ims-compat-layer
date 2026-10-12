@@ -1,5 +1,13 @@
 # crDroid Android 13 IMS source restoration
 
+> **Current reader note (2026-10-13):** This is a historical development
+> snapshot. See [`VALIDATED_FEATURES.md`](VALIDATED_FEATURES.md) for the latest
+> feature acceptance and [`CHERISH_ANDROID13_IMS_HANDOFF.md`](CHERISH_ANDROID13_IMS_HANDOFF.md)
+> for the current Cherish source-application entry point. The old `d11cbe58`
+> carrier-specific fresh-bearer policy, which could disconnect an active call,
+> is retired and is not a current recipe; current validated Wi-Fi/LTE handover
+> calls remained connected.
+
 Build correction, 2026-10-10:
 [SystemUI IMS constant imports require the `.stub` package](SYSTEMUI_IMS_IMPORT_BUILD_FIX_20261010.md).
 Live WSL source and the current icon patch are corrected; the historical
@@ -130,10 +138,12 @@ validated outgoing 188 and incoming VoWiFi calls with audible media and normal
 teardown. These results remain scoped to the tested build and do not establish
 complete cross-ROM support. CherishOS 4.12 results remain separate.
 
-The stable carrier-policy fix is public in device-tree commit
+The historical, now-retired carrier-policy workaround was published in device-tree commit
 [`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4)
-on branch `m11q-volte`. The native active-W2L experiment was fully reverted;
-the published CarrierConfig rule is the current workaround.
+on branch `m11q-volte`. At that historical checkpoint, the native active-W2L
+experiment had been fully reverted and the published CarrierConfig rule was
+the active workaround. The rule is retired and must not be used as the current
+handover recipe.
 
 ## Purpose and portability boundary
 
@@ -197,8 +207,9 @@ plus m11q device integration commit
 
 The M11 device tree at `97206c0e` already descends from its IMS integration
 history through `bac4e173`. Public device-tree commit `9aebafe` updates the
-payload-verifier hash and its README instructions; `d11cbe58` adds the stable
-fresh-bearer policy described below. This check rules out a missed patch among
+payload-verifier hash and its README instructions; `d11cbe58` added the
+historical fresh-bearer policy described below, which is now retired. This
+check rules out a missed patch among
 the nine listed CherishOS framework commits for this crDroid snapshot; it does
 not certify arbitrary ROM revisions or the runtime media path.
 
@@ -267,10 +278,11 @@ ROM revisions in the baseline table.
    equivalent m11q-gated resource and SELinux changes. The local manifest must
    replace the ROM's existing Telecomm project identity before `repo sync`;
    otherwise syncing can discard the fork checkout.
-7. Keep the later Taiwan Mobile idle WFC-to-LTE workaround separate from the
-   IMS API restoration. Device-tree commit `d11cbe58` applies the configured
-   fresh-bearer policy; it was runtime-validated on PLMN 46697 and intentionally
-   disconnects an active VoWiFi call when Wi-Fi is disabled.
+7. Historical note: the Taiwan Mobile idle WFC-to-LTE workaround was separate
+   from the IMS API restoration. Device-tree commit `d11cbe58` configured a
+   fresh-bearer policy that was runtime-validated on PLMN 46697 and disconnected
+   an active VoWiFi call when Wi-Fi was disabled. This workaround is retired;
+   do not apply it as the current handover recipe.
 8. Review the combined diffs and source baselines, build and flash the ROM,
    then run the registration, outgoing/incoming VoLTE, outgoing/incoming
    VoWiFi audio, teardown, and idle WFC-to-LTE checks in
@@ -381,7 +393,7 @@ UE/modem/Samsung IMS state from carrier-side session binding. Because the same
 P-CSCF succeeds after a fresh PDN setup, a single bad P-CSCF node is not a
 sufficient explanation.
 
-### Applied handover-policy workaround
+### Historical, retired handover-policy workaround
 
 The AOSP CarrierConfig documentation says handover rules are checked in array
 order and that a matching disallowed rule tears down the source data network;
@@ -393,7 +405,7 @@ The first device test placed this rule before that catch-all for M11/TWM:
 
 `source=IWLAN, target=EUTRAN, type=disallowed, capabilities=IMS`
 
-The user built, flashed, and confirmed that the rule fixes the failed idle
+At that historical checkpoint, the user built, flashed, and confirmed that the rule fixed the failed idle
 WFC-to-LTE transition: Android tears down the IWLAN IMS network and creates a
 fresh WWAN IMS bearer instead of carrying the failing handover state forward.
 The expected tradeoff was also confirmed: disabling Wi-Fi during an active
@@ -405,12 +417,14 @@ were moved into `overlay/packages/apps/CarrierConfig/res/xml/vendor.xml` for
 the four PLMNs with
 complete bundled Samsung VoWiFi profiles: 46601, 46605, 46692, and 46697. The
 temporary carrier-ID 1888 copy was removed to avoid duplicate policy sources.
-This stable change was published as device-tree commit
+This change was published as device-tree commit
 [`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4)
-on branch `m11q-volte`. The attempted native active-W2L experiment was fully
-reverted, so the overlay policy is the active implementation. Only 46697 has
-runtime validation; the other three entries still require their own
-registration, idle transition, call, and active-call interruption checks.
+on branch `m11q-volte`. The attempted native active-W2L experiment had been
+fully reverted, so the overlay policy was the active implementation at that
+historical checkpoint. Only 46697 had
+runtime validation at that time; the other three entries had no separate
+registration, idle transition, call, and active-call interruption checks. The
+policy is retired and these checks are not current acceptance steps.
 
 The separate call-state cleanup gap was addressed in
 `frameworks/opt/telephony/src/java/com/android/internal/telephony/imsphone/ImsPhoneCallTracker.java`.
@@ -419,12 +433,13 @@ at 21:50:14.563 without a manual hang-up. The user confirmed that the patched
 build now ends the failed call instead of remaining stuck. This change fixes
 the stale call UI state; it does not explain or prevent the carrier-side 487.
 
-The airplane-mode reset experiment confirmed that a fresh WWAN IMS setup
-restores 188 on this build. The carrier overlay's IWLAN-to-EUTRAN disallow rule
-was then tested for an idle WFC-to-LTE transition on PLMN 46697 and confirmed to
-trigger teardown plus a fresh WWAN setup without toggling airplane mode. The
-expected limitation was also observed: turning Wi-Fi off during an active
-VoWiFi call drops that call. The other configured PLMNs have not had separate
+The historical airplane-mode reset experiment confirmed that a fresh WWAN IMS
+setup restored 188 on this build. The carrier overlay's IWLAN-to-EUTRAN
+disallow rule was then tested for an idle WFC-to-LTE transition on PLMN 46697
+and confirmed to trigger teardown plus a fresh WWAN setup without toggling
+airplane mode. The expected limitation was also observed: turning Wi-Fi off
+during an active VoWiFi call dropped that call. The other configured PLMNs had
+not had separate
 runtime validation. Keep fresh log excerpts redacted; full SIP bodies and
 subscriber identifiers are not needed.
 
@@ -436,21 +451,22 @@ subscriber identifiers are not needed.
 - The user built/flashed the restored crDroid source and performed the partial
   runtime checks listed above, including a successful validation of the
   Telephony call-state cleanup change. The user runs ROM builds manually.
-- Direct LTE and a call after airplane-mode IMS reset succeed. Before applying
+- Historical observation: direct LTE and a call after airplane-mode IMS reset
+  succeeded. Before applying
   the carrier policy, the allowed WFC-to-LTE handover path reproduced the SIP
-  487. On PLMN 46697, the idle-transition disallow policy restores calling by
-  forcing a fresh bearer; active WFC calls are intentionally interrupted when
-  Wi-Fi is disabled. The exact UE-versus-carrier continuity cause remains
-  unresolved.
-- Incoming VoWiFi media now works on the tested crDroid build. The missing
+  487. Historically, on PLMN 46697, the then-active idle-transition disallow
+  policy restored calling by forcing a fresh bearer; active WFC calls were
+  interrupted when Wi-Fi was disabled. That policy is retired. The exact
+  UE-versus-carrier continuity cause remains unresolved.
+- At that checkpoint, incoming VoWiFi media worked on the tested crDroid build. The missing
   precondition was the ordering between Samsung's SAE request and Telecom's
   `MODE_IN_CALL` transition; the m11q-gated post-mode callback supplies the
   required ordering. Outgoing 188 remained audible and ended normally, and an
   incoming call completed with bidirectional audio and normal teardown.
 - No ROM build or tests were run by the assistant.
 - The crDroid Telecom integration is published as `66d3d91d`; its m11q overlay
-  and SELinux integration are published as `29fc1533`. The stable device-tree
-  CarrierConfig workaround remains published separately as `d11cbe58`.
+  and SELinux integration are published as `29fc1533`. The retired device-tree
+  CarrierConfig workaround remains in the public history as `d11cbe58`.
 
 ## Follow-up for the compatibility-layer update
 
@@ -460,10 +476,10 @@ subscriber identifiers are not needed.
    SELinux, carrier configuration, and Telephony call-state cleanup changes.
 3. Add an apply/preflight workflow that reports unsupported baselines and
    context drift without partially modifying a tree.
-4. Validate the applied IWLAN-to-EUTRAN IMS disallow policy on 46601, 46605,
-   and 46692. PLMN 46697 is the only one with runtime validation so far. Confirm
-   fresh WWAN IMS setup after an idle transition and record the expected
-   active-VoWiFi-call interruption tradeoff for each carrier.
+4. Historical follow-up: validate the then-applied IWLAN-to-EUTRAN IMS
+   disallow policy on 46601, 46605, and 46692. PLMN 46697 was the only one with
+   runtime validation at that time. This policy is retired; these are not
+   current acceptance steps.
 5. Validate the patch series on a clean crDroid 13 tree, then repeat the same
    build/runtime gates on each additional ROM before claiming portability.
    Keep CherishOS results as a separate historical baseline and record each

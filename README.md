@@ -1,209 +1,69 @@
 # Samsung Galaxy M11 IMS compatibility layer
 
-Project-authored tooling and documentation for adapting Samsung's stock IMS
-stack to Android 13 custom ROMs on the Galaxy M11 (`SM-M115F`, `m11q`). This
-repository is source-only: it does not distribute Samsung firmware or a
-flashable package.
+**Working VoLTE, Wi-Fi Calling and IMS SMS on Android 13 custom ROMs for the Samsung Galaxy M11.**
 
-## Reference and acknowledgement
+This project adapts Samsung's stock IMS stack to **CherishOS 4.12** and **crDroid 9.20** on the Galaxy M11 (`SM-M115F`, `m11q`). It publishes the compatibility code, Android source patches, transformation tools and development records used to make that port work.
 
-This project was developed with reference to
-[`myesxc/Samsung-s20-ims-compat-layer`](https://github.com/myesxc/Samsung-s20-ims-compat-layer).
-Its staged compatibility-layer and stock-APK adaptation approach informed this
-work, which was then modified and independently validated for the Galaxy M11,
-its pinned firmware inputs, and the runtime scope documented below.
+The port was developed with **ChatGPT/Codex assistance**. The maintainer built and flashed the ROMs, made real calls, checked SMS and tested handovers on the phone. Those results are the basis for the feature status below.
 
-## Current project status
+[繁體中文](README.zh-TW.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md)
 
-For the current, independent CherishOS Android 13 source handoff, start with
-[`docs/CHERISH_ANDROID13_IMS_HANDOFF.md`](docs/CHERISH_ANDROID13_IMS_HANDOFF.md)
-and its [machine-readable inventory](devices/m11q/cherish-android13-handoff.json).
-The later [local IMS patch supplement](docs/CHERISH_LOCAL_IMS_PATCHES_20261012.md)
-publishes the MMS companion copy, missing Telecom permission, and capability
-regression test. Apply its two new hunks after the validated baseline checkpoint;
-their new source state awaits the user's manual build.
-The new port's source changes have been applied and exported in the
-[2026-10-12 Cherish source checkpoint](docs/CHERISH_SOURCE_CHECKPOINT.md),
-including the missing MMS API companion and build prerequisites. Source
-replay is verified against locked bases. The user reported a successful ROM
-build, boot after Format Data, and normal calls. ER1 now uses the identified
-CWK3 stock trio, with matching tool and contract pins. This is scoped user
-acceptance; it does not newly establish VoWiFi, SMS or ERIS/IPsec execution.
-The inventory is **not yet a closed strict APK rebuild recipe**: the fresh IMS
-candidate differs from historical whole-artifact pins, whose producer contracts
-remain unchanged. The stage narrative below is historical; its early carrier-specific
-call-disconnection workaround is not the handoff policy.
+## What works
 
-Stage 3 is the current VoWiFi compatibility and validation stage. It builds on
-Stage 2, which extended the original SIM1 voice bring-up to a **single active
-subscription on either physical slot** and added an Android 13 IMS SMS bridge. Runtime
-validation was performed on one M11 with
-CherishOS 4.12 / Android 13, SELinux Enforcing, Taiwan Mobile and stock input
-build `M115FXXS5CWK3`.
+Validated on the tested M11/Taiwan Mobile setup, using **one active SIM at a time**:
 
-A separate Android 13 crDroid restoration and porting record is available in
-[`docs/CRDROID_ANDROID13_IMS_RESTORATION.md`](docs/CRDROID_ANDROID13_IMS_RESTORATION.md).
-Static comparison found all nine known runtime patch groups from the public
-CherishOS forks in the crDroid source trees; no omitted patch from that known
-set was found. The port has passed direct-LTE, outgoing VoWiFi and incoming
-VoWiFi calls with bidirectional audio and normal teardown. The crDroid-specific
-incoming-media fix asks Samsung `secims` to start the slot audio path only after
-Telecom enters `MODE_IN_CALL`; it is gated by an m11q resource overlay and does
-not change other devices by default. Cross-ROM acceptance remains incomplete:
-before the handover workaround, an outgoing INVITE after IWLAN-to-LTE received
-SIP 487. The published M11 CarrierConfig fix forces a fresh bearer for idle
-transitions on the tested PLMN and disconnects an active VoWiFi call when Wi-Fi
-is disabled. It is public in device-tree commit
-[`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4).
-The incoming-media integration is public in Telecom commit
-[`66d3d91d`](https://github.com/chenjohnliu/android_packages_services_Telecomm/commit/66d3d91d238436c9a04cd4b653f3db02db4f901e)
-and device-tree commit
-[`29fc1533`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/29fc1533c06fe54ef80d3808698d33edd93caed8).
-See the
-[`Android 13 ROM bring-up guide`](docs/M11_ANDROID13_ROM_BRINGUP.md) for the
-reproducible inputs, remaining manual port steps, and validation matrix.
+| Feature | CherishOS 4.12 | crDroid 9.20 |
+| --- | --- | --- |
+| IMS registration with the active SIM in SIM1 or SIM2 | Passed | Passed |
+| Outgoing and incoming VoLTE calls | Passed | Passed |
+| Outgoing and incoming Wi-Fi Calling (VoWiFi) | Passed | Passed |
+| Two-way call audio and normal hang-up | Passed | Passed |
+| SMS sending and receiving, including the IMS SMS bridge | Passed | Passed |
+| Wi-Fi Calling → VoLTE during an ongoing call | Passed | Passed |
+| VoLTE → Wi-Fi Calling during an ongoing call | Passed | Passed |
+| Leaving weak Wi-Fi coverage without dropping the call | Passed | Passed |
 
-The following behavior has been validated with one active SIM at a time:
+SIM1 and SIM2 were tested separately. This does **not** support two active IMS subscriptions together. On the latest CherishOS test, the ongoing call returned to Wi-Fi Calling about **two minutes** after Wi-Fi coverage returned; that timing can vary.
 
-- IMS registration on SIM1 and SIM2;
-- outgoing and incoming VoLTE, including ringing, answer, two-way speech and
-  teardown;
-- SMS send and receive on SIM1 and SIM2;
-- incoming SMS delivery from Samsung IMS into Android, including the corrected
-  Samsung message-ID acknowledgement path;
-- physical SIM1 hot-swap recovery followed by VoLTE and SMS operation.
+The accepted ROMs also include the corrected VoWiFi status icon and restricted microG signature spoofing. These are companion Android/ROM changes; this repository does not install microG.
 
-Outgoing SMS is functionally validated, but the transport result must be stated
-precisely. In the captured Taiwan Mobile transaction, Samsung IMS sent a SIP
-`MESSAGE` and received SIP `202 Accepted`, followed by RP cause 50. Android then
-completed the message through the modem fallback path. The newer active-SIM
-SMSC E.164 normalization candidate is deterministic and structure-verified but
-has not yet been validated on-device as a successful end-to-end outgoing IMS
-SMS transaction. Therefore this project does **not** currently claim pure IMS
-transport for outgoing SMS.
+## Scope and limitations
 
-The selected Stage 1 recovery baseline remains BQ3 IMS bridge plus BQ6 generic
-Telephony fallback; BQ7 is excluded. Stage 2 adds the single-active slot policy
-and IMS SMS compatibility changes. See
-[`docs/STAGE1_RUNTIME_BASELINE.md`](docs/STAGE1_RUNTIME_BASELINE.md) and
-[`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md) for the evidence and build
-boundaries.
+- Tested hardware: **Samsung Galaxy M11 SM-M115F**; stock inputs: **M115FXXS5CWK3**; target: **Android 13**.
+- Runtime results are from **Taiwan Mobile** and the tested Wi-Fi environments. Stock-backed carrier profiles provide wider configuration coverage, but other carriers and models are not runtime-certified.
+- **Concurrent dual-SIM/DSDS IMS is unsupported.**
+- **Actual emergency calling has not been tested**, including emergency calls over Wi-Fi. The capability regression test does not place a call.
+- ViLTE and other audio accessories are outside the reported validation scope. Brief audio pauses can occur during handover.
 
-Concurrent dual-SIM / DSDS operation is intentionally unsupported and
-unvalidated; SIM2 support here means SIM2 works as the one active subscription,
-not that two subscriptions can remain active together. Emergency calling,
-ViLTE, inter-RAT handover, other Samsung models/builds and general carrier
-support also remain unverified.
+See [current validation details](docs/VALIDATED_FEATURES.md) for the evidence and limits. Older failure captures and retired experiments remain in the documentation as development history.
 
-> **Release warning:** Emergency calling is not validated; do not rely on this
-> ROM for emergency communications. See
-> [`docs/EMERGENCY_CALLING_AUDIT.md`](docs/EMERGENCY_CALLING_AUDIT.md) for the
-> source audit, framework routing correction and strictly no-dial validation
-> boundary.
+## Where to start
 
-Stage 3 VoWiFi is runtime-validated on the tested M11/Taiwan Mobile combination
-for an outgoing call to 188 and an incoming call from another handset. The 188
-call stayed connected, played audible service audio and ended normally. After
-BT1 moved the incoming-call SAE audio-interface update to the post-ESTABLISHED
-state, the incoming call had bidirectional audio and no longer disconnected at
-about 16 seconds. This remains a scoped result: emergency calling, inter-RAT
-handover, alternate audio devices, concurrent dual-SIM operation, other
-carriers and other stock builds/models remain unverified. Earlier
-LTE-only/WFC-disabled and pre-BT1 captures describe investigation states, not
-the current build. See
-[`docs/STAGE3_MT_VOWIFI_MEDIA.md`](docs/STAGE3_MT_VOWIFI_MEDIA.md) for the fix
-boundary and evidence, and
-[`docs/STAGE2_VOWIFI_HANDOFF.md`](docs/STAGE2_VOWIFI_HANDOFF.md) for the
-historical handoff.
+**To use a ROM:** download the [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) or [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid) release and follow its installation instructions. This repository is not a flashable package.
 
-## Reproducibility boundary
+**To reproduce the CherishOS port:** start with the [Android 13 source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md). It points to the pinned source checkpoint, the two supplemental source patches and the stock-input workflow. Use the combined checkpoint once; do not stack the historical patch series on top of it.
 
-The public checkout contains the seven project-authored bridge Java sources,
-fail-closed transformers, contracts, tests, ABI declaration fixtures and
-verification tooling. The bridge inventory and expected hashes are recorded in
-[`devices/m11q/imsservice-build.json`](devices/m11q/imsservice-build.json).
+**To understand how it works:** use the [documentation guide](docs/README.md), which separates current integration instructions from component references and historical experiments.
 
-The public checkout provides the project-authored transformations, but a
-complete independent rebuild additionally needs every exact private input.
-The current ER1 inputs are now the three hash-pinned raw CWK3 stock libraries.
-Their provenance and generated outputs are recorded in the
-[ER1 stock contract](docs/ER1_ERIS_PRIVATE_CRYPTO.md). The former pair remains
-historical metadata and is no longer a required input. Exact APK reproduction
-remains a separate boundary: the new Cherish IMS candidate's primary DEX and
-whole-APK hashes differ from the historical strict contracts.
-The pinned IMS bridge source was
-promoted only after two deterministic `PIN_DISCOVERY` runs produced identical
-DEX and unsigned-APK identities. The default strict mode can regenerate and
-publish that exactly pinned unsigned APK. Build reproducibility does not, by
-itself, establish additional VoWiFi runtime behavior. The required private inputs are:
+## What is in this repository
 
-1. the exact stock files listed in
-   [`devices/m11q/payload-manifest.tsv`](devices/m11q/payload-manifest.tsv);
-2. the matching Android framework/APK decoding and build tools described in
-   [`docs/IMS_APK_BUILDER.md`](docs/IMS_APK_BUILDER.md);
-3. the exact stock ER1 library inputs now included in the raw-input manifest.
-   Do not substitute arbitrary libraries or use another ROM's private outputs.
+| Directory | Purpose |
+| --- | --- |
+| `bridge/` | Android/Samsung IMS compatibility code and Android ABI fixtures |
+| `platform/`, `patches/` | Android framework, Telephony, Telecom and ROM integration changes |
+| `tools/` | Stock-payload transformations, source replay and verification |
+| `devices/m11q/` | Pinned input hashes, contracts and source/acceptance inventories |
+| `tests/` | Source and host tests; these do not replace real phone testing |
+| `docs/` | Integration guides, technical references and development history |
 
-Stage 3 stock inputs and locally derived outputs have different handling; see
-[`docs/STAGE3_PAYLOAD_INPUTS.md`](docs/STAGE3_PAYLOAD_INPUTS.md). The public
-checkout automates the BT1 Samsung IMS transformation without publishing its
-private input or generated output. It also provides UW1 for the pinned
-`UnifiedWFC.apk` method and ER1 for the three-file ERIS private crypto closure.
-SV1 and EC1 now reconstruct `sveservice.apk` and `EpdgService.apk` directly
-from their exact stock APKs while preserving every unrelated APK entry. Neither
-builder consumes a saved decoded tree, patched DEX, or final APK. See
-[`docs/SV1_SVESERVICE_MEDIA.md`](docs/SV1_SVESERVICE_MEDIA.md),
-[`docs/EC1_EPDGSERVICE_ANDROID13_COMPAT.md`](docs/EC1_EPDGSERVICE_ANDROID13_COMPAT.md),
-and
-[`docs/STAGE3_REMAINING_PAYLOAD_STATUS.md`](docs/STAGE3_REMAINING_PAYLOAD_STATUS.md).
+You supply the matching stock firmware privately. Samsung APKs, JARs, libraries, decoded code, ROM ZIPs and signing keys are not distributed here.
 
-Both fresh builders were run twice and produced deterministic unsigned APKs.
-Their transformed class structures reproduce the historical runtime-validated
-implementations, but the newly repacked unsigned APK files have not themselves
-been platform-signed, flashed and separately revalidated on the phone.
+The working port and an exact artifact rebuild are separate results: the latest CherishOS ROM passed phone validation, while reproducing its fresh IMS APK byte for byte under the historical strict producer contracts remains an open tooling boundary. This is not a one-command port for arbitrary ROMs. Details are in the [source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md).
 
-Do not publish Samsung-derived implementations, decoded trees, generated smali,
-or rebuilt APK/JAR/SO/ELF files. The builder fails closed if a bridge source is
-missing or differs from its reviewed hash.
+## Credits and license
 
-## Repository contents
+- [myesxc/Samsung-s20-ims-compat-layer](https://github.com/myesxc/Samsung-s20-ims-compat-layer): the stock-IMS adaptation and compatibility-layer approach that informed this work.
+- **@ifoodplayer**: kernel source and original device/vendor trees.
+- **chenjohnliu**: M11 integration, ROM builds and device validation, with ChatGPT/Codex-assisted implementation and analysis.
 
-- `tools/` — payload verification, bridge build orchestration, ABI checks and
-  narrow fail-closed transformations;
-- `devices/m11q/` — input manifest, transformation contracts and bridge
-  inventory; no proprietary payload;
-- `bridge/java/` — project-authored Stage 1 voice baseline, Stage 2
-  single-active-slot and IMS SMS bridge, and Stage 3 VoWiFi lifecycle fixes;
-- `bridge/abi/` — declaration-only Android 13 ABI fixtures;
-- `tests/` — synthetic tests without Samsung binaries or implementations;
-- `patches/` — project-authored Android source corrections kept separate from
-  proprietary payloads;
-- `docs/` — runtime baseline, provenance boundary and release SOP.
-
-The repository currently provides deterministic local payload builders and
-source references, but not a one-command firmware extractor or an ordered,
-preflighted source patch series for every Android 13 ROM. The bring-up guide
-states the exact boundary and avoids claiming that a clean checkout of an
-arbitrary ROM is already reproducible.
-
-Run the source-only validation suite:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-No Android ROM build is performed by this repository. Users build ROMs
-manually after preparing their own permitted inputs.
-
-## Licensing and proprietary inputs
-
-See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The Apache-2.0 license covers only project-authored
-material in this repository. Samsung firmware, APKs, JARs, shared libraries,
-native executables, carrier data and other stock-derived inputs are excluded
-and remain governed by their own terms.
-
-See [`docs/PUBLIC_RELEASE_SOP.md`](docs/PUBLIC_RELEASE_SOP.md) for the
-private-stock-input workflow and publication gates, and
-[`docs/PATCH_PROVENANCE.md`](docs/PATCH_PROVENANCE.md) for source boundaries.
-The completed fresh extraction and non-ROM rebuild are recorded in
-[`docs/FRESH_EXTRACTION_VALIDATION.md`](docs/FRESH_EXTRACTION_VALIDATION.md).
+[Apache-2.0](LICENSE) applies to project-authored material. Samsung-derived inputs remain subject to their own terms; see [NOTICE](NOTICE) and [patch provenance](docs/PATCH_PROVENANCE.md).

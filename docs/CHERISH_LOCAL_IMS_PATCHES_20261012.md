@@ -27,7 +27,12 @@ The permission hunk comes from [Telecomm commit 66d3d91](https://github.com/chen
 
 The test comes from [IMS commit 1b1a3226](https://github.com/chenjohnliu/android_frameworks_opt_net_ims/commit/1b1a32269a62de0e82e3ede53bf2c44751307f18). It uses simulated capability masks to check that zero and an unrelated bit do not report emergency MMTEL, while the emergency bit does. It does not originate a telephone call.
 
-No Android ROM build, Android unit test run, or new runtime validation was performed for this supplement. A manual build and runtime validation remain pending. The earlier capability correction and its 2026-09-26 no-dial runtime evidence remain recorded in [the emergency audit](EMERGENCY_CALLING_AUDIT.md).
+At the time of source verification, no Android ROM build, Android unit test run,
+or new runtime validation had been performed for this supplement. The user's
+2026-10-13 acceptance later covered the resulting source state with a passing
+manual build and the [documented device checks](VALIDATED_FEATURES.md). The Android unit test was not
+run. The earlier capability correction and its 2026-09-26 no-dial runtime
+evidence remain recorded in [the emergency audit](EMERGENCY_CALLING_AUDIT.md).
 
 The full local inventory contained 14 regular files, including 13 patches: these three IMS-related patches and ten non-IMS patches. The non-IMS group comprises eight build/product/app/OTA customization patches and two microG patches (one saved under `crdroid`). Local files remain useful copies; the three IMS patches now also have exact public copies and hashes here.
 

@@ -16,9 +16,11 @@
     "dependency_closure": true,
     "port_applied": true,
     "build_performed": true,
-    "build_runtime_current_port_validated": false,
+    "build_runtime_current_port_validated": true,
+    "validated_rom_available": true,
+    "strict_independent_rebuild_ready": false,
     "deployable": false,
-    "note": "The baseline source checkpoint has user-reported build, boot and normal-call acceptance. The later Telecom permission and capability-test additions are source-verified and applied, but the latest source state awaits manual build and runtime validation. Current ER1 input provenance is closed by CWK3 stock. Fresh IMS APK producer adaptation remains a separate open boundary."
+    "note": "The user reported a passing manual build and runtime acceptance on 2026-10-13 after all six previously omitted changes were applied; a validated ROM is available. deployable remains false because the fresh IMS artifact's independent strict producer profile/rebuild gap is still open, not because ROM build or device validation is pending. ER1 stock-input provenance is closed; that does not establish ERIS/IPsec execution."
   },
   "source_repositories": [
     {
@@ -114,7 +116,7 @@
       "tools/verify_payload.py",
       "tools/verify_framework_abi.py"
     ],
-    "interpretation": "Historical donor sources and the combined target checkpoint are published. Fresh build, boot and normal calls are user-reported; other runtime scopes remain separate.",
+    "interpretation": "Historical donor sources and the combined target checkpoint are published. The user reported the 2026-10-13 build, boot, microG Self Check, SMS send/receive, IMS bridge, per-slot VoLTE/VoWiFi, two-way audio, handover and weak-WiFi call-continuity results; an incoming IMS SMS trace was separately verified read-only by the root agent. ERIS/IPsec execution and emergency actual dial remain unverified; dual-active DSDS IMS is unsupported.",
     "cherish_ims_supplement": [
       "devices/m11q/cherish-ims-supplement-source-verification.json",
       "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
@@ -184,7 +186,7 @@
     },
     "limits": "The combined checkpoint reproduces the platform source changes. Historical APK contracts retain their exact pins; the fresh IMS primary DEX/whole APK differs. Raw-input closure, source replay, exact APK reproduction and runtime acceptance are distinct.",
     "fresh_ims_candidate": {
-      "acceptance": "user_reported_build_boot_and_normal_calls",
+      "acceptance": "user_reported_build_boot_and_runtime_acceptance_2026_10_13",
       "unsigned_apk_sha256": "4508e6c4b0899d230d488a7a6b797193733abdf54517eb6d3dd04cdc3e89150d",
       "classes_dex_sha256": "778642ddb5ee419b8b03e08722b0042325ab71d021acb68f4cfd9cabe569bae8",
       "bridge_dex_sha256": "b9d57c1a1aab37fd88a5443bde177c710897b1603481350e8037cf332ce0d325",
@@ -204,11 +206,12 @@
       "Device runtime validation on the resulting build"
     ],
     "behavioral_scope": {
-      "ims_sms": "The compatibility source includes IMS SMS APIs and message/callback bridges. This is a source capability, not proof of SMS runtime success on the future port.",
-      "sms_claim": "Preserve the documented functional IMS SMS and fallback scope; do not interpret it as a guarantee of pure outgoing IMS SMS for every carrier or network.",
+      "ims_sms": "The user reported SMS send/receive and IMS bridge passing on the validated CherishOS build; the root agent separately verified an incoming IMS SMS trace read-only.",
+      "sms_claim": "SMS send/receive passed in the reported validation scope.",
       "sim_scope": "Single active IMS subscription in either SIM slot; dual-active DSDS IMS is not claimed.",
-      "handover_and_timer": "EC2 AP-assisted W2L remains disabled; legacy mode only; stock Timer F remains 128 seconds.",
-      "wfc": "Use the reviewed global WFC v2 profile policy without promoting its source gate into a runtime guarantee."
+      "voice_and_wfc_runtime": "SIM1 and SIM2 each passed incoming and outgoing VoLTE and VoWiFi with two-way audio. WiFi/LTE handover passed; calls remained connected when leaving weak WiFi and returned to VoWiFi after about 120 seconds back on WiFi.",
+      "handover_and_timer": "WiFi/LTE handover passed in the reported runtime validation. EC2 AP-assisted W2L remains disabled; legacy mode only; stock Timer F remains 128 seconds.",
+      "wfc": "SIM1 and SIM2 each passed incoming and outgoing VoWiFi with two-way audio in the reported runtime validation."
     }
   },
   "artifact_references": {
@@ -308,21 +311,41 @@
     "devices/m11q/cherish-ims-supplement-source-verification.json"
   ],
   "runtime_acceptance": {
-    "date": "2026-10-12",
-    "evidence_type": "user_report",
+    "date": "2026-10-13",
+    "evidence_type": "user_reported_build_and_device_validation",
     "rom": "CherishOS 4.12 / Android 13",
     "device": "Samsung Galaxy M11 (m11q)",
     "build_success": true,
     "boot_success": true,
     "normal_voice_call_success": true,
+    "microg_self_check_success": true,
+    "sms_send_receive_success": true,
+    "ims_bridge_success": true,
+    "single_active_ims_sim1": {
+      "incoming_outgoing_volte": true,
+      "incoming_outgoing_vowifi": true,
+      "bidirectional_audio": true
+    },
+    "single_active_ims_sim2": {
+      "incoming_outgoing_volte": true,
+      "incoming_outgoing_vowifi": true,
+      "bidirectional_audio": true
+    },
+    "wifi_lte_handover_success": true,
+    "weak_wifi_call_continuity_success": true,
+    "return_to_vowifi_after_wifi_recovery_seconds_approx": 120,
+    "return_to_vowifi_timing_is_guaranteed": false,
+    "summary_path": "docs/VALIDATED_FEATURES.md",
+    "incoming_ims_sms_trace": {
+      "verified": true,
+      "evidence_type": "agent_read_only_trace_review"
+    },
+    "android_unit_test_run": false,
     "installation_note": "The initial boot returned to recovery with enablefilecrypto_failed after switching from crDroid with Wipe only. Format Data was followed by successful boot and user-reported normal calls.",
     "not_newly_verified": [
-      "VoWiFi",
       "ERIS/IPsec execution",
-      "SMS",
-      "SIM2",
-      "handover",
-      "emergency calling"
+      "emergency actual dial",
+      "dual-active DSDS IMS"
     ],
     "rom_build_run_by_agent": false,
     "device_capture_for_this_acceptance": false

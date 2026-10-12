@@ -1,5 +1,15 @@
 # Samsung M115F IMS compatibility layer — public release SOP
 
+> **Current reader note (2026-10-13):** This is a historical publication and
+> payload-status snapshot. See [`VALIDATED_FEATURES.md`](VALIDATED_FEATURES.md)
+> for the latest feature acceptance and
+> [`CHERISH_ANDROID13_IMS_HANDOFF.md`](CHERISH_ANDROID13_IMS_HANDOFF.md) for the
+> current Cherish source-application entry point. The old `d11cbe58`
+> carrier-specific fresh-bearer policy, which could disconnect an active call,
+> is retired and is not a current recipe; current validated Wi-Fi/LTE handover
+> calls remained connected. The older runtime and payload status
+> below remains historical evidence and does not replace the latest acceptance.
+
 Status: **published source-only compatibility layer**. The seven
 project-authored bridge Java sources and fail-closed transformations are
 published under Apache-2.0. Samsung payloads and generated private outputs
@@ -369,11 +379,12 @@ install the `ims` directory, review the `device.mk` / `BoardConfig.mk`
 fragments, and verify the completed payload before building. The public device
 tree update [`9aebafe`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/9aebafee57492a75cadd115ae80ea21db378a760) fixes the verifier's expected
 BT1 APK hash and documents how to generate that APK.
-The later device-tree commit
+The historical, now-retired device-tree commit
 [`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4)
-adds the stable IWLAN-to-EUTRAN fresh-bearer policy for PLMNs 46601, 46605,
+added an IWLAN-to-EUTRAN fresh-bearer policy for PLMNs 46601, 46605,
 46692, and 46697. TWM runtime validation is confirmed on 46697 only; turning
-Wi-Fi off during an active VoWiFi call intentionally disconnects it.
+Wi-Fi off during an active VoWiFi call intentionally disconnected it under
+that retired policy. Do not use this policy as the current handover recipe.
 
 Public Android source references and the manually restored crDroid baseline
 are recorded in
@@ -523,11 +534,12 @@ Before claiming the port works on that ROM:
 The crDroid 13 restoration has partial user-built/flashed results. Direct LTE
 calling and a fresh WWAN IMS setup after airplane-mode reset succeeded. The
 call-state cleanup now clears the Dialer after a failed call, but does not
-change the carrier SIP 487. On the validated Taiwan Mobile PLMN, the M11
-CarrierConfig overlay change in
+change the carrier SIP 487. Historically, on Taiwan Mobile PLMN 46697, the
+now-retired M11 CarrierConfig overlay change in
 [`d11cbe58`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/d11cbe58dfdf81c284788c50e5b6e37de47cf5d4)
-disallows idle IWLAN-to-EUTRAN IMS handover and forces a fresh WWAN bearer;
-turning Wi-Fi off during an active VoWiFi call disconnects that call.
+disallowed idle IWLAN-to-EUTRAN IMS handover and forced a fresh WWAN bearer;
+turning Wi-Fi off during an active VoWiFi call disconnected it. This workaround
+is retired; current validated Wi-Fi/LTE handover calls remained connected.
 Incoming VoWiFi media is now validated on the tested crDroid build with the
 same BT1 APK plus the m11q-gated post-`MODE_IN_CALL` Telecom callback. See the
 restoration record and

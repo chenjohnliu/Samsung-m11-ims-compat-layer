@@ -1,9 +1,17 @@
 # Independent CherishOS Android 13 IMS handoff — M11
 
 The 2026-10-12 checkpoint contains the source changes used for the user's
-fresh CherishOS 4.12 / Android 13 M11 build. The user reported successful ROM
-build, boot after Format Data, and normal calls. Those results are scoped
-user acceptance, not a new VoWiFi/SMS/handover/ERIS/IPsec validation matrix.
+fresh CherishOS 4.12 / Android 13 M11 build. On 2026-10-13, after all six
+previously omitted changes were applied, the user reported a passing manual build,
+boot after Format Data, microG Self Check, SMS send/receive and IMS bridge.
+Single-active IMS was validated on SIM1 and SIM2: incoming and outgoing VoLTE
+and VoWiFi with two-way audio passed on each slot. WiFi/LTE handover passed;
+calls stayed connected when leaving weak WiFi and returned to VoWiFi after
+about 120 seconds back on WiFi. The root agent also verified an incoming IMS
+SMS trace read-only.
+
+See [validated features](VALIDATED_FEATURES.md) for the current acceptance
+matrix, tested setup and remaining limits.
 
 Start with [the target source checkpoint](CHERISH_SOURCE_CHECKPOINT.md) and
 its [manifest](../platform/checkpoints/cherish-20261012/manifest.json).
@@ -14,8 +22,8 @@ After that baseline, apply the
 [IMS local-patch supplement](CHERISH_LOCAL_IMS_PATCHES_20261012.md): the Telecom
 permission declaration and emergency capability unit-test hunk. The MMS copy
 in that inventory is already included in the baseline and must not be applied
-again. The prior build/normal-call acceptance predates these two additions;
-the latest source state is verified without an Android build.
+again. The 2026-10-13 build and runtime acceptance includes the supplemental
+changes.
 
 ## Locked source inputs
 
@@ -92,9 +100,12 @@ Android explicitly rebooted to recovery. Format Data was followed by the
 user's successful boot. This was a data-encryption state issue, separate
 from the MMS interface compilation fix.
 
-VoWiFi, SMS, SIM2, handover and ERIS/IPsec execution were not newly verified.
-Preserve the project's single-active-subscription scope and existing outgoing
-SMS fallback limits; do not turn normal-call acceptance into dual-active DSDS,
-pure outgoing IMS SMS or emergency-call claims. Historical runtime records
+The 2026-10-13 user-reported acceptance covers the build, boot, microG Self
+Check, SMS send/receive and IMS bridge, plus per-slot single-active VoLTE and
+VoWiFi calls, two-way audio, WiFi/LTE handover and weak-WiFi call continuity
+with return to VoWiFi after about 120 seconds on WiFi. An incoming IMS SMS
+trace was separately verified read-only by the root agent. ERIS/IPsec execution
+and an emergency actual dial remain unverified; dual-active DSDS IMS is outside
+the supported single-active-subscription scope. Historical runtime records
 remain historical. New captures are private and should be labelled by exact
 build, slot, carrier and tested behavior before extending those claims.

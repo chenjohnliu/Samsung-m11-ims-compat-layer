@@ -3,16 +3,26 @@
 This checkpoint records the source changes applied to the newly synchronized
 CherishOS Android 13 M11 tree. It closes the known platform-source omissions
 found during the user's manual build, including the MMS implementation paired
-with the framework API change. On 2026-10-12 the user reported a successful
-ROM build, boot after Format Data, and normal calls. This is user-reported
-voice acceptance; VoWiFi, SMS, handover and ERIS/IPsec were not newly verified.
+with the framework API change. The 2026-10-12 report covered build, boot after
+Format Data and normal calls. It was superseded by the user's 2026-10-13
+acceptance after all six previously omitted changes were applied: manual build and
+boot, microG Self Check, SMS send/receive and IMS bridge passed; SIM1 and SIM2
+each passed incoming/outgoing VoLTE and VoWiFi with two-way audio, WiFi/LTE
+handover, and weak-WiFi call continuity with return to VoWiFi after about 120
+seconds on WiFi. The root agent separately verified an incoming IMS SMS trace
+read-only. ERIS/IPsec execution and emergency actual dial remain unverified;
+dual-active DSDS IMS is unsupported.
+
+The [current acceptance summary](VALIDATED_FEATURES.md) separates the verified
+phone features from the independent artifact-rebuild boundary.
 
 This is the validated baseline snapshot. The later
 [IMS source supplement](CHERISH_LOCAL_IMS_PATCHES_20261012.md) adds the missing
 Telecom permission declaration and emergency capability regression test.
 Apply those two patches once after this checkpoint. Its separate MMS patch
 is a reference copy of the companion already included here. The supplement
-has source verification, but no subsequent user build or runtime acceptance.
+has source verification; the later 2026-10-13 user acceptance covers the
+resulting source state.
 
 The authoritative patch list is
 [`platform/checkpoints/cherish-20261012/manifest.json`](../platform/checkpoints/cherish-20261012/manifest.json).
@@ -101,10 +111,13 @@ run, Wipe alone left a Keystore/FBE failure and returned to recovery with
 `enablefilecrypto_failed`; the user reported boot success after Format Data.
 This install result is separate from the source/MMS fixes.
 
-Additional runtime tests must be labelled separately: IMS registration,
-outgoing/incoming VoLTE with two-way audio and teardown, SMS, VoWiFi and
-handover. The user's normal-call report does not automatically pass that
-entire matrix. Android ROM builds remain user-performed.
+The 2026-10-13 acceptance covers the manual build, boot, microG Self Check,
+SMS send/receive and IMS bridge, plus single-active SIM1/SIM2 incoming and
+outgoing VoLTE/VoWiFi with two-way audio, WiFi/LTE handover, and weak-WiFi call
+continuity with return to VoWiFi after about 120 seconds on WiFi. The root agent
+separately verified an incoming IMS SMS trace read-only. ERIS/IPsec execution
+and emergency actual dial remain unverified; dual-active DSDS IMS is
+unsupported. Android ROM builds remain user-performed.
 
 Publication validation: all 14 project patches replayed and reversed to their
 exact trees, with real source indexes and worktrees preserved. The public CLI
