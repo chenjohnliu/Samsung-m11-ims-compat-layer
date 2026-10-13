@@ -22,7 +22,7 @@ the time it was written.
 
 ## Source state reviewed
 
-- Public compatibility repository: `b07c19b` (`Complete Stage 2 IMS SMS
+- Public compatibility repository: `a63dfb2` (`Complete Stage 2 IMS SMS
   compatibility`). The pre-existing uncommitted `README.md` update was left
   untouched.
 - Device tree: `706e607` on the branch now named `m11q-volte`. The pre-existing

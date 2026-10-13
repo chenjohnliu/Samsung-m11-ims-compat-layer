@@ -2,7 +2,7 @@
   "format_version": 1,
   "audit_date": "2026-10-12",
   "status": "PASS",
-  "parent_publication_commit": "3b254f2c77ce6f7bcd3402643a44276a6f69337d",
+  "parent_publication_commit": "f6801465f0e02e59721a8031c397dcf22adf631c",
   "temporary_git_indexes_used": true,
   "source_head_and_real_index_unchanged": true,
   "rom_build_ran_by_agent": false,

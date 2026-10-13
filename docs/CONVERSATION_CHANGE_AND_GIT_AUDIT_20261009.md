@@ -68,7 +68,7 @@
 
 | Repo／分支 | GitHub branch HEAD | 核對結果 |
 | --- | --- | --- |
-| Samsung-m11-ims-compat-layer／main | `082b9311105349af6f490f61bff01c7b95049310` | 與本機 HEAD 相同；working-tree 新改動不在該提交 |
+| Samsung-m11-ims-compat-layer／main | `7f1a01a9de6a5b2dfd70b199ab7cbac8020f5dfc` | 與本機 HEAD 相同；working-tree 新改動不在該提交 |
 | android_device_samsung_m11q／m11q-volte | `9ce7a0bac0e14bf820cb6deb68e9ebac061056ab` | 與本機該分支相同；5 檔本機修改仍未提交 |
 | android_packages_services_Telecomm／m11q-vowifi-audio-path | `66d3d91d238436c9a04cd4b653f3db02db4f901e` | 先前 MT 修復已推；目前 SA2 尚未提交 |
 | android_kernel_samsung_sdm450／lineage-20 | `9f3c4fedd9ef626303987cef1abfaf971efce694` | HEAD 已推；4 檔本機 build compatibility 修改未提交 |

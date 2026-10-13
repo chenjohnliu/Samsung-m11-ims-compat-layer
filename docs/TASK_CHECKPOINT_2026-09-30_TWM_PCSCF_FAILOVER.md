@@ -227,7 +227,7 @@ Compatibility repository:
 
 - path: `D:\m11q\Samsung-m11-ims-compat-layer`
 - branch: `main`
-- starting HEAD: `082b9311105349af6f490f61bff01c7b95049310`
+- starting HEAD: `7f1a01a9de6a5b2dfd70b199ab7cbac8020f5dfc`
 - BU1 changes are uncommitted and unpushed.
 
 Local crDroid device tree:

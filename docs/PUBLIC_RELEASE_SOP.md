@@ -41,7 +41,7 @@ Known-good device/firmware baseline:
 - Confirmed Stage 3 function on the tested M11/Taiwan Mobile setup: outgoing
   VoWiFi to 188 with audible service audio and normal teardown, plus incoming
   VoWiFi from another handset with sustained bidirectional audio after BT1.
-- Historical Stage 1 source checkpoints were compatibility layer `8a3dc34`,
+- Historical Stage 1 source checkpoints were compatibility layer `12b615a`,
   device tree `510d965`, Telephony `afedb3add`, and ROM pre-release
   `20260910-13-rc1`. Current behavior and reproducible output identities are
   recorded in `README.md`, `docs/IMS_APK_BUILDER.md`, and

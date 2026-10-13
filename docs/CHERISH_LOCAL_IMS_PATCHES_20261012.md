@@ -4,7 +4,7 @@ This supplement inventories the three IMS-related local patch copies from `my_ro
 
 The MMS service compatibility patch is included here so all three local copies are represented publicly. It is already present in the parent checkpoint at `platform/checkpoints/cherish-20261012/manifest.json`; keep it as reference material and do not apply it again.
 
-The newer Telecom permission patch and IMS emergency-capability test patch belong after the parent combined checkpoint. Apply each once to the matching project in the chosen source checkout. Do not replay the entire donor commits `66d3d91` or `1b1a3226`: their production hooks and capability correction are already included in the parent checkpoint. The parent checkpoint publication commit is pinned as `3b254f2c77ce6f7bcd3402643a44276a6f69337d`. Apply that checkpoint before these two supplemental changes.
+The newer Telecom permission patch and IMS emergency-capability test patch belong after the parent combined checkpoint. Apply each once to the matching project in the chosen source checkout. Do not replay the entire donor commits `66d3d91` or `1b1a3226`: their production hooks and capability correction are already included in the parent checkpoint. The parent checkpoint publication commit is pinned as `f6801465f0e02e59721a8031c397dcf22adf631c`. Apply that checkpoint before these two supplemental changes.
 
 In a WSL/Linux shell, set both variables below to absolute paths for the chosen source checkout and this repository's supplement directory. Run the check command for each patch, then its apply command:
 

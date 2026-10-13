@@ -173,7 +173,7 @@ class CherishAndroid13HandoffTests(unittest.TestCase):
         self.assertTrue(evidence.is_file())
         self.assertIn(documented_commit, evidence.read_text(encoding="utf-8"))
         actual_commit = subprocess.check_output(
-            ["git", "-c", f"safe.directory={ROOT}", "-C", str(ROOT), "rev-parse", "66e8fa9"],
+            ["git", "-c", f"safe.directory={ROOT}", "-C", str(ROOT), "rev-parse", "6b4e3b7"],
             text=True,
         ).strip()
         self.assertEqual(handoff["compatibility_repository_commit"], actual_commit)

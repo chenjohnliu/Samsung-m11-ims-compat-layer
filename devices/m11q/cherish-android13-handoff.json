@@ -27,7 +27,7 @@
       "name": "Samsung-m11-ims-compat-layer",
       "url": "https://github.com/chenjohnliu/Samsung-m11-ims-compat-layer.git",
       "ref": "main",
-      "revision": "9b94f710ac189db495326c72d99c1e350c445305",
+      "revision": "db738129984c4deccae854b724b54dd44efb7db0",
       "role": "Public patch series, contracts, compatibility source and reproducibility metadata."
     },
     {
@@ -63,7 +63,7 @@
     "framework_patch_checkpoint": "platform/checkpoints/ims-20261010/manifest.json",
     "systemui_corrective_patch": {
       "path": "platform/systemui/0001-fix-ims-registration-constant-import-package.patch",
-      "compatibility_repository_commit": "66e8fa9aa43d8c10f8b381542b06c88d9b03c56e",
+      "compatibility_repository_commit": "6b4e3b70068c2b31ea683f3435e1e6304c251b87",
       "wsl_source_commit_prefix": "2521273",
       "wsl_source_commit_full_sha": "2521273c19652476c4ee7392c4c4607ff6949c84",
       "wsl_source_commit_evidence": "docs/SYSTEMUI_IMS_IMPORT_BUILD_FIX_20261010.md",
