@@ -15,8 +15,8 @@ matrix, tested setup and remaining limits.
 
 The [source and patch index](SOURCE_INDEX.md) is the entry point for choosing
 between synchronized full-source fork commits and their equivalent patch
-recipes. It records all 14 checkpointed projects. For either newly synchronized
-Telephony/Telecom project, use the pinned fork commit or its patch chain once;
+recipes. It records all 14 checkpointed projects. For each synchronized
+platform/device project, use the pinned fork commit or its patch chain once;
 the fork already includes that entire chain.
 
 Start with [the target source checkpoint](CHERISH_SOURCE_CHECKPOINT.md) and

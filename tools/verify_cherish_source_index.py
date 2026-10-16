@@ -7,7 +7,7 @@ patch files match their recorded hashes, and that every declared tree chain is
 contiguous. It does not prove that a remote fork still exists or that its
 commit objects are available.
 
-With --forks-root, the synchronized Telephony and Telecom forks are also
+With --forks-root, the synchronized platform and device forks are also
 checked using local Git objects only. Each pinned commit chain is matched to
 the ordered patch files using a temporary Git index, leaving clone refs,
 worktrees, and real indexes untouched.
@@ -32,10 +32,24 @@ IMS_SUPPLEMENT_MANIFEST = "platform/checkpoints/cherish-20261012-ims-supplement/
 VOWIFI_MANIFEST = "platform/checkpoints/cherish-20261016-vowifi/manifest.json"
 INDEX_PATH = "devices/m11q/cherish-source-index.json"
 EXPECTED_PROJECT_COUNT = 14
-SYNCED_FORK_PROJECTS = {"frameworks/opt/telephony", "packages/services/Telecomm"}
 FORK_REPOSITORIES = {
+    "frameworks/base": "https://github.com/chenjohnliu/android_frameworks_base.git",
+    "frameworks/opt/net/ims": "https://github.com/chenjohnliu/android_frameworks_opt_net_ims.git",
     "frameworks/opt/telephony": "https://github.com/chenjohnliu/android_frameworks_opt_telephony.git",
+    "packages/services/Telephony": "https://github.com/chenjohnliu/android_packages_services_Telephony.git",
+    "system/netd": "https://github.com/chenjohnliu/android_system_netd.git",
     "packages/services/Telecomm": "https://github.com/chenjohnliu/android_packages_services_Telecomm.git",
+    "device/samsung/m11q": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
+}
+SYNCED_FORK_PROJECTS = set(FORK_REPOSITORIES)
+FORK_CLONE_NAMES = {
+    "frameworks/base": "frameworks_base",
+    "frameworks/opt/net/ims": "net_ims",
+    "frameworks/opt/telephony": "telephony",
+    "packages/services/Telephony": "phone_service",
+    "system/netd": "netd",
+    "packages/services/Telecomm": "telecomm",
+    "device/samsung/m11q": "device",
 }
 OID_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -309,7 +323,7 @@ def validate_index_data(
 
     return {"projects": len(entries), "patches": sum(len(x["patches"]) for x in entries.values()),
             "reference_only": sum(len(x["reference_only_patches"]) for x in entries.values()),
-            "forks_checked": 2 if forks_root is not None else 0}
+            "forks_checked": len(synchronized_projects) if forks_root is not None else 0}
 
 
 def _validate_fork_metadata(
@@ -348,10 +362,7 @@ def _validate_fork_metadata(
 
     if forks_root is None:
         return
-    clone_name = {
-        "frameworks/opt/telephony": "telephony",
-        "packages/services/Telecomm": "telecomm",
-    }.get(project_path)
+    clone_name = FORK_CLONE_NAMES.get(project_path)
     if clone_name is None:
         raise ValidationError(f"no local fork clone mapping defined for {project_path}")
     clone = _inside(forks_root, clone_name, f"{project_path} fork clone")
@@ -368,6 +379,8 @@ def _validate_fork_metadata(
     if base_tree_actual != base_tree or base_tree_actual != expected_steps[0]["before_tree"]:
         raise ValidationError(f"fork base tree mismatch for {project_path}")
     pinned_tip = fork["commit"]
+    if _git(clone, ["rev-parse", f"refs/heads/{fork['branch']}"]) != pinned_tip:
+        raise ValidationError(f"local fork branch differs from the indexed pin for {project_path}")
     _git(clone, ["cat-file", "-e", f"{pinned_tip}^{{commit}}"])
     resolved_tip = _git(clone, ["rev-parse", f"{pinned_tip}^{{commit}}"])
     if resolved_tip != pinned_tip:
@@ -394,11 +407,14 @@ def _validate_fork_metadata(
         index_path = Path(temp_dir) / "index"
         env = os.environ.copy()
         env["GIT_INDEX_FILE"] = str(index_path)
-        _git(clone, ["read-tree", base], env=env)
+        # The pinned device history contains a Unix-valid path that Windows
+        # cannot check out. These commands only update a disposable index.
+        prefix = ["-c", "core.protectNTFS=false"] if project_path == "device/samsung/m11q" else []
+        _git(clone, prefix + ["read-tree", base], env=env)
         for index, (commit_record, step) in enumerate(zip(commits, expected_steps), start=1):
             patch_path = _inside(publication_root, step["path"], f"{project_path} fork patch")
-            _git(clone, ["apply", "--cached", "--binary", str(patch_path)], env=env)
-            resulting_tree = _git(clone, ["write-tree"], env=env)
+            _git(clone, prefix + ["apply", "--cached", "--binary", str(patch_path)], env=env)
+            resulting_tree = _git(clone, ["write-tree", "--missing-ok"], env=env)
             commit_tree = _git(clone, ["rev-parse", f"{commit_record['sha']}^{{tree}}"])
             if resulting_tree != step["after_tree"] or resulting_tree != commit_tree:
                 raise ValidationError(f"patch-to-fork tree mismatch for {project_path}, step {index}")
@@ -427,7 +443,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--forks-root",
         type=Path,
-        help="optional directory containing local telephony/ and telecomm/ clones",
+        help="optional directory containing the seven local fork clones listed in the source guide",
     )
     args = parser.parse_args(argv)
     try:
