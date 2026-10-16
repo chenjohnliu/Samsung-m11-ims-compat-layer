@@ -29,6 +29,11 @@ delays, or change the historical APK producer contracts.
 
 ## Application order
 
+The [source index](SOURCE_INDEX.md) also links complete Telephony and Telecom
+fork branches that contain these corrections and their prerequisites. Their
+fixed commits and full Git trees match the patch route below. If using those
+indexed fork commits, skip the entire patch chain for those two projects.
+
 Start with the locked [combined checkpoint](CHERISH_SOURCE_CHECKPOINT.md), then
 the two new patches in the [2026-10-12 IMS supplement](CHERISH_LOCAL_IMS_PATCHES_20261012.md).
 Its MMS copy is already in the combined checkpoint and must not be applied again.

@@ -1,0 +1,408 @@
+{
+  "format_version": 1,
+  "updated_date": "2026-10-16",
+  "scope": "Fourteen checkpointed CherishOS Android 13 projects; not the entire Android tree or a new runtime acceptance.",
+  "checkpoint_manifests": [
+    "platform/checkpoints/cherish-20261012/manifest.json",
+    "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
+    "platform/checkpoints/cherish-20261016-vowifi/manifest.json"
+  ],
+  "full_source_policy": "Use the pinned synchronized fork commit OR its ordered upstream-base patch recipe per project, never both. Older donor refs are historical records.",
+  "projects": [
+    {
+      "path": "frameworks/base",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_frameworks_base",
+      "base_commit": "bd837f94b5e87a4c4fbc9f40e0c0f597f74baf78",
+      "base_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/frameworks__base/live-source.patch",
+          "sha256": "baed90c07dd789377ee0cdafaca1935a2c60ce56bb476fe3156db029979dc99c",
+          "before_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+          "after_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+      "historical_donor": {
+        "repository": "https://github.com/chenjohnliu/android_frameworks_base",
+        "branch": "m11q-volte",
+        "recorded_commits": [
+          "73178bfc7d1e81b64b02d2b24c14ef24a8a1ecdf"
+        ],
+        "current_build_head_claimed": false
+      }
+    },
+    {
+      "path": "frameworks/opt/net/ims",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_frameworks_opt_net_ims",
+      "base_commit": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+      "base_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/frameworks__opt__net__ims/live-source.patch",
+          "sha256": "15ae3f9fd562feca1d57c7295dc61b73312a01648eeba0c95e5e9f6919151209",
+          "before_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+          "after_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261012-ims-supplement/frameworks__opt__net__ims/emergency-capability-test.patch",
+          "sha256": "653cfc1ce53444f8564e0ab3f9026810c704cd80d3c4488200321e1f4fc8a06a",
+          "before_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97",
+          "after_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8",
+      "historical_donor": {
+        "repository": "https://github.com/chenjohnliu/android_frameworks_opt_net_ims",
+        "branch": "m11q-emergency-capability-mask",
+        "recorded_commits": [
+          "1b1a32269a62de0e82e3ede53bf2c44751307f18"
+        ],
+        "current_build_head_claimed": false
+      }
+    },
+    {
+      "path": "frameworks/opt/telephony",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_frameworks_opt_telephony",
+      "base_commit": "d8ea3f40256b74d228f98448c4e75a15db547921",
+      "base_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/frameworks__opt__telephony/live-source.patch",
+          "sha256": "8a801395b1a0018f1e5040f2be508c1e9e4d5666bfd85359fa59e8f0bb962d47",
+          "before_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+          "after_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch",
+          "sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e",
+          "before_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
+          "after_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "synchronized_fork_or_patch_recipe",
+      "synchronized_fork": {
+        "repository": "https://github.com/chenjohnliu/android_frameworks_opt_telephony.git",
+        "branch": "cherish-13-m11q-ims",
+        "commit": "b4e7075580611ff4fa330e09f11fb92c09299ec5",
+        "tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+        "commits": [
+          {
+            "patch_sha256": "8a801395b1a0018f1e5040f2be508c1e9e4d5666bfd85359fa59e8f0bb962d47",
+            "sha": "941d53c8d77140876b3ce719bbeffb66a6c0fe9c",
+            "patch_path": "platform/checkpoints/cherish-20261012/frameworks__opt__telephony/live-source.patch",
+            "tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
+            "parent": "d8ea3f40256b74d228f98448c4e75a15db547921"
+          },
+          {
+            "patch_sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e",
+            "sha": "b4e7075580611ff4fa330e09f11fb92c09299ec5",
+            "patch_path": "platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch",
+            "tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+            "parent": "941d53c8d77140876b3ce719bbeffb66a6c0fe9c"
+          }
+        ]
+      },
+      "final_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+      "historical_donor": {
+        "repository": "https://github.com/chenjohnliu/android_frameworks_opt_telephony",
+        "branch": "m11q-volte",
+        "recorded_commits": [
+          "6c209a7d4fb239e8c8826d1c303f26dd6417dd5a"
+        ],
+        "current_build_head_claimed": false
+      }
+    },
+    {
+      "path": "packages/services/Telephony",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_packages_services_Telephony",
+      "base_commit": "abbe1d49d26bf05ed6287eaad07a3e94136377d9",
+      "base_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/packages__services__Telephony/live-source.patch",
+          "sha256": "1f8cfe987136571abb83e850ae5428970d1494d0d7fca2a066fa06493bd69ff5",
+          "before_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+          "after_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401",
+      "historical_donor": {
+        "repository": "https://github.com/chenjohnliu/android_packages_services_Telephony",
+        "branch": "m11q-volte",
+        "recorded_commits": [
+          "cf338879ae9ae3a946a84d4678c245c51c98e753",
+          "afedb3add75f2f5120f598942f91d8f4ba07d382",
+          "26d0551acfa76e1fbcbc63e1114327e578badef7"
+        ],
+        "current_build_head_claimed": false
+      }
+    },
+    {
+      "path": "system/netd",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_system_netd",
+      "base_commit": "0a1e4b250e798479cafc3297a4b8a22c5158da29",
+      "base_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/system__netd/live-source.patch",
+          "sha256": "455eaa8530913030c27d4bb5fa71e95b381f1d7630cf0b9ce5034e48d8656a16",
+          "before_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+          "after_tree": "ba89c15b79d86144876f596de94cd579221d152e"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "ba89c15b79d86144876f596de94cd579221d152e",
+      "historical_donor": {
+        "repository": "https://github.com/chenjohnliu/android_system_netd",
+        "branch": "m11q-volte",
+        "recorded_commits": [
+          "8e455b91f8aa5b52771fbcf0250a7181f16ec43e"
+        ],
+        "current_build_head_claimed": false
+      }
+    },
+    {
+      "path": "packages/services/Telecomm",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_packages_services_Telecomm",
+      "base_commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+      "base_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/packages__services__Telecomm/live-source.patch",
+          "sha256": "cf1f8f93a764ad422d60e0abeff23778d5c790e376f642b67a8bdc3504d706be",
+          "before_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+          "after_tree": "eacda91439eb522e11034aad65eddfa2bc399307"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch",
+          "sha256": "66f6e96678a5c0cc0a1000c88284cf0770b04b3c62c22657706b861b07be31cc",
+          "before_tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+          "after_tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch",
+          "sha256": "c0a168b8d124b89aaffb1cf1c29163fc19a7c5ac8993b62e56ef9b5c7545d812",
+          "before_tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd",
+          "after_tree": "b2c191d69d2055770b1d96f6baddff6abe472252"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "synchronized_fork_or_patch_recipe",
+      "synchronized_fork": {
+        "repository": "https://github.com/chenjohnliu/android_packages_services_Telecomm.git",
+        "branch": "cherish-13-m11q-ims",
+        "commit": "fe02eed197e3e0d0e0317eeeebbb2775c60e691c",
+        "tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+        "commits": [
+          {
+            "patch_sha256": "cf1f8f93a764ad422d60e0abeff23778d5c790e376f642b67a8bdc3504d706be",
+            "sha": "df5ac4eca7d6cdcf84462e4dc3a2691ee9e7ebef",
+            "patch_path": "platform/checkpoints/cherish-20261012/packages__services__Telecomm/live-source.patch",
+            "tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+            "parent": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244"
+          },
+          {
+            "patch_sha256": "66f6e96678a5c0cc0a1000c88284cf0770b04b3c62c22657706b861b07be31cc",
+            "sha": "dc661880537847a1a549be04f6718e663b730a39",
+            "patch_path": "platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch",
+            "tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd",
+            "parent": "df5ac4eca7d6cdcf84462e4dc3a2691ee9e7ebef"
+          },
+          {
+            "patch_sha256": "c0a168b8d124b89aaffb1cf1c29163fc19a7c5ac8993b62e56ef9b5c7545d812",
+            "sha": "fe02eed197e3e0d0e0317eeeebbb2775c60e691c",
+            "patch_path": "platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch",
+            "tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+            "parent": "dc661880537847a1a549be04f6718e663b730a39"
+          }
+        ]
+      },
+      "final_tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+      "historical_donor": {
+        "repository": "https://github.com/chenjohnliu/android_packages_services_Telecomm",
+        "branch": "m11q-vowifi-audio-path",
+        "recorded_commits": [
+          "66d3d91d238436c9a04cd4b653f3db02db4f901e",
+          "8e1a9a333a5692343f8bede5a2fe2dcac0d44489"
+        ],
+        "current_build_head_claimed": false
+      }
+    },
+    {
+      "path": "packages/services/Mms",
+      "role": "core",
+      "source_url": "https://android.googlesource.com/platform/packages/services/Mms",
+      "base_commit": "88c00908f6f248edc300e38044cb88e08eea942e",
+      "base_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/packages__services__Mms/live-source.patch",
+          "sha256": "bca6c53efaa605d3ffb8df2003193c1ec46969bacec616158cd0da553d2cd733",
+          "before_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+          "after_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12"
+        }
+      ],
+      "reference_only_patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Mms/mms-service-compat.patch",
+          "sha256": "fc13a3939a5047b65d26b8a1253ec297982cddfcd40988f68861cd9a3a73dff7"
+        }
+      ],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12"
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/audio",
+      "role": "core",
+      "source_url": "https://github.com/LineageOS/android_hardware_qcom_audio",
+      "base_commit": "b6b4b95176283ccd966e3cf388ec2fc2acbe4ef6",
+      "base_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/hardware__qcom-caf__msm8953__audio/live-source.patch",
+          "sha256": "4ed43e3e20725b79e0bc8ddc6bb39b7f2ba90a6f5ec2a7ee0ffb2498504a5d28",
+          "before_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+          "after_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5"
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/display",
+      "role": "core",
+      "source_url": "https://github.com/LineageOS/android_hardware_qcom_display",
+      "base_commit": "6fe03b204444745439fe8d164dc78ee0a5576ca8",
+      "base_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/hardware__qcom-caf__msm8953__display/live-source.patch",
+          "sha256": "f1f3a5e0b2631b3da7a401b499c44463ecb9c019ac6d10086cd8b0ccd6c4768c",
+          "before_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+          "after_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b"
+    },
+    {
+      "path": "vendor/qcom/opensource/commonsys-intf/display",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_vendor_qcom_opensource_display-commonsys-intf",
+      "base_commit": "ba6b55fdd5e13290a9e97a0f947fd21ee2f228af",
+      "base_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/vendor__qcom__opensource__commonsys-intf__display/live-source.patch",
+          "sha256": "a41904cbc416dc67715bfc44d065f684778167d34299c009568396fadc13484c",
+          "before_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+          "after_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356"
+    },
+    {
+      "path": "device/cherish/sepolicy",
+      "role": "core",
+      "source_url": "https://github.com/CherishOS/android_device_cherish_sepolicy",
+      "base_commit": "c6ecfded4535af0ea163bfd1ff1c9f131f6c2507",
+      "base_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/device__cherish__sepolicy/live-source.patch",
+          "sha256": "ce264761086cf69c7097b60a33896f900f7d6accd6e2a4465643ded05f4864a7",
+          "before_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+          "after_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d"
+    },
+    {
+      "path": "device/samsung/m11q",
+      "role": "product",
+      "source_url": "https://github.com/chenjohnliu/android_device_samsung_m11q",
+      "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+      "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch",
+          "sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299",
+          "before_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+          "after_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df"
+    },
+    {
+      "path": "vendor/cherish",
+      "role": "optional",
+      "source_url": "https://github.com/CherishOS/android_vendor_cherish",
+      "base_commit": "4b061ffab32779b72e10249fddb1f69a6561d777",
+      "base_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/vendor__cherish/live-source.patch",
+          "sha256": "89b5870a368a5c5f5ee61f89309d33be70b5ca924341146dd4f831e3fb80e0f8",
+          "before_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+          "after_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec"
+    },
+    {
+      "path": "build/make",
+      "role": "optional",
+      "source_url": "https://github.com/CherishOS/android_build",
+      "base_commit": "a74a178b502303584cc55ecbf6d2d7d3ae22c8b2",
+      "base_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261012/build__make/live-source.patch",
+          "sha256": "74db0fd1eab3e08c74bd3917722d59e0cb0cfeb0ed89ab7b3a096ba0336f7fb0",
+          "before_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+          "after_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1"
+        }
+      ],
+      "reference_only_patches": [],
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1"
+    }
+  ]
+}

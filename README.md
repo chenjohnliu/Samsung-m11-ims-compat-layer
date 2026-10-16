@@ -6,7 +6,7 @@ This project adapts Samsung's stock IMS stack to **CherishOS 4.12** and **crDroi
 
 The port was developed with **ChatGPT/Codex assistance**. The maintainer built and flashed the ROMs, made real calls, checked SMS and tested handovers on the phone. Those results are the basis for the feature status below.
 
-[繁體中文](README.zh-TW.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md)
+[繁體中文](README.zh-TW.md) · [Source and patch index](docs/SOURCE_INDEX.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md)
 
 ## Feature support
 

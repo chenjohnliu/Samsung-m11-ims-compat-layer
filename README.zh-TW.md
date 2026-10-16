@@ -6,7 +6,7 @@
 
 本移植工作有 ChatGPT/Codex 協助。維護者親自建置並刷入 ROM，在手機上撥打電話、測試簡訊與換手；下方功能狀態以這些實機結果為準。
 
-[English README](README.md) · [文件導覽](docs/README.md) · [驗證結果與範圍](docs/VALIDATED_FEATURES.md)
+[English README](README.md) · [原始碼與 patch 總索引](docs/SOURCE_INDEX.md) · [文件導覽](docs/README.md) · [驗證結果與範圍](docs/VALIDATED_FEATURES.md)
 
 ## 功能支援狀態
 
@@ -41,6 +41,8 @@ SIM1 與 SIM2 是分開測試的，兩者沒有同時啟用 IMS。這不代表�
 [2026-10-16 原始碼補充修正](docs/CHERISH_VOWIFI_FIXES_20261016.md)處理後來在家用網路重現的初始 VoWiFi 來電音訊與 legacy MTU 問題。已通過文件記載的通話檢查；完整版本回歸矩陣尚未重跑，偶發 VoWiFi 狀態列圖示消失也仍待查。
 
 ## 從哪裡開始
+
+**想找完整原始碼或 patch：**先看[原始碼與 patch 總索引](docs/SOURCE_INDEX.md)。Telephony 與 Telecom 的最新 Cherish 分支統一為 `cherish-13-m11q-ims`；總表列出固定 commit 與對應 patch。使用該完整分支後，同一專案的 patch 不需要再套一次。其他專案依總表的 patch 順序整合，舊 fork 分支保留作歷史來源。
 
 **想使用 ROM：**下載 [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) 或 [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid) 版本，並依照各版本的安裝說明操作。本專案不提供可直接刷入的套件。
 

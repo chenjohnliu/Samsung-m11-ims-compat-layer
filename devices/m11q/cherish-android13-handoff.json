@@ -80,7 +80,10 @@
     "supplement_application_policy": "After the combined baseline checkpoint, apply only the two new Telecom permission and emergency-capability test hunks once. The separate MMS companion copy is already included in the baseline. Non-IMS microG/Play Integrity changes remain separate public donor changes.",
     "replay_policy": "Use the combined Cherish checkpoint instead of layering the historical checkpoint, separate SystemUI patch or SA2 renderer on top.",
     "vowifi_20261016_supplement": "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
-    "vowifi_20261016_application_policy": "After the combined checkpoint and earlier IMS supplement, apply the initial incoming Wi-Fi audio and legacy IWLAN MTU patches once; see docs/CHERISH_VOWIFI_FIXES_20261016.md. Earlier checkpoint and APK pins are unchanged."
+    "vowifi_20261016_application_policy": "After the combined checkpoint and earlier IMS supplement, apply the initial incoming Wi-Fi audio and legacy IWLAN MTU patches once; see docs/CHERISH_VOWIFI_FIXES_20261016.md. Earlier checkpoint and APK pins are unchanged.",
+    "source_index": "devices/m11q/cherish-source-index.json",
+    "source_index_guide": "docs/SOURCE_INDEX.md",
+    "source_selection_policy": "For projects with a synchronized fork pin, use that complete commit OR the ordered patch recipe, never both. Historical source_repositories pins above remain donor/baseline records; current synchronized source pins are in the source index."
   },
   "public_source_inventory": {
     "ims_framework_sms_and_subscription_compatibility": [
@@ -313,7 +316,12 @@
     "devices/m11q/cherish-ims-supplement-source-verification.json",
     "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
     "docs/CHERISH_VOWIFI_FIXES_20261016.md",
-    "tests/java/vowifi_20261016/run_tests.py"
+    "tests/java/vowifi_20261016/run_tests.py",
+    "devices/m11q/cherish-source-index.json",
+    "docs/SOURCE_INDEX.md",
+    "platform/checkpoints/README.md",
+    "patches/README.md",
+    "tools/verify_cherish_source_index.py"
   ],
   "runtime_acceptance": {
     "date": "2026-10-13",

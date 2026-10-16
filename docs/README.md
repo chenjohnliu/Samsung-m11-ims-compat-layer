@@ -6,6 +6,7 @@ Start with the question you want to answer. You do not need to read the experime
 
 | Question | Read this |
 | --- | --- |
+| Where are the full source forks and their corresponding patches? | [Source and patch index](SOURCE_INDEX.md) — current Cherish branches, exact commits and all 14 project recipes |
 | What works, and on which phone/ROM? | [Validated features](VALIDATED_FEATURES.md) |
 | Where can I download a ROM? | [Project README](../README.md#where-to-start) |
 | How do I reproduce the CherishOS source integration? | [Android 13 handoff](CHERISH_ANDROID13_IMS_HANDOFF.md) |
