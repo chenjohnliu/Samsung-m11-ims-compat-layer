@@ -1,0 +1,22 @@
+{
+  "repository": "https://github.com/chenjohnliu/android_packages_services_Telecomm",
+  "previous_repository_id": 1395542795,
+  "previous_parent": "crdroidandroid/android_packages_services_Telecomm",
+  "replacement_repository_id": 1422387915,
+  "parent": "CherishOS/android_packages_services_Telecomm",
+  "source": "CherishOS/android_packages_services_Telecomm",
+  "upstream_repository_id": 293298615,
+  "default_branch": "cherish-13-m11q-ims",
+  "cherish_commit": "fe02eed197e3e0d0e0317eeeebbb2775c60e691c",
+  "cherish_tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+  "historical_branch": "m11q-vowifi-audio-path",
+  "historical_commit": "8e1a9a333a5692343f8bede5a2fe2dcac0d44489",
+  "branch_commits_changed": false,
+  "old_repository_refs_backed_up": 31,
+  "local_full_backup_and_bundle_restore_verified": true,
+  "inherited_crdroid_refs_not_republished": 29,
+  "github_parent_source_default_branch_and_commit_tree_verified": true,
+  "verified_at_utc": "2026-10-16T16:18:27+00:00",
+  "android_build_performed": false,
+  "live_source_or_manifest_changed": false
+}

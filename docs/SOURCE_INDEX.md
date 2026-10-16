@@ -75,8 +75,19 @@ changes outside the IMS checkpoint. This index describes the IMS source recipe;
 it does not silently import those separate customizations or claim an exact
 snapshot of every file in a previously built ROM.
 
-Existing branches, checkpoints and APK hash contracts are retained. Patch paths
-stay stable so older links and manifests continue to work.
+The Telecom repository was recreated at the same URL as a direct fork of
+`CherishOS/android_packages_services_Telecomm`, replacing its earlier crDroid
+fork relationship. Its default branch is `cherish-13-m11q-ims`. The current
+Cherish integration commit and the historical `m11q-vowifi-audio-path` commit
+were restored unchanged; the 29 inherited crDroid branches remain in the
+verified local backup rather than being republished. See the
+[fork-origin verification record](../devices/m11q/telecomm-fork-origin.json).
+
+The other repositories were retained: the five other platform forks already
+have CherishOS parents, and the device fork remains based on ifoodplayer.
+Checkpoint and APK hash contracts, source commit pins and patch paths stay
+stable so the existing integration recipe and historical M11 links continue
+to work.
 
 ## Keeping the two source routes synchronized
 

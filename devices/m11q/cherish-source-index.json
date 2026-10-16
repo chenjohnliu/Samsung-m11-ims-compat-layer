@@ -297,7 +297,14 @@
             "patch_path": "platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch",
             "patch_sha256": "c0a168b8d124b89aaffb1cf1c29163fc19a7c5ac8993b62e56ef9b5c7545d812"
           }
-        ]
+        ],
+        "github_origin": {
+          "repository_id": 1422387915,
+          "parent": "CherishOS/android_packages_services_Telecomm",
+          "source": "CherishOS/android_packages_services_Telecomm",
+          "default_branch": "cherish-13-m11q-ims",
+          "verification_record": "devices/m11q/telecomm-fork-origin.json"
+        }
       },
       "final_tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
       "historical_donor": {

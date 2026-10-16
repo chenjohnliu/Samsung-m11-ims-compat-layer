@@ -321,7 +321,8 @@
     "docs/SOURCE_INDEX.md",
     "platform/checkpoints/README.md",
     "patches/README.md",
-    "tools/verify_cherish_source_index.py"
+    "tools/verify_cherish_source_index.py",
+    "devices/m11q/telecomm-fork-origin.json"
   ],
   "runtime_acceptance": {
     "date": "2026-10-13",
