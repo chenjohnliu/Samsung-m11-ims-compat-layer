@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "updated_date": "2026-10-16",
+  "updated_date": "2026-10-17",
   "scope": "Fourteen checkpointed CherishOS Android 13 projects; not the entire Android tree or a new runtime acceptance.",
   "checkpoint_manifests": [
     "platform/checkpoints/cherish-20261012/manifest.json",
@@ -98,6 +98,10 @@
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_opt_net_ims",
         "branch": "m11q-emergency-capability-mask",
+        "ref_status": "archived_as_tag",
+        "archive_tag": "archive/m11q-emergency-capability-mask-20261017",
+        "archive_commit": "1b1a32269a62de0e82e3ede53bf2c44751307f18",
+        "retired_date": "2026-10-17",
         "recorded_commits": [
           "1b1a32269a62de0e82e3ede53bf2c44751307f18"
         ],
@@ -152,6 +156,10 @@
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_opt_telephony",
         "branch": "m11q-volte",
+        "ref_status": "archived_as_tag",
+        "archive_tag": "archive/m11q-volte-20261017",
+        "archive_commit": "6c209a7d4fb239e8c8826d1c303f26dd6417dd5a",
+        "retired_date": "2026-10-17",
         "recorded_commits": [
           "6c209a7d4fb239e8c8826d1c303f26dd6417dd5a"
         ],
@@ -193,6 +201,10 @@
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_packages_services_Telephony",
         "branch": "m11q-volte",
+        "ref_status": "archived_as_tag",
+        "archive_tag": "archive/m11q-volte-20261017",
+        "archive_commit": "26d0551acfa76e1fbcbc63e1114327e578badef7",
+        "retired_date": "2026-10-17",
         "recorded_commits": [
           "cf338879ae9ae3a946a84d4678c245c51c98e753",
           "afedb3add75f2f5120f598942f91d8f4ba07d382",
@@ -236,6 +248,10 @@
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_system_netd",
         "branch": "m11q-volte",
+        "ref_status": "archived_as_tag",
+        "archive_tag": "archive/m11q-volte-20261017",
+        "archive_commit": "8e455b91f8aa5b52771fbcf0250a7181f16ec43e",
+        "retired_date": "2026-10-17",
         "recorded_commits": [
           "8e455b91f8aa5b52771fbcf0250a7181f16ec43e"
         ],

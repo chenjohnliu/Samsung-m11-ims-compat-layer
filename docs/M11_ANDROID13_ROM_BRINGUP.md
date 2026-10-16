@@ -134,8 +134,16 @@ Git.
 
 ## 3. Integrate the M11 device tree
 
-Use the public M11 device-tree `m11q-volte` branch at the revision specified by
-the current port handoff. Its IMS integration history is present through `97206c0e`;
+For a CherishOS 4.12 source tree, use the seven exact full-source pins or their
+ordered patch recipes in the [Cherish source index](SOURCE_INDEX.md). The
+`cherish-13-m11q-ims` device pin is `f4a8473a4c8e14c85cce08241e2691e15ddd0a55`;
+the other six project pins are listed beside it. Do not substitute the device
+donor branch for that synchronized Cherish source route. The device
+`m11q-volte` ref remains the live default and release target for the separate
+crDroid port described below.
+
+For the historical crDroid port, use the public M11 device-tree `m11q-volte`
+branch at its recorded handoff revision. Its IMS integration history is present through `97206c0e`;
 [`9aebafe`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/9aebafee57492a75cadd115ae80ea21db378a760)
 updates the payload verifier and generation instructions. The historical
 `d11cbe58` policy described below is retired; do not select it as the current
@@ -152,8 +160,12 @@ a stop condition even if the ROM compiles.
 
 ## 4. Port the Android framework changes
 
-The nine known production changes in the five public CherishOS Android forks
-are enumerated with source and target baselines in
+For a current CherishOS integration, use the complete source route in the
+[Cherish source index](SOURCE_INDEX.md): each synchronized fork commit already
+contains its listed patch chain. The following donor replay is historical
+provenance for the separately adapted crDroid port; it is not the active
+CherishOS source route. The nine known production changes in the five public
+CherishOS Android forks are enumerated with source and target baselines in
 [`CRDROID_ANDROID13_IMS_RESTORATION.md`](CRDROID_ANDROID13_IMS_RESTORATION.md).
 The documented source history has two distinct baselines: the M11 public fork
 refs based on CherishOS, and the manually adapted crDroid source revisions.
@@ -174,24 +186,27 @@ git -C frameworks/base cherry-pick \
 
 git -C frameworks/opt/net/ims fetch \
   https://github.com/chenjohnliu/android_frameworks_opt_net_ims.git \
-  m11q-emergency-capability-mask
+  refs/tags/archive/m11q-emergency-capability-mask-20261017
 git -C frameworks/opt/net/ims cherry-pick \
   1b1a32269a62de0e82e3ede53bf2c44751307f18
 
 git -C frameworks/opt/telephony fetch \
-  https://github.com/chenjohnliu/android_frameworks_opt_telephony.git m11q-volte
+  https://github.com/chenjohnliu/android_frameworks_opt_telephony.git \
+  refs/tags/archive/m11q-volte-20261017
 git -C frameworks/opt/telephony cherry-pick \
   6c209a7d4fb239e8c8826d1c303f26dd6417dd5a
 
 git -C packages/services/Telephony fetch \
-  https://github.com/chenjohnliu/android_packages_services_Telephony.git m11q-volte
+  https://github.com/chenjohnliu/android_packages_services_Telephony.git \
+  refs/tags/archive/m11q-volte-20261017
 git -C packages/services/Telephony cherry-pick \
   cf338879ae9ae3a946a84d4678c245c51c98e753 \
   afedb3add75f2f5120f598942f91d8f4ba07d382 \
   26d0551acfa76e1fbcbc63e1114327e578badef7
 
 git -C system/netd fetch \
-  https://github.com/chenjohnliu/android_system_netd.git m11q-volte
+  https://github.com/chenjohnliu/android_system_netd.git \
+  refs/tags/archive/m11q-volte-20261017
 git -C system/netd cherry-pick \
   8e455b91f8aa5b52771fbcf0250a7181f16ec43e
 ```

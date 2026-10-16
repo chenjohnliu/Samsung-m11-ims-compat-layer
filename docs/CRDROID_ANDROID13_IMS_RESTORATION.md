@@ -174,6 +174,13 @@ branch head.
 | [`android_packages_services_Telephony`](https://github.com/chenjohnliu/android_packages_services_Telephony) | `m11q-volte` / `26d0551a` | `abbe1d49d26b` | [`cf338879`](https://github.com/chenjohnliu/android_packages_services_Telephony/commit/cf338879ae9ae3a946a84d4678c245c51c98e753), [`afedb3ad`](https://github.com/chenjohnliu/android_packages_services_Telephony/commit/afedb3add75f2f5120f598942f91d8f4ba07d382), [`26d0551a`](https://github.com/chenjohnliu/android_packages_services_Telephony/commit/26d0551acfa76e1fbcbc63e1114327e578badef7) |
 | [`android_system_netd`](https://github.com/chenjohnliu/android_system_netd) | `m11q-volte` / `8e455b91` | `0a1e4b250e79` | [`8e455b91`](https://github.com/chenjohnliu/android_system_netd/commit/8e455b91f8aa5b52771fbcf0250a7181f16ec43e) |
 
+The branch names in this table describe the recorded donor history. On
+2026-10-17, the four donor refs other than `frameworks/base` were replaced by
+archive tags at the same exact commits. Use the tag fetches in the
+[bring-up guide](M11_ANDROID13_ROM_BRINGUP.md) and the
+[retirement record](M11Q_BRANCH_RETIREMENT_20261017.md); the commit links above
+continue to identify the original source.
+
 The `android_frameworks_base:m11q-volte` branch also contains microG and Play
 Integrity changes between the Samsung API commit and the ePDG commits. Those
 commits are unrelated to IMS and were not restored.

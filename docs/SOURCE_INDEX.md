@@ -55,12 +55,20 @@ project. The baseline is not an additional layer on top of the historical
 
 ## Older forks and historical checkpoints
 
-Branches such as `m11q-volte`, `m11q-vowifi-audio-path` and
-`m11q-emergency-capability-mask` remain available as recorded donor history.
-Their names alone do not establish that they contain the latest Cherish
-integration. In particular, the old Telecom donor follows a LineageOS-derived
-base; its changes were adapted to CherishOS. It must not replace the current
-Cherish project wholesale.
+The `m11q-emergency-capability-mask` ref and the `m11q-volte` refs for
+`frameworks/opt/telephony`, `packages/services/Telephony` and `system/netd` were
+retired on 2026-10-17 and preserved as lightweight tags at their recorded donor
+commits. Their archive tags and exact SHAs are listed in the
+[branch retirement record](M11Q_BRANCH_RETIREMENT_20261017.md) and the
+machine-readable index. The `frameworks/base:m11q-volte` ref remains for its
+separate microG and Play Integrity history; the device-tree `m11q-volte` ref
+remains the live default and release target; and the Telecom
+`m11q-vowifi-audio-path` ref remains for the crDroid replay path.
+
+None of these donor refs identifies the current Cherish integration. In
+particular, the old Telecom donor follows a LineageOS-derived base; its changes
+were adapted to CherishOS. It must not replace the current Cherish project
+wholesale.
 
 The recorded `frameworks/base`, IMS framework, Telephony framework, phone service
 and netd donor histories already use CherishOS bases even though their branch
@@ -83,8 +91,8 @@ were restored unchanged; the 29 inherited crDroid branches remain in the
 verified local backup rather than being republished. See the
 [fork-origin verification record](../devices/m11q/telecomm-fork-origin.json).
 
-The other repositories were retained: the five other platform forks already
-have CherishOS parents, and the device fork remains based on ifoodplayer.
+The remaining repositories were retained: the five other platform forks
+already have CherishOS parents, and the device fork remains based on ifoodplayer.
 Checkpoint and APK hash contracts, source commit pins and patch paths stay
 stable so the existing integration recipe and historical M11 links continue
 to work.
