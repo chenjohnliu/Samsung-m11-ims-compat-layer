@@ -1,6 +1,21 @@
 # Validated features and current project status
 
-Updated **2026-10-13 (Asia/Taipei)**. This page is the current runtime summary; dated investigation records describe their original builds and experiments.
+Updated **2026-10-16 (Asia/Taipei)**. The acceptance matrix below records the 2026-10-13 release tests. Later source revisions have the narrower validation scope described here; dated investigation records describe their original builds and experiments.
+
+## 2026-10-16 source follow-up
+
+Later home-network incoming-call failures led to separate initial Wi-Fi audio
+and legacy IWLAN MTU corrections. The maintainer built and flashed both. Incoming
+calls passed with two-way audio; a call near the AP also passed handset → speaker
+→ handset checks for about 81 seconds. A remote-person outgoing call had normal
+two-way speech. A subsequent service-announcement call lasted about 112 seconds,
+retained the VoWiFi icon and sampled source MTU 1400, and verified audible
+downlink only.
+
+An outgoing-call status icon disappearance that recovered by itself remains
+unresolved. The complete VoLTE, both-direction handover and both-slot regression
+matrix has not been repeated on this source revision. See the
+[patches, application order and evidence limits](CHERISH_VOWIFI_FIXES_20261016.md).
 
 ## Tested setup
 

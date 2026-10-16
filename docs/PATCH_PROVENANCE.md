@@ -199,6 +199,15 @@ companion, four build prerequisites, product selection and optional user
 customizations. Every project is tied to a base commit, patch hash and result
 tree. It supplements the historical checkpoint without changing its evidence.
 
+The later `platform/checkpoints/cherish-20261016-vowifi` supplement contains
+project-authored changes to the AOSP/Cherish Telecom and Telephony source paths,
+not extracted Samsung method bodies. It records packed MTU field handling and
+the observed audio parameter contract without distributing stock binaries or
+decoded source. Its manifest records exact prerequisite/result trees and hashes;
+standalone Java policy tests and the scoped device results are linked from
+[the supplement guide](CHERISH_VOWIFI_FIXES_20261016.md). The earlier checkpoint
+and APK input/output contracts are unchanged.
+
 ## Never publish
 
 - Stock, intermediate or patched APK/JAR/DEX/class files.

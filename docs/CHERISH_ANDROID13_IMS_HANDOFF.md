@@ -25,6 +25,12 @@ in that inventory is already included in the baseline and must not be applied
 again. The 2026-10-13 build and runtime acceptance includes the supplemental
 changes.
 
+For the later m11q home-Wi-Fi incoming-call corrections, apply the
+[2026-10-16 VoWiFi supplement](CHERISH_VOWIFI_FIXES_20261016.md) after those
+prerequisites. It contains the initial incoming audio and legacy IWLAN MTU
+patches, standalone Java checks, and the narrower device validation scope.
+The occasional outgoing-call status icon disappearance remains unresolved.
+
 ## Locked source inputs
 
 The [baseline manifest](../platform/checkpoints/cherish-20261012/base-manifest.xml)

@@ -1,0 +1,164 @@
+{
+  "format_version": 1,
+  "checkpoint": "cherish-20261016-vowifi",
+  "status": "replay_verified_supplement",
+  "notes": [
+    "The candidate patches apply after the listed public checkpoint prerequisites.",
+    "Java policy validation is separate from patch replay; this checkpoint makes no Android build or root-cause claim."
+  ],
+  "projects": [
+    {
+      "project": "packages/services/Telecomm",
+      "source_url": "https://github.com/CherishOS/android_packages_services_Telecomm",
+      "source_base": {
+        "commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+        "tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7"
+      },
+      "application_order": [
+        "cherish-20261012/packages__services__Telecomm/live-source.patch",
+        "cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch",
+        "packages__services__Telecomm/initial-wifi-audio.patch"
+      ],
+      "prerequisite_trees": {
+        "published_checkpoint": "eacda91439eb522e11034aad65eddfa2bc399307",
+        "candidate_precondition": "b3b2f8987054b18db82c1d40ca31a5279674b4dd"
+      },
+      "patches": [
+        {
+          "name": "packages__services__Telecomm/initial-wifi-audio.patch",
+          "sha256": "c0a168b8d124b89aaffb1cf1c29163fc19a7c5ac8993b62e56ef9b5c7545d812"
+        },
+        {
+          "name": "cherish-20261012/packages__services__Telecomm/live-source.patch",
+          "sha256": "cf1f8f93a764ad422d60e0abeff23778d5c790e376f642b67a8bdc3504d706be",
+          "role": "prerequisite"
+        },
+        {
+          "name": "cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch",
+          "sha256": "66f6e96678a5c0cc0a1000c88284cf0770b04b3c62c22657706b861b07be31cc",
+          "role": "prerequisite"
+        }
+      ],
+      "changed_paths": [
+        "src/com/android/server/telecom/CallAudioManager.java",
+        "src/com/android/server/telecom/CallAudioModeStateMachine.java",
+        "src/com/android/server/telecom/SamsungImsAudioHandover.java",
+        "src/com/android/server/telecom/SamsungImsAudioTransition.java"
+      ],
+      "files": [
+        {
+          "path": "src/com/android/server/telecom/CallAudioManager.java",
+          "before_sha256": "965b69dd13ef215c8b88d48d782dbba4fa90f775a4ec158fb01850b083624b19",
+          "after_sha256": "e0d5068fa55ec0e334102c926b2d50bfcd3d639b81c841e5e4e0a5a280ac9f7c"
+        },
+        {
+          "path": "src/com/android/server/telecom/CallAudioModeStateMachine.java",
+          "before_sha256": "20e6074ed2423f17a4866e14f32f8281da15770a703f9deebf9b1f985a1fa3a7",
+          "after_sha256": "283770714b34bb03117828ad0cd7bcbd5525ca4c3e81dd6cd4a454d42b183c93"
+        },
+        {
+          "path": "src/com/android/server/telecom/SamsungImsAudioHandover.java",
+          "before_sha256": "990419965435e2f444771c3f02183fef21756703b78d6af7096488aa6ec02cbc",
+          "after_sha256": "fc1313cf3673670f719c101f1406202a7f6e92155e0a5300fba68d458fbe5aea"
+        },
+        {
+          "path": "src/com/android/server/telecom/SamsungImsAudioTransition.java",
+          "before_sha256": "40dd5fa206fa1f54be201dd2e7eb17b39119df1750b270dd3f945be3bdb93079",
+          "after_sha256": "9c3103595d8e56ccdf748977319d5083e6fabb2f9fdc3af825cb4822e4287463"
+        }
+      ],
+      "validation": {
+        "archive_tree_matches_source_base": true,
+        "prerequisite_patches_apply": true,
+        "candidate_apply_check": true,
+        "candidate_applies": true,
+        "replay_tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+        "candidate_reverse_check": true,
+        "reverse_candidate_tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd",
+        "full_chain_reverse_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+        "recorded_candidate_hashes_match": true,
+        "active_source_candidate_hashes_match": true
+      }
+    },
+    {
+      "project": "frameworks/opt/telephony",
+      "source_url": "https://github.com/CherishOS/android_frameworks_opt_telephony",
+      "source_base": {
+        "commit": "d8ea3f40256b74d228f98448c4e75a15db547921",
+        "tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843"
+      },
+      "application_order": [
+        "cherish-20261012/frameworks__opt__telephony/live-source.patch",
+        "frameworks__opt__telephony/legacy-iwlan-mtu.patch"
+      ],
+      "prerequisite_trees": {
+        "published_checkpoint": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
+        "candidate_precondition": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac"
+      },
+      "patches": [
+        {
+          "name": "frameworks__opt__telephony/legacy-iwlan-mtu.patch",
+          "sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e"
+        },
+        {
+          "name": "cherish-20261012/frameworks__opt__telephony/live-source.patch",
+          "sha256": "8a801395b1a0018f1e5040f2be508c1e9e4d5666bfd85359fa59e8f0bb962d47",
+          "role": "prerequisite"
+        }
+      ],
+      "changed_paths": [
+        "src/java/com/android/internal/telephony/RILUtils.java",
+        "src/java/com/android/internal/telephony/SamsungM11Mtu.java",
+        "src/java/com/android/internal/telephony/data/DataNetwork.java",
+        "src/java/com/android/internal/telephony/data/DataNetworkController.java",
+        "src/java/com/android/internal/telephony/data/SamsungM11IwlanMtuPolicy.java"
+      ],
+      "files": [
+        {
+          "path": "src/java/com/android/internal/telephony/RILUtils.java",
+          "before_sha256": "d33d3b2b43731bbc10a918b0d3f55d1bfdcc372f001b08f156c7972639b40543",
+          "after_sha256": "88d48744110642e29b3c31a710008bb45ced81ed3098af9ce98e2cf4971f70e2"
+        },
+        {
+          "path": "src/java/com/android/internal/telephony/SamsungM11Mtu.java",
+          "before_sha256": null,
+          "after_sha256": "57adbc08887dc597b24c06c9c74e41044511e73a71188550d7e1eda977633706"
+        },
+        {
+          "path": "src/java/com/android/internal/telephony/data/DataNetwork.java",
+          "before_sha256": "db38a80b5e0c7095964c621ef87a6f535ae37a4af98c9cd8629dd3b6ab74e7f3",
+          "after_sha256": "bfd8a3e8f329d4b264f0915ea6ae3d8c127d4dc8295b3ccb89bf65a9ca7cd4da"
+        },
+        {
+          "path": "src/java/com/android/internal/telephony/data/DataNetworkController.java",
+          "before_sha256": "47894a624d62716ef35b49aa5ce31a3f1ecec52a4625afab31d2788bb6d873c4",
+          "after_sha256": "44256acdacae805369865bad72a53f1fe0c58610a68b4a60ef75d802e8e5cd1b"
+        },
+        {
+          "path": "src/java/com/android/internal/telephony/data/SamsungM11IwlanMtuPolicy.java",
+          "before_sha256": null,
+          "after_sha256": "9bc4ff5c6c5d052749d2d17f16ade9be3d1b32c851098637466f2db390496df6"
+        }
+      ],
+      "validation": {
+        "archive_tree_matches_source_base": true,
+        "prerequisite_patches_apply": true,
+        "candidate_apply_check": true,
+        "candidate_applies": true,
+        "replay_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+        "candidate_reverse_check": true,
+        "reverse_candidate_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
+        "full_chain_reverse_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+        "recorded_candidate_hashes_match": true,
+        "active_source_candidate_hashes_match": true
+      }
+    }
+  ],
+  "rom_build_performed_by_agent": false,
+  "user_reported_build_and_flash": true,
+  "runtime_scope_document": "docs/CHERISH_VOWIFI_FIXES_20261016.md",
+  "path_resolution": {
+    "new_patch_paths_relative_to": "platform/checkpoints/cherish-20261016-vowifi",
+    "prerequisite_patch_paths_relative_to": "platform/checkpoints"
+  }
+}

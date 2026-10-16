@@ -38,11 +38,13 @@ SIM1 與 SIM2 是分開測試的，兩者沒有同時啟用 IMS。這不代表�
 
 請見[目前的功能驗證紀錄](docs/VALIDATED_FEATURES.md)，了解測試證據與限制。較早的失敗紀錄與已退休的實驗仍保留在文件中，作為開發歷程參考。
 
+[2026-10-16 原始碼補充修正](docs/CHERISH_VOWIFI_FIXES_20261016.md)處理後來在家用網路重現的初始 VoWiFi 來電音訊與 legacy MTU 問題。已通過文件記載的通話檢查；完整版本回歸矩陣尚未重跑，偶發 VoWiFi 狀態列圖示消失也仍待查。
+
 ## 從哪裡開始
 
 **想使用 ROM：**下載 [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) 或 [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid) 版本，並依照各版本的安裝說明操作。本專案不提供可直接刷入的套件。
 
-**想重現 CherishOS 移植：**請從 [Android 13 原始碼整合交接指南](docs/CHERISH_ANDROID13_IMS_HANDOFF.md)開始。該指南會帶你找到固定版本的原始碼檢查點、兩份補充修補，以及原廠輸入檔案的處理流程。整合時使用合併後的檢查點一次即可，不要再疊加舊的修補系列。
+**想重現 CherishOS 移植：**請從 [Android 13 原始碼整合交接指南](docs/CHERISH_ANDROID13_IMS_HANDOFF.md)開始。該指南會帶你找到固定版本的原始碼檢查點、先前的兩份補充修補、2026-10-16 VoWiFi 修正，以及原廠輸入檔案的處理流程。依序套用一次，不要再疊加舊的修補系列。
 
 **想了解運作方式：**請看[文件導覽](docs/README.md)，其中將目前的整合步驟、各元件技術資料與歷史實驗分開說明。
 

@@ -11,10 +11,11 @@ Start with the question you want to answer. You do not need to read the experime
 | How do I reproduce the CherishOS source integration? | [Android 13 handoff](CHERISH_ANDROID13_IMS_HANDOFF.md) |
 | Which source changes belong to that checkpoint? | [Combined source checkpoint](CHERISH_SOURCE_CHECKPOINT.md) |
 | What must be applied after the checkpoint? | [IMS supplement](CHERISH_LOCAL_IMS_PATCHES_20261012.md) — two new patches; the MMS copy is reference-only |
+| What fixes the later home-Wi-Fi incoming-call failures? | [2026-10-16 VoWiFi supplement](CHERISH_VOWIFI_FIXES_20261016.md) — initial audio and legacy MTU, after the earlier supplement |
 | What proves the crDroid handovers worked? | [Hotspot call and handover record](CRDROID_HOTSPOT_HANDOVER_PASS_20261010.md) |
 | What may be published? | [Patch provenance](PATCH_PROVENANCE.md), [LICENSE](../LICENSE), [NOTICE](../NOTICE) |
 
-For the CherishOS port, follow the handoff's combined checkpoint and then the two supplemental patches **once**. Do not also replay the old platform series, separate SystemUI correction or audio renderer over the combined checkpoint. Exact base revisions and application rules are recorded in the linked guides.
+For the CherishOS port, follow the handoff's combined checkpoint, the two earlier supplemental patches, and then the 2026-10-16 VoWiFi supplement **once**. Do not also replay the old platform series, separate SystemUI correction or audio renderer over the combined checkpoint. Exact base revisions and application rules are recorded in the linked guides.
 
 ## Component references
 

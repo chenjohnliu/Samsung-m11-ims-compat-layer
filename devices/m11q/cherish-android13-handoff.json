@@ -78,7 +78,9 @@
     "cherish_target_checkpoint": "platform/checkpoints/cherish-20261012/manifest.json",
     "cherish_ims_supplement": "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
     "supplement_application_policy": "After the combined baseline checkpoint, apply only the two new Telecom permission and emergency-capability test hunks once. The separate MMS companion copy is already included in the baseline. Non-IMS microG/Play Integrity changes remain separate public donor changes.",
-    "replay_policy": "Use the combined Cherish checkpoint instead of layering the historical checkpoint, separate SystemUI patch or SA2 renderer on top."
+    "replay_policy": "Use the combined Cherish checkpoint instead of layering the historical checkpoint, separate SystemUI patch or SA2 renderer on top.",
+    "vowifi_20261016_supplement": "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
+    "vowifi_20261016_application_policy": "After the combined checkpoint and earlier IMS supplement, apply the initial incoming Wi-Fi audio and legacy IWLAN MTU patches once; see docs/CHERISH_VOWIFI_FIXES_20261016.md. Earlier checkpoint and APK pins are unchanged."
   },
   "public_source_inventory": {
     "ims_framework_sms_and_subscription_compatibility": [
@@ -308,7 +310,10 @@
     "devices/m11q/cherish-20261012-user-acceptance.json",
     "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
     "docs/CHERISH_LOCAL_IMS_PATCHES_20261012.md",
-    "devices/m11q/cherish-ims-supplement-source-verification.json"
+    "devices/m11q/cherish-ims-supplement-source-verification.json",
+    "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
+    "docs/CHERISH_VOWIFI_FIXES_20261016.md",
+    "tests/java/vowifi_20261016/run_tests.py"
   ],
   "runtime_acceptance": {
     "date": "2026-10-13",
@@ -349,5 +354,16 @@
     ],
     "rom_build_run_by_agent": false,
     "device_capture_for_this_acceptance": false
+  },
+  "runtime_followup_20261016": {
+    "document": "docs/CHERISH_VOWIFI_FIXES_20261016.md",
+    "user_reported_build_and_flash": true,
+    "agent_ran_android_build": false,
+    "incoming_two_way_audio_pass": true,
+    "handset_speaker_handset_pass": true,
+    "remote_person_outgoing_two_way_audio_pass": true,
+    "outgoing_service_test_downlink_pass": true,
+    "full_regression_matrix_repeated": false,
+    "intermittent_status_icon_disappearance_resolved": false
   }
 }

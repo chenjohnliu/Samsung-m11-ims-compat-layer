@@ -1,0 +1,360 @@
+diff --git a/src/com/android/server/telecom/CallAudioManager.java b/src/com/android/server/telecom/CallAudioManager.java
+--- a/src/com/android/server/telecom/CallAudioManager.java
++++ b/src/com/android/server/telecom/CallAudioManager.java
+@@ -778,12 +778,20 @@
+ 
+     private void observeSamsungImsAudioCall() {
+         Call call = mForegroundCall;
+-        boolean allowed = call != null && mCalls.size() == 1 && mCalls.contains(call)
+-                && call.getState() == CallState.ACTIVE && !call.isEmergencyCall()
++        boolean wifi = call != null && call.hasProperty(Connection.PROPERTY_WIFI);
++        int state = call == null ? CallState.NEW : call.getState();
++        boolean initialCandidate = call != null
++                && mCallsManager.getContext().getResources().getBoolean(
++                        R.bool.config_enable_samsung_mt_vowifi_audio_path)
++                && call.isIncoming() && wifi
++                && (state == CallState.RINGING || state == CallState.ANSWERED
++                        || state == CallState.ACTIVE);
++        boolean eligibleState = state == CallState.ACTIVE || initialCandidate;
++        boolean allowed = call != null && eligibleState && mCalls.size() == 1
++                && mCalls.contains(call) && !call.isEmergencyCall()
+                 && !call.isConference() && call.getParentCall() == null
+                 && !call.isSelfManaged() && !call.isExternalCall()
+                 && !VideoProfile.isVideo(call.getVideoState()) && !call.getIsVoipAudioMode();
+-        boolean wifi = call != null && call.hasProperty(Connection.PROPERTY_WIFI);
+         int phoneId = -1;
+         int subId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
+         if (allowed) {
+@@ -804,7 +812,8 @@
+                         == android.telephony.TelephonyManager.NETWORK_TYPE_LTE;
+             }
+         }
+-        mSamsungImsAudioHandover.observe(call, allowed, wifi, phoneId, subId);
++        mSamsungImsAudioHandover.observe(call, allowed, wifi, phoneId, subId,
++                initialCandidate && allowed);
+     }
+ 
+     boolean setSamsungImsHandoverAudioMode(android.media.AudioManager audio, int mode) {
+@@ -813,6 +822,10 @@
+ 
+     void finishSamsungImsHandoverAudioMode(android.media.AudioManager audio) {
+         mSamsungImsAudioHandover.finish(audio);
++    }
++
++    void releaseSamsungInitialWifiAudioIfUnowned(android.media.AudioManager audio) {
++        mSamsungImsAudioHandover.releaseInitialIfUnowned(audio);
+     }
+ 
+     /**
+diff --git a/src/com/android/server/telecom/CallAudioModeStateMachine.java b/src/com/android/server/telecom/CallAudioModeStateMachine.java
+--- a/src/com/android/server/telecom/CallAudioModeStateMachine.java
++++ b/src/com/android/server/telecom/CallAudioModeStateMachine.java
+@@ -238,7 +238,7 @@
+             if (mIsInitialized) {
+                 mCallAudioManager.setCallAudioRouteFocusState(CallAudioRouteStateMachine.NO_FOCUS);
+                 mCallAudioManager.finishSamsungImsHandoverAudioMode(mAudioManager);
+-                mAudioManager.setMode(AudioManager.MODE_NORMAL);
++                setAudioMode(AudioManager.MODE_NORMAL);
+                 mLocalLog.log("Mode MODE_NORMAL");
+                 mMostRecentMode = AudioManager.MODE_NORMAL;
+                 // Don't release focus here -- wait until we get a signal that any other audio
+@@ -304,7 +304,7 @@
+             mLocalLog.log("Enter AUDIO_PROCESSING");
+             if (mIsInitialized) {
+                 mCallAudioManager.setCallAudioRouteFocusState(CallAudioRouteStateMachine.NO_FOCUS);
+-                mAudioManager.setMode(NEW_AUDIO_MODE_FOR_AUDIO_PROCESSING);
++                setAudioMode(NEW_AUDIO_MODE_FOR_AUDIO_PROCESSING);
+                 mLocalLog.log("Mode MODE_CALL_SCREENING");
+                 mMostRecentMode = NEW_AUDIO_MODE_FOR_AUDIO_PROCESSING;
+             }
+@@ -383,7 +383,7 @@
+                 // Do not set MODE_RINGTONE if we were previously in the CALL_SCREENING mode -- this
+                 // trips up the audio system.
+                 if (mAudioManager.getMode() != AudioManager.MODE_CALL_SCREENING) {
+-                    mAudioManager.setMode(AudioManager.MODE_RINGTONE);
++                    setAudioMode(AudioManager.MODE_RINGTONE);
+                     mLocalLog.log("Mode MODE_RINGTONE");
+                 }
+                 mCallAudioManager.setCallAudioRouteFocusState(
+@@ -476,7 +476,7 @@
+                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+             // SA2: preserve Telecom ownership and stock STOP/mode/engine ordering.
+             if (!mCallAudioManager.setSamsungImsHandoverAudioMode(mAudioManager, AudioManager.MODE_IN_CALL)) {
+-                mAudioManager.setMode(AudioManager.MODE_IN_CALL);
++                setAudioMode(AudioManager.MODE_IN_CALL);
+             }
+             mCallAudioManager.onSimCallAudioModeSet();
+             mLocalLog.log("Mode MODE_IN_CALL");
+@@ -563,7 +563,7 @@
+                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+             // SA2: preserve Telecom ownership and stock STOP/mode/engine ordering.
+             if (!mCallAudioManager.setSamsungImsHandoverAudioMode(mAudioManager, AudioManager.MODE_IN_COMMUNICATION)) {
+-                mAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
++                setAudioMode(AudioManager.MODE_IN_COMMUNICATION);
+             }
+             mLocalLog.log("Mode MODE_IN_COMMUNICATION");
+             mMostRecentMode = AudioManager.MODE_IN_COMMUNICATION;
+@@ -643,7 +643,7 @@
+             mLocalLog.log("Enter TONE/HOLDING");
+             mAudioManager.requestAudioFocusForCall(AudioManager.STREAM_VOICE_CALL,
+                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+-            mAudioManager.setMode(mMostRecentMode);
++            setAudioMode(mMostRecentMode);
+             mLocalLog.log("Mode " + mMostRecentMode);
+             mCallAudioManager.setCallAudioRouteFocusState(CallAudioRouteStateMachine.ACTIVE_FOCUS);
+         }
+@@ -763,6 +763,14 @@
+         mCallAudioManager = callAudioManager;
+     }
+ 
++    /** Runs on the mode-state-machine thread; release stale initial Wi-Fi state before mode writes. */
++    private void setAudioMode(int mode) {
++        if (mCallAudioManager != null) {
++            mCallAudioManager.releaseSamsungInitialWifiAudioIfUnowned(mAudioManager);
++        }
++        mAudioManager.setMode(mode);
++    }
++
+     public String getCurrentStateName() {
+         IState currentState = getCurrentState();
+         return currentState == null ? "no state" : currentState.getName();
+diff --git a/src/com/android/server/telecom/SamsungImsAudioHandover.java b/src/com/android/server/telecom/SamsungImsAudioHandover.java
+--- a/src/com/android/server/telecom/SamsungImsAudioHandover.java
++++ b/src/com/android/server/telecom/SamsungImsAudioHandover.java
+@@ -20,6 +20,8 @@
+     private static final String TAG = "M11StockAudioPort";
+     private final SamsungImsAudioTransition policy = new SamsungImsAudioTransition();
+     private int lastCallState; // Only state actually written by this adapter, not another call's state.
++    private Object initialOwnerCall;
++    private int initialOwnerPhoneId = -1, initialOwnerSubscriptionId = -1;
+ 
+     static boolean enabled() {
+         return "m11q".equals(SystemProperties.get("ro.product.device"))
+@@ -44,7 +46,12 @@
+     }
+ 
+     void observe(Object call, boolean allowed, boolean wifi, int phoneId, int subId) {
+-        policy.observe(call, allowed && enabled(), wifi, phoneId, subId);
++        observe(call, allowed, wifi, phoneId, subId, false);
++    }
++
++    void observe(Object call, boolean allowed, boolean wifi, int phoneId, int subId,
++            boolean allowInitialWifi) {
++        policy.observe(call, allowed && enabled(), wifi, phoneId, subId, allowInitialWifi);
+     }
+ 
+     boolean isVoip(Object call) { return enabled() && policy.isVoip(call); }
+@@ -54,6 +61,8 @@
+         // Stock enterUnfocusedState -> resetAudioMode -> setOffAudioParam.
+         // Cleanup remains necessary even if applicability changes after our write.
+         int off = lastCallState == 32 ? 16 : lastCallState == 2 ? 1 : 0;
++        initialOwnerCall = null;
++        initialOwnerPhoneId = initialOwnerSubscriptionId = -1;
+         if (off != 0) {
+             lastCallState = 0;
+             try {
+@@ -65,11 +74,21 @@
+         }
+     }
+ 
++    void releaseInitialIfUnowned(AudioManager audio) {
++        Object owner = initialOwnerCall;
++        if (owner != null && (!enabled() || !policy.matchesEligibleIdentity(
++                owner, initialOwnerPhoneId, initialOwnerSubscriptionId))) {
++            Log.i(TAG, "SA2 initial-WiFi ownership ended; clearing its call-state parameter");
++            finish(audio);
++        }
++    }
++
+     private static Object getter(Object value, String name) throws Exception {
+         return value.getClass().getMethod(name).invoke(value);
+     }
+ 
+     boolean setMode(AudioManager audio, int mode, Context context) {
++        releaseInitialIfUnowned(audio);
+         if (!enabled()) return false;
+         boolean[] modeWritten = {false};
+         String[] stage = {"preflight"};
+@@ -119,7 +138,7 @@
+             }
+             if (!matched) throw new IllegalStateException("No normal LTE/IWLAN IMS registration");
+             requireCounts(service, counts, plan.phoneId);
+-            SamsungImsAudioTransition.run(plan.toWifi, new SamsungImsAudioTransition.Operations() {
++            SamsungImsAudioTransition.run(plan, new SamsungImsAudioTransition.Operations() {
+                 private void check(String next) {
+                     stage[0] = next;
+                     if (!enabled() || !policy.current(plan)
+@@ -142,6 +161,11 @@
+                     check("g_call_state=" + value);
+                     audio.setParameters("g_call_state=" + value);
+                     lastCallState = value == 32 || value == 2 ? value : 0;
++                    if (plan.initial && value == 32) {
++                        initialOwnerCall = plan.call;
++                        initialOwnerPhoneId = plan.phoneId;
++                        initialOwnerSubscriptionId = plan.subscriptionId;
++                    }
+                     Log.i(TAG, "SA2 g_call_state=" + value);
+                 }
+                 public void mode(int value) {
+@@ -152,11 +176,13 @@
+                 }
+             });
+             policy.complete(plan);
+-            Log.i(TAG, "SA2 sequence returned " + (plan.toWifi ? "L2W" : "W2L")
++            String sequence = plan.initial ? "initial-WiFi" : plan.toWifi ? "L2W" : "W2L";
++            Log.i(TAG, "SA2 sequence returned " + sequence
+                     + " (not proof of audible continuity)");
+             return true;
+         } catch (Exception | LinkageError e) {
+             Log.e(TAG, "SA2 aborted at " + stage[0] + "; no automatic retry", e);
++            releaseInitialIfUnowned(audio);
+             // If a partial stock reset wrote NORMAL, let Telecom finish its requested mode.
+             // No invented audio-engine rollback or retry is issued.
+             try { return modeWritten[0] && audio.getMode() == mode; }
+diff --git a/src/com/android/server/telecom/SamsungImsAudioTransition.java b/src/com/android/server/telecom/SamsungImsAudioTransition.java
+--- a/src/com/android/server/telecom/SamsungImsAudioTransition.java
++++ b/src/com/android/server/telecom/SamsungImsAudioTransition.java
+@@ -6,7 +6,7 @@
+ final class SamsungImsAudioTransition {
+     private Object call;
+     private int phoneId = -1, subscriptionId = -1;
+-    private boolean eligible, wifi, sawLte;
++    private boolean eligible, wifi, sawLte, initialWifi;
+     private int selectedMode;
+     private long generation, attempted = -1;
+ 
+@@ -37,10 +37,15 @@
+     }
+ 
+     synchronized void observe(Object identity, boolean allowed, boolean onWifi, int phone, int subId) {
++        observe(identity, allowed, onWifi, phone, subId, false);
++    }
++
++    synchronized void observe(Object identity, boolean allowed, boolean onWifi, int phone, int subId,
++            boolean allowInitialWifi) {
+         if (!allowed || identity == null || !supportedPhone(phone) || subId < 0) {
+             call = null;
+             phoneId = subscriptionId = -1;
+-            eligible = sawLte = false;
++            eligible = wifi = sawLte = initialWifi = false;
+             selectedMode = 0;
+             generation++;
+             return;
+@@ -49,26 +54,43 @@
+             call = identity;
+             phoneId = phone;
+             subscriptionId = subId;
+-            sawLte = false;
++            eligible = false;
++            wifi = sawLte = initialWifi = false;
+             selectedMode = 0;
+             generation++;
+         }
+-        if (!eligible || wifi != onWifi) generation++;
++
++        boolean changed = !eligible || wifi != onWifi;
++        boolean wasSawLte = sawLte;
++        boolean wasInitialWifi = initialWifi;
+         eligible = true;
+         wifi = onWifi;
+-        // Initial IWLAN calls stay on their existing path, including BT1/MT handling.
+         if (!wifi && !sawLte) {
+             sawLte = true;
+-            selectedMode = 2;
++            initialWifi = false;
++            // Preserve an initial-Wi-Fi transition that already selected mode 3.
++            if (selectedMode == 0) selectedMode = 2;
++        } else {
++            initialWifi = wifi && !sawLte && allowInitialWifi;
+         }
++        changed |= sawLte != wasSawLte || initialWifi != wasInitialWifi;
++        if (changed) generation++;
+     }
+ 
+     synchronized boolean isVoip(Object identity) {
+-        return eligible && call == identity && sawLte && wifi;
++        return eligible && call == identity && wifi && (sawLte || initialWifi);
+     }
+ 
+     synchronized boolean owns(Object identity, int phone, int subId) {
++        // An initial Wi-Fi call does not establish an LTE source. Keep LTE attribution explicit.
+         return eligible && sawLte && call == identity && phoneId == phone && subscriptionId == subId;
++    }
++
++    synchronized boolean matchesEligibleIdentity(Object identity, int phone, int subId) {
++        // Cleanup context only: an initial owner remains valid on Wi-Fi or after LTE was seen.
++        // This does not grant LTE provenance; owns() remains sawLte-only.
++        return eligible && call == identity && phoneId == phone && subscriptionId == subId
++                && (sawLte || initialWifi);
+     }
+ 
+     static boolean normalRegistration(int expectedPhone, int phone, int rat,
+@@ -80,16 +102,28 @@
+     }
+ 
+     synchronized Plan take(int targetMode, int currentMode) {
++        if (!eligible || attempted == generation) return null;
++        if (initialWifi && wifi && !sawLte && selectedMode == 0) {
++            if (targetMode != 3 || (currentMode != 0 && currentMode != 1 && currentMode != 2))
++                return null;
++            attempted = generation;
++            return new Plan(call, generation, true, phoneId, subscriptionId, true, currentMode);
++        }
+         int desired = wifi ? 3 : 2;
+-        if (!eligible || !sawLte || targetMode != desired || selectedMode == desired
+-                || selectedMode != currentMode || attempted == generation) return null;
++        if (!sawLte || targetMode != desired || selectedMode == desired
++                || selectedMode != currentMode) return null;
+         attempted = generation;
+-        return new Plan(call, generation, wifi, phoneId, subscriptionId);
++        return new Plan(call, generation, wifi, phoneId, subscriptionId, false, currentMode);
+     }
+ 
+     synchronized boolean current(Plan plan) {
+-        return eligible && call == plan.call && generation == plan.generation
+-                && wifi == plan.toWifi && phoneId == plan.phoneId && subscriptionId == plan.subscriptionId;
++        if (!eligible || call != plan.call || generation != plan.generation
++                || wifi != plan.toWifi || phoneId != plan.phoneId || subscriptionId != plan.subscriptionId)
++            return false;
++        if (plan.initial) {
++            return initialWifi && wifi && !sawLte && selectedMode == 0;
++        }
++        return sawLte;
+     }
+ 
+     synchronized void complete(Plan plan) {
+@@ -101,9 +135,16 @@
+         final long generation;
+         final boolean toWifi;
+         final int phoneId, subscriptionId;
++        final boolean initial;
++        final int fromMode;
+         Plan(Object call, long generation, boolean toWifi, int phoneId, int subId) {
++            this(call, generation, toWifi, phoneId, subId, false, 0);
++        }
++        Plan(Object call, long generation, boolean toWifi, int phoneId, int subId,
++                boolean initial, int fromMode) {
+             this.call = call; this.generation = generation; this.toWifi = toWifi;
+             this.phoneId = phoneId; this.subscriptionId = subId;
++            this.initial = initial; this.fromMode = fromMode;
+         }
+     }
+ 
+@@ -133,4 +174,17 @@
+             ops.mode(2);
+         }
+     }
++
++    /** Initial IWLAN uses the stock INFORM sequence; a late mode-2 repair uses the handover order. */
++    static void run(Plan plan, Operations ops) throws Exception {
++        if (!plan.initial || !plan.toWifi || plan.fromMode == 2) {
++            run(plan.toWifi, ops);
++        } else {
++            if (plan.fromMode != 0 && plan.fromMode != 1)
++                throw new IllegalArgumentException("Unsupported initial audio mode");
++            ops.parameter(32); // SEC_WIFI_CALL_ON.
++            ops.mode(3); // MODE_IN_COMMUNICATION.
++            ops.audioPath(7); // Stock INFORM / DELAYED_MEDIA; no SAE START or STOP.
++        }
++    }
+ }

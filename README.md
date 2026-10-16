@@ -38,11 +38,13 @@ SIM1 and SIM2 were tested separately. This does **not** support two active IMS s
 
 See [current validation details](docs/VALIDATED_FEATURES.md) for the evidence and limits. Older failure captures and retired experiments remain in the documentation as development history.
 
+The [2026-10-16 source supplement](docs/CHERISH_VOWIFI_FIXES_20261016.md) adds initial incoming Wi-Fi audio and legacy MTU corrections after later home-network failures. These passed the documented call checks; the full release regression matrix has not been repeated, and occasional VoWiFi status-icon disappearance remains unresolved.
+
 ## Where to start
 
 **To use a ROM:** download the [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) or [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid) release and follow its installation instructions. This repository is not a flashable package.
 
-**To reproduce the CherishOS port:** start with the [Android 13 source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md). It points to the pinned source checkpoint, the two supplemental source patches and the stock-input workflow. Use the combined checkpoint once; do not stack the historical patch series on top of it.
+**To reproduce the CherishOS port:** start with the [Android 13 source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md). It points to the pinned source checkpoint, the two earlier supplemental source patches, the 2026-10-16 VoWiFi corrections and the stock-input workflow. Apply them in order once; do not stack the historical patch series on top.
 
 **To understand how it works:** use the [documentation guide](docs/README.md), which separates current integration instructions from component references and historical experiments.
 

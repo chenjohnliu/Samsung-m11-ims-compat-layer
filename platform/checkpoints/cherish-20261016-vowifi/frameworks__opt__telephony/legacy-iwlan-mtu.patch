@@ -1,0 +1,753 @@
+diff --git a/src/java/com/android/internal/telephony/RILUtils.java b/src/java/com/android/internal/telephony/RILUtils.java
+--- a/src/java/com/android/internal/telephony/RILUtils.java
++++ b/src/java/com/android/internal/telephony/RILUtils.java
+@@ -270,6 +270,7 @@
+ import android.net.LinkAddress;
+ import android.net.LinkProperties;
+ import android.os.SystemClock;
++import android.os.SystemProperties;
+ import android.service.carrier.CarrierIdentifier;
+ import android.telephony.AccessNetworkConstants;
+ import android.telephony.Annotation;
+@@ -3442,7 +3443,16 @@
+             if (!TextUtils.isEmpty(result.pcscf)) {
+                 pcscfs = result.pcscf.split("\\s+");
+             }
+-            mtu = mtuV4 = mtuV6 = result.mtu;
++            if (isM11QLegacyIwlanMtuNormalizationEnabled()) {
++                // The 1.0 callback may carry the same packed value; decode only when both
++                // fields look like valid MTUs, preserving all scalar values unchanged.
++                int[] normalizedMtu = SamsungM11Mtu.decodeLegacyMtu(result.mtu);
++                mtu = normalizedMtu[0];
++                mtuV4 = normalizedMtu[1];
++                mtuV6 = normalizedMtu[2];
++            } else {
++                mtu = mtuV4 = mtuV6 = result.mtu;
++            }
+             if (addresses != null) {
+                 for (String address : addresses) {
+                     laList.add(convertToLinkAddress(address));
+@@ -3461,7 +3471,14 @@
+             dnses = result.dnses.toArray(new String[0]);
+             gateways = result.gateways.toArray(new String[0]);
+             pcscfs = result.pcscf.toArray(new String[0]);
+-            mtu = mtuV4 = mtuV6 = result.mtu;
++            if (isM11QLegacyIwlanMtuNormalizationEnabled()) {
++                int[] normalizedMtu = SamsungM11Mtu.decodeLegacyMtu(result.mtu);
++                mtu = normalizedMtu[0];
++                mtuV4 = normalizedMtu[1];
++                mtuV6 = normalizedMtu[2];
++            } else {
++                mtu = mtuV4 = mtuV6 = result.mtu;
++            }
+             if (addresses != null) {
+                 for (String address : addresses) {
+                     laList.add(convertToLinkAddress(address));
+@@ -3589,6 +3606,12 @@
+                 .setSliceInfo(sliceInfo)
+                 .setTrafficDescriptors(trafficDescriptors)
+                 .build();
++    }
++
++    private static boolean isM11QLegacyIwlanMtuNormalizationEnabled() {
++        // The device/mode gate is required because packed MTU evidence is Samsung M11-specific.
++        return "m11q".equals(SystemProperties.get("ro.product.device"))
++                && "legacy".equals(SystemProperties.get("ro.telephony.iwlan_operation_mode"));
+     }
+ 
+     /**
+diff --git a/src/java/com/android/internal/telephony/data/DataNetwork.java b/src/java/com/android/internal/telephony/data/DataNetwork.java
+--- a/src/java/com/android/internal/telephony/data/DataNetwork.java
++++ b/src/java/com/android/internal/telephony/data/DataNetwork.java
+@@ -42,6 +42,7 @@
+ import android.os.Message;
+ import android.os.Process;
+ import android.os.SystemClock;
++import android.os.SystemProperties;
+ import android.provider.Telephony;
+ import android.telephony.AccessNetworkConstants;
+ import android.telephony.AccessNetworkConstants.AccessNetworkType;
+@@ -74,6 +75,7 @@
+ import android.telephony.data.QosBearerSession;
+ import android.telephony.data.TrafficDescriptor;
+ import android.telephony.data.TrafficDescriptor.OsAppId;
++import android.telephony.ims.stub.ImsRegistrationImplBase;
+ import android.text.TextUtils;
+ import android.util.ArrayMap;
+ import android.util.IndentingPrintWriter;
+@@ -109,6 +111,8 @@
+ import java.io.PrintWriter;
+ import java.math.BigInteger;
+ import java.net.InetAddress;
++import java.net.NetworkInterface;
++import java.net.SocketException;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collections;
+@@ -238,6 +242,9 @@
+      */
+     private static final int EVENT_NOTIFY_HANDOVER_STARTED = 25;
+ 
++    /** Event for MMTEL registration technology changed. */
++    private static final int EVENT_MMTEL_REGISTRATION_TECH_CHANGED = 28;
++
+     /**
+      * Event for the response of notifying source transport that handover is about to be initiated
+      * on target transport.
+@@ -545,6 +552,12 @@
+     /** Data network controller. */
+     private final @NonNull DataNetworkController mDataNetworkController;
+ 
++    /** Registration technology snapshot used only by the Samsung M11 MTU policy. */
++    private int mMmtelRegistrationTechnology = ImsRegistrationImplBase.REGISTRATION_TECH_NONE;
++
++    private final SamsungM11IwlanMtuPolicy mSamsungM11IwlanMtuPolicy =
++            new SamsungM11IwlanMtuPolicy();
++
+     /** Data network controller callback. */
+     private final @NonNull DataNetworkController.DataNetworkControllerCallback
+             mDataNetworkControllerCallback;
+@@ -903,6 +916,8 @@
+         mAccessNetworksManager = phone.getAccessNetworksManager();
+         mVcnManager = mPhone.getContext().getSystemService(VcnManager.class);
+         mDataNetworkController = phone.getDataNetworkController();
++        mMmtelRegistrationTechnology =
++                mDataNetworkController.getCachedMmtelRegistrationTechnology();
+         mDataNetworkControllerCallback = new DataNetworkController.DataNetworkControllerCallback(
+                 getHandler()::post) {
+             @Override
+@@ -942,6 +957,11 @@
+         updateNetworkCapabilities();
+     }
+ 
++    /** Called by the controller when current MMTEL registration technology changes. */
++    void onSamsungImsRegistrationTechnologyChanged(int technology) {
++        sendMessage(obtainMessage(EVENT_MMTEL_REGISTRATION_TECH_CHANGED, technology, 0));
++    }
++
+     /**
+      * Initialize and start the state machine.
+      */
+@@ -1117,6 +1137,13 @@
+                     updateNetworkCapabilities();
+                     break;
+                 }
++                case EVENT_MMTEL_REGISTRATION_TECH_CHANGED:
++                    mMmtelRegistrationTechnology = msg.arg1;
++                    if (mDataCallResponse != null && mNetworkAgent != null
++                            && (isConnected() || isHandoverInProgress())) {
++                        updateDataNetwork(mDataCallResponse);
++                    }
++                    break;
+                 case EVENT_ATTACH_NETWORK_REQUEST: {
+                     onAttachNetworkRequests((NetworkRequestList) msg.obj);
+                     updateNetworkScore();
+@@ -1593,6 +1620,7 @@
+         @Override
+         public void enter() {
+             logl("Data network disconnected. mEverConnected=" + mEverConnected);
++            mSamsungM11IwlanMtuPolicy.reset();
+             // Preserve the list for onSetupDataFailed callback, because we need to pass that list
+             // back to DataNetworkController, but after EVENT_DETACH_ALL_NETWORK_REQUESTS gets
+             // processed, the network request list would become empty.
+@@ -2357,6 +2385,56 @@
+             }
+         }
+ 
++        final ApnSetting apnSetting = mDataProfile.getApnSetting();
++        final boolean dedicatedImsApn = apnSetting != null
++                && apnSetting.canHandleType(ApnSetting.TYPE_IMS)
++                && !apnSetting.canHandleType(ApnSetting.TYPE_DEFAULT)
++                && !apnSetting.canHandleType(ApnSetting.TYPE_EMERGENCY);
++        final String operatorNumerics = SystemProperties.get("gsm.sim.operator.numeric", "");
++        final boolean m11qImsScope = SamsungM11IwlanMtuPolicy.isApplicable(
++                SystemProperties.get("ro.product.device", ""),
++                SystemProperties.get("ro.telephony.iwlan_operation_mode", ""),
++                operatorNumerics, mPhone.getPhoneId(),
++                SubscriptionManager.isValidSubscriptionId(mSubId)
++                        && mSubId == mPhone.getSubId(), dedicatedImsApn,
++                AccessNetworkConstants.TRANSPORT_TYPE_WWAN, mTransport);
++
++        int kernelMtu = -1;
++        SamsungM11IwlanMtuPolicy.Result mtuResult =
++                new SamsungM11IwlanMtuPolicy.Result(mtuV4, mtuV6,
++                        Math.max(mtuV4, mtuV6), false, false);
++        if (m11qImsScope || mSamsungM11IwlanMtuPolicy.hasLease()) {
++            int interfaceIndex = -1;
++            boolean interfaceKnown = false;
++            String interfaceName = response.getInterfaceName();
++            try {
++                if (!TextUtils.isEmpty(interfaceName)) {
++                    NetworkInterface networkInterface = NetworkInterface.getByName(interfaceName);
++                    if (networkInterface != null) {
++                        interfaceIndex = networkInterface.getIndex();
++                        kernelMtu = networkInterface.getMTU();
++                        interfaceKnown = interfaceIndex > 0;
++                    }
++                }
++            } catch (SocketException e) {
++                // Keep the interface snapshot unknown. The policy fails closed and holds a
++                // matching active lease until a later data-network event supplies a snapshot.
++                log("Samsung M11 MTU interface snapshot unavailable");
++            }
++            mtuResult = mSamsungM11IwlanMtuPolicy.evaluate(m11qImsScope,
++                    mMmtelRegistrationTechnology
++                            == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN,
++                    interfaceName, interfaceIndex, response.getId(), interfaceKnown,
++                    kernelMtu, mtuV4, mtuV6);
++        }
++        mtuV4 = mtuResult.routeMtuV4;
++        mtuV6 = mtuResult.routeMtuV6;
++        if (mtuResult.changed) {
++            log("Samsung M11 MTU policy: kernel=" + kernelMtu + " reported="
++                    + Math.max(response.getMtuV4(), response.getMtuV6()) + " selected="
++                    + mtuResult.linkMtu);
++        }
++
+         // Set MTU for each route.
+         for (InetAddress gateway : response.getGatewayAddresses()) {
+             int mtu = gateway instanceof java.net.Inet6Address ? mtuV6 : mtuV4;
+@@ -2367,7 +2445,7 @@
+         // LinkProperties.setMtu should be deprecated. The mtu for each route has been already
+         // provided in addRoute() above. For backwards compatibility, we still need to provide
+         // a value for the legacy MTU. Use the higher value of v4 and v6 value here.
+-        linkProperties.setMtu(Math.max(mtuV4, mtuV6));
++        linkProperties.setMtu(mtuResult.linkMtu);
+ 
+         if (mDataProfile.getApnSetting() != null
+                 && !TextUtils.isEmpty(mDataProfile.getApnSetting().getProxyAddressAsString())) {
+diff --git a/src/java/com/android/internal/telephony/data/DataNetworkController.java b/src/java/com/android/internal/telephony/data/DataNetworkController.java
+--- a/src/java/com/android/internal/telephony/data/DataNetworkController.java
++++ b/src/java/com/android/internal/telephony/data/DataNetworkController.java
+@@ -35,6 +35,7 @@
+ import android.os.Looper;
+ import android.os.Message;
+ import android.os.PersistableBundle;
++import android.os.SystemProperties;
+ import android.telecom.VideoProfile;
+ import android.telephony.AccessNetworkConstants;
+ import android.telephony.AccessNetworkConstants.AccessNetworkType;
+@@ -72,6 +73,7 @@
+ import android.telephony.ims.ImsStateCallback;
+ import android.telephony.ims.RegistrationManager;
+ import android.telephony.ims.feature.ImsFeature;
++import android.telephony.ims.stub.ImsRegistrationImplBase;
+ import android.text.TextUtils;
+ import android.util.ArrayMap;
+ import android.util.ArraySet;
+@@ -347,6 +349,10 @@
+      */
+     private final @NonNull SparseArray<RegistrationManager.RegistrationCallback>
+             mImsFeatureRegistrationCallbacks = new SparseArray<>();
++
++    /** Current MMTEL registration technology, or NONE when MMTEL is not registered. */
++    private volatile int mMmtelRegistrationTechnology =
++            ImsRegistrationImplBase.REGISTRATION_TECH_NONE;
+ 
+     /** The counter to detect back to back release/request IMS network. */
+     private @NonNull SlidingWindowEventCounter mImsThrottleCounter;
+@@ -2206,16 +2212,42 @@
+                 new RegistrationManager.RegistrationCallback() {
+                     @Override
+                     public void onRegistered(ImsRegistrationAttributes attributes) {
++                        if (subId != mSubId
++                                || mImsFeatureRegistrationCallbacks.get(imsFeature) != this) {
++                            return;
++                        }
+                         log("IMS " + DataUtils.imsFeatureToString(imsFeature)
+                                 + " registered. Attributes=" + attributes);
+                         mRegisteredImsFeatures.add(imsFeature);
++                        if (imsFeature == ImsFeature.FEATURE_MMTEL) {
++                            updateMmtelRegistrationTechnology(
++                                    attributes.getRegistrationTechnology(), subId, this);
++                        }
++                    }
++
++                    @Override
++                    public void onRegistering(ImsRegistrationAttributes attributes) {
++                        if (subId == mSubId
++                                && mImsFeatureRegistrationCallbacks.get(imsFeature) == this
++                                && imsFeature == ImsFeature.FEATURE_MMTEL) {
++                            updateMmtelRegistrationTechnology(
++                                    ImsRegistrationImplBase.REGISTRATION_TECH_NONE, subId, this);
++                        }
+                     }
+ 
+                     @Override
+                     public void onUnregistered(ImsReasonInfo info) {
++                        if (subId != mSubId
++                                || mImsFeatureRegistrationCallbacks.get(imsFeature) != this) {
++                            return;
++                        }
+                         log("IMS " + DataUtils.imsFeatureToString(imsFeature)
+                                 + " deregistered. Info=" + info);
+                         mRegisteredImsFeatures.remove(imsFeature);
++                        if (imsFeature == ImsFeature.FEATURE_MMTEL) {
++                            updateMmtelRegistrationTechnology(
++                                    ImsRegistrationImplBase.REGISTRATION_TECH_NONE, subId, this);
++                        }
+                         evaluatePendingImsDeregDataNetworks();
+                     }
+                 };
+@@ -2266,6 +2298,35 @@
+             log("Successfully unregistered " + DataUtils.imsFeatureToString(imsFeature)
+                     + " registration state. sudId=" + subId);
+             mImsFeatureRegistrationCallbacks.remove(imsFeature);
++            if (imsFeature == ImsFeature.FEATURE_MMTEL) {
++                setMmtelRegistrationTechnology(ImsRegistrationImplBase.REGISTRATION_TECH_NONE);
++            }
++        }
++    }
++
++    /** Return the cached technology without consulting IMS binder state. */
++    public int getCachedMmtelRegistrationTechnology() {
++        return mMmtelRegistrationTechnology;
++    }
++
++    private void updateMmtelRegistrationTechnology(int technology, int subId,
++            RegistrationManager.RegistrationCallback callback) {
++        if (subId != mSubId
++                || mImsFeatureRegistrationCallbacks.get(ImsFeature.FEATURE_MMTEL) != callback) {
++            return;
++        }
++        setMmtelRegistrationTechnology(technology);
++    }
++
++    private void setMmtelRegistrationTechnology(int technology) {
++        if (mMmtelRegistrationTechnology == technology) return;
++        mMmtelRegistrationTechnology = technology;
++        if (SamsungM11IwlanMtuPolicy.isM11qLegacyDevice(
++                SystemProperties.get("ro.product.device", ""),
++                SystemProperties.get("ro.telephony.iwlan_operation_mode", ""))) {
++            for (DataNetwork dataNetwork : mDataNetworkList) {
++                dataNetwork.onSamsungImsRegistrationTechnologyChanged(technology);
++            }
+         }
+     }
+ 
+@@ -2279,12 +2340,22 @@
+                 imsFeature -> new ImsStateCallback() {
+                     @Override
+                     public void onUnavailable(int reason) {
++                        if (subId != mSubId || mImsStateCallbacks.get(imsFeature) != this) {
++                            return;
++                        }
+                         // Unregister registration state update when IMS service is unbound.
++                        if (imsFeature == ImsFeature.FEATURE_MMTEL) {
++                            setMmtelRegistrationTechnology(
++                                    ImsRegistrationImplBase.REGISTRATION_TECH_NONE);
++                        }
+                         unregisterImsFeatureRegistrationState(subId, imsFeature);
+                     }
+ 
+                     @Override
+                     public void onAvailable() {
++                        if (subId != mSubId || mImsStateCallbacks.get(imsFeature) != this) {
++                            return;
++                        }
+                         mImsFeaturePackageName.put(imsFeature, ImsResolver.getInstance()
+                                 .getConfiguredImsServicePackageName(mPhone.getPhoneId(),
+                                         imsFeature));
+@@ -2294,6 +2365,12 @@
+ 
+                     @Override
+                     public void onError() {
++                        if (imsFeature == ImsFeature.FEATURE_MMTEL && subId == mSubId
++                                && mImsStateCallbacks.get(imsFeature) == this) {
++                            setMmtelRegistrationTechnology(
++                                    ImsRegistrationImplBase.REGISTRATION_TECH_NONE);
++                            unregisterImsFeatureRegistrationState(subId, imsFeature);
++                        }
+                     }
+                 };
+ 
+@@ -2320,6 +2397,8 @@
+      * @param subId Subscription index.
+      */
+     private void unregisterImsStateCallbacks(int subId) {
++        unregisterImsFeatureRegistrationState(subId, ImsFeature.FEATURE_MMTEL);
++        unregisterImsFeatureRegistrationState(subId, ImsFeature.FEATURE_RCS);
+         ImsStateCallback callback = mImsStateCallbacks.get(ImsFeature.FEATURE_MMTEL);
+         if (callback != null) {
+             mImsManager.getImsMmTelManager(subId).unregisterImsStateCallback(callback);
+@@ -2333,21 +2412,34 @@
+             mImsStateCallbacks.remove(ImsFeature.FEATURE_RCS);
+             log("Unregister RCS state on sub " + subId);
+         }
++        setMmtelRegistrationTechnology(ImsRegistrationImplBase.REGISTRATION_TECH_NONE);
+     }
+ 
+     /** Called when subscription info changed. */
+     private void onSubscriptionChanged() {
+         if (mSubId != mPhone.getSubId()) {
+-            log("onDataConfigUpdated: mSubId changed from " + mSubId + " to "
+-                    + mPhone.getSubId());
+-            if (isImsGracefulTearDownSupported()) {
+-                if (SubscriptionManager.isValidSubscriptionId(mPhone.getSubId())) {
+-                    registerImsStateCallback(mPhone.getSubId());
+-                } else {
+-                    unregisterImsStateCallbacks(mSubId);
+-                }
+-            }
+-            mSubId = mPhone.getSubId();
++            int oldSubId = mSubId;
++            int newSubId = mPhone.getSubId();
++            log("onDataConfigUpdated: mSubId changed from " + oldSubId + " to " + newSubId);
++            // Publish the new identity before registering callbacks; their initial state can be
++            // delivered immediately on this handler.
++            mSubId = newSubId;
++            setMmtelRegistrationTechnology(ImsRegistrationImplBase.REGISTRATION_TECH_NONE);
++            boolean shouldListenForImsState = isImsGracefulTearDownSupported()
++                    || SamsungM11IwlanMtuPolicy.isM11qLegacyDevice(
++                            SystemProperties.get("ro.product.device", ""),
++                            SystemProperties.get(
++                                    "ro.telephony.iwlan_operation_mode", ""));
++            if (oldSubId != newSubId
++                    && (mImsStateCallbacks.get(ImsFeature.FEATURE_MMTEL) != null
++                    || mImsStateCallbacks.get(ImsFeature.FEATURE_RCS) != null
++                    || mImsFeatureRegistrationCallbacks.get(ImsFeature.FEATURE_MMTEL) != null
++                    || mImsFeatureRegistrationCallbacks.get(ImsFeature.FEATURE_RCS) != null)) {
++                unregisterImsStateCallbacks(oldSubId);
++            }
++            if (shouldListenForImsState && SubscriptionManager.isValidSubscriptionId(newSubId)) {
++                registerImsStateCallback(newSubId);
++            }
+             updateSubscriptionPlans();
+         }
+     }
+diff --git a/src/java/com/android/internal/telephony/SamsungM11Mtu.java b/src/java/com/android/internal/telephony/SamsungM11Mtu.java
+new file mode 100644
+--- /dev/null
++++ b/src/java/com/android/internal/telephony/SamsungM11Mtu.java
+@@ -0,0 +1,33 @@
++package com.android.internal.telephony;
++
++/**
++ * Decodes a packed MTU value returned by the Samsung M11 legacy IWLAN radio path.
++ *
++ * <p>The low 16 bits carry the IPv4 MTU and the high 16 bits carry the IPv6 MTU.
++ * The legacy DataCallResponse MTU is the larger of the two family-specific values.
++ */
++final class SamsungM11Mtu {
++    private SamsungM11Mtu() {}
++
++    /** Returns values in {@code [legacy, IPv4, IPv6]} order. */
++    static int[] decodeLegacyMtu(int rawMtu) {
++        if (rawMtu <= 0xffff) {
++            // Ordinary scalar MTUs and sentinels retain RILUtils' old behavior.
++            return new int[] {rawMtu, rawMtu, rawMtu};
++        }
++
++        int mtuV4 = rawMtu & 0xffff;
++        int mtuV6 = rawMtu >>> 16;
++        if (!isValidFamilyMtu(mtuV4, 68, 10_000)
++                || !isValidFamilyMtu(mtuV6, 1_280, 10_000)
++                || (mtuV4 == 0 && mtuV6 == 0)) {
++            // Only normalize values that plausibly encode valid per-family MTUs.
++            return new int[] {rawMtu, rawMtu, rawMtu};
++        }
++        return new int[] {Math.max(mtuV4, mtuV6), mtuV4, mtuV6};
++    }
++
++    private static boolean isValidFamilyMtu(int mtu, int minimum, int maximum) {
++        return mtu == 0 || (mtu >= minimum && mtu <= maximum);
++    }
++}
+diff --git a/src/java/com/android/internal/telephony/data/SamsungM11IwlanMtuPolicy.java b/src/java/com/android/internal/telephony/data/SamsungM11IwlanMtuPolicy.java
+new file mode 100644
+--- /dev/null
++++ b/src/java/com/android/internal/telephony/data/SamsungM11IwlanMtuPolicy.java
+@@ -0,0 +1,293 @@
++package com.android.internal.telephony.data;
++
++/**
++ * Pure policy for the Samsung M11 legacy IWLAN route MTU workaround.
++ *
++ * <p>The caller supplies already-normalized, positive IPv4 and IPv6 MTUs. This class never
++ * decodes a modem's packed MTU field and never performs Android or interface I/O.
++ */
++final class SamsungM11IwlanMtuPolicy {
++    static final int IWLAN_CAP = 1400;
++    private static final int MIN_V4 = 68;
++    private static final int MIN_V6 = 1280;
++    private static final int MAX_MTU = 10_000;
++
++    private String mOwnedInterface;
++    private int mOwnedIfindex;
++    private int mOwnedCid;
++    private int mBaselineKernelMtu;
++    private int mIssuedLinkMtu;
++    private Result mLastSafeResult;
++    private boolean mRestorePending;
++    private int mPendingObservedKernelMtu;
++
++    /** Immutable policy output. Values are the route MTUs and legacy LinkProperties MTU. */
++    static final class Result {
++        final int routeMtuV4;
++        final int routeMtuV6;
++        final int linkMtu;
++        final boolean changed;
++        final boolean heldForUnknownKernel;
++
++        Result(int v4, int v6, int link, boolean changed, boolean held) {
++            routeMtuV4 = v4;
++            routeMtuV6 = v6;
++            linkMtu = link;
++            this.changed = changed;
++            heldForUnknownKernel = held;
++        }
++    }
++
++    /**
++     * Applies one event. {@code scope} means every static restriction (device, legacy mode,
++     * operator/phone match, valid subscription, IMS-only APN, and WWAN) has passed. IWLAN is
++     * specifically the current MMTEL registration technology, not a preferred transport.
++     *
++     * <p>If {@code interfaceKnown} is false, interfaceName and cid still identify the current
++     * bearer when available; a matching owned bearer retains its last safe result. An unknown
++     * index is never treated as a valid identity and cannot acquire a new lease.
++     */
++    Result evaluate(boolean scope, boolean iwlan, String interfaceName, int ifindex, int cid,
++            boolean interfaceKnown, int kernelMtu, int reportedV4, int reportedV6) {
++        Result original = new Result(reportedV4, reportedV6,
++                Math.max(reportedV4, reportedV6), false, false);
++        boolean validReported = validV4(reportedV4) && validV6(reportedV6);
++
++        if (isOwnedBearer(interfaceName, cid) && !interfaceKnown) {
++            if (mLastSafeResult != null) {
++                return held(mLastSafeResult);
++            }
++            return original;
++        }
++
++        boolean validIdentity = interfaceKnown && interfaceName != null
++                && !interfaceName.isEmpty() && ifindex > 0 && cid >= 0;
++        boolean sameIdentity = validIdentity && matchesOwned(interfaceName, ifindex, cid);
++        boolean hadOwner = mOwnedInterface != null;
++
++        // A different, known bearer cannot inherit or restore the previous bearer’s lease.
++        if (hadOwner && !sameIdentity && (validIdentity || !isOwnedBearer(interfaceName, cid))) {
++            clearLease();
++            hadOwner = false;
++        }
++
++        if (!validReported) {
++            // Invalid typed MTUs never create a cap or justify restoring a previous baseline.
++            if (hadOwner && sameIdentity && kernelMtu == mIssuedLinkMtu) {
++                Result held = mLastSafeResult;
++                if (held != null) return held(held);
++            }
++            return original;
++        }
++
++        boolean validKernel = validKernel(kernelMtu);
++        if (!validKernel) {
++            if (hadOwner && sameIdentity && mLastSafeResult != null) {
++                return held(mLastSafeResult);
++            }
++            return original;
++        }
++
++        // Both effective family MTUs are supplied by the caller. Do not emit an IPv6 route MTU
++        // below its protocol minimum, even when an unusual interface snapshot reports it.
++        if (kernelMtu < MIN_V6) {
++            if (sameIdentity && kernelMtu != mIssuedLinkMtu) clearLease();
++            return original;
++        }
++
++        int reportedMax = Math.max(reportedV4, reportedV6);
++        boolean externalChangeOnOwnedBearer = false;
++        boolean completedRestore = false;
++        if (sameIdentity && mRestorePending) {
++            if (scope && iwlan) {
++                // Re-entering IWLAN before the requested restore is observed keeps the original
++                // baseline and resumes the cap lease from the current observed value.
++                if (kernelMtu == mPendingObservedKernelMtu || kernelMtu == mIssuedLinkMtu) {
++                    mRestorePending = false;
++                    mIssuedLinkMtu = kernelMtu;
++                } else {
++                    clearLease();
++                    hadOwner = false;
++                    sameIdentity = false;
++                }
++            } else if (kernelMtu == mPendingObservedKernelMtu) {
++                int target = Math.min(mBaselineKernelMtu, reportedMax);
++                Result pending = new Result(Math.min(reportedV4, target),
++                        Math.min(reportedV6, target), target, true, false);
++                if (target == kernelMtu) {
++                    clearLease();
++                    return pending;
++                }
++                mIssuedLinkMtu = target;
++                mLastSafeResult = pending;
++                return pending;
++            } else if (kernelMtu == mIssuedLinkMtu) {
++                clearLease();
++                hadOwner = false;
++                sameIdentity = false;
++                completedRestore = true;
++            } else {
++                clearLease();
++                hadOwner = false;
++                sameIdentity = false;
++                externalChangeOnOwnedBearer = true;
++            }
++        } else {
++            externalChangeOnOwnedBearer = sameIdentity && kernelMtu != mIssuedLinkMtu;
++        }
++        if (externalChangeOnOwnedBearer) {
++            // An external kernel change revokes our ownership. It is authoritative and is never
++            // raised, including when it is a smaller native value such as 1310.
++            clearLease();
++            hadOwner = false;
++            sameIdentity = false;
++        }
++
++        if (scope && iwlan && validIdentity) {
++            int normalLink = Math.min(reportedMax, kernelMtu);
++            int link = Math.min(normalLink, IWLAN_CAP);
++            int v4 = Math.min(reportedV4, link);
++            int v6 = Math.min(reportedV6, link);
++            if (sameIdentity) {
++                // Keep the original baseline while the observed interface matches the last
++                // target we issued. The newly computed target may be unchanged.
++                mRestorePending = false;
++                mIssuedLinkMtu = link;
++            } else if (kernelMtu > link) {
++                mOwnedInterface = interfaceName;
++                mOwnedIfindex = ifindex;
++                mOwnedCid = cid;
++                mBaselineKernelMtu = kernelMtu;
++                mIssuedLinkMtu = link;
++            }
++            Result result = new Result(v4, v6, link, true, false);
++            if (mOwnedInterface != null && matchesOwned(interfaceName, ifindex, cid)) {
++                mLastSafeResult = result;
++            }
++            return result;
++        }
++
++        if (hadOwner && sameIdentity) {
++            // Leaving scope restores only a baseline still owned by us, and only up to the
++            // currently reported MTU. The current kernel value must still equal our target.
++            int restored = Math.min(mBaselineKernelMtu, reportedMax);
++            int link = restored;
++            int v4 = Math.min(reportedV4, link);
++            int v6 = Math.min(reportedV6, link);
++            Result restore = new Result(v4, v6, link, true, false);
++            if (link != kernelMtu) {
++                // LinkProperties carries an issued restore target. Keep it pending across
++                // subsequent data-network events until the interface reports that value.
++                mRestorePending = true;
++                mPendingObservedKernelMtu = kernelMtu;
++                mIssuedLinkMtu = link;
++                mLastSafeResult = restore;
++            } else {
++                clearLease();
++            }
++            return restore;
++        }
++
++        if (externalChangeOnOwnedBearer || completedRestore) {
++            int link = Math.min(reportedMax, kernelMtu);
++            return new Result(Math.min(reportedV4, link), Math.min(reportedV6, link), link,
++                    true, false);
++        }
++
++        // For eligible M11 IMS outside IWLAN, respect a smaller observed kernel MTU. All other
++        // profiles/devices retain the original route and legacy MTUs.
++        if (scope && validIdentity) {
++            int link = Math.min(reportedMax, kernelMtu);
++            return new Result(Math.min(reportedV4, link), Math.min(reportedV6, link), link,
++                    link != reportedMax, false);
++        }
++        return original;
++    }
++
++    void reset() {
++        clearLease();
++    }
++
++    boolean hasLease() {
++        return mOwnedInterface != null;
++    }
++
++    private Result held(Result result) {
++        return new Result(result.routeMtuV4, result.routeMtuV6, result.linkMtu,
++                result.changed, true);
++    }
++
++    private boolean isOwnedBearer(String interfaceName, int cid) {
++        return mOwnedInterface != null && mOwnedInterface.equals(interfaceName)
++                && mOwnedCid == cid;
++    }
++
++    private boolean matchesOwned(String interfaceName, int ifindex, int cid) {
++        return mOwnedInterface != null && mOwnedInterface.equals(interfaceName)
++                && mOwnedIfindex == ifindex && mOwnedCid == cid;
++    }
++
++    private void clearLease() {
++        mOwnedInterface = null;
++        mOwnedIfindex = 0;
++        mOwnedCid = -1;
++        mBaselineKernelMtu = 0;
++        mIssuedLinkMtu = 0;
++        mLastSafeResult = null;
++        mRestorePending = false;
++        mPendingObservedKernelMtu = 0;
++    }
++
++    static boolean isApplicable(String device, String operationMode, String operatorNumerics,
++            int phoneId, boolean validSubId, boolean dedicatedImsApn, int transportWwan,
++            int currentTransport) {
++        return "m11q".equals(device) && "legacy".equals(operationMode)
++                && hasSingleOperatorForPhone(operatorNumerics, phoneId) && validSubId
++                && dedicatedImsApn && transportWwan == currentTransport;
++    }
++
++    static boolean isM11qLegacyDevice(String device, String operationMode) {
++        return "m11q".equals(device) && "legacy".equals(operationMode);
++    }
++
++    /** Accept only one populated numeric in slots 0/1, attached to the matching phone slot. */
++    static boolean hasSingleOperatorForPhone(String operatorNumerics, int phoneId) {
++        if (operatorNumerics == null || (phoneId != 0 && phoneId != 1)) return false;
++        String[] slots = operatorNumerics.split(",", -1);
++        if (slots.length > 2) {
++            for (int i = 2; i < slots.length; i++) {
++                if (!slots[i].trim().isEmpty()) return false;
++            }
++        }
++        int populated = 0;
++        int populatedSlot = -1;
++        for (int i = 0; i < Math.min(slots.length, 2); i++) {
++            String value = slots[i].trim();
++            if (value.isEmpty()) continue;
++            populated++;
++            populatedSlot = i;
++            if (!isOperatorNumeric(value)) return false;
++        }
++        return populated == 1 && populatedSlot == phoneId;
++    }
++
++    private static boolean isOperatorNumeric(String value) {
++        if (value.length() < 5 || value.length() > 6) return false;
++        for (int i = 0; i < value.length(); i++) {
++            if (value.charAt(i) < '0' || value.charAt(i) > '9') return false;
++        }
++        return true;
++    }
++
++    private static boolean validV4(int value) {
++        return value >= MIN_V4 && value <= MAX_MTU;
++    }
++
++    private static boolean validV6(int value) {
++        return value >= MIN_V6 && value <= MAX_MTU;
++    }
++
++    private static boolean validKernel(int value) {
++        return value >= MIN_V4 && value <= MAX_MTU;
++    }
++}
