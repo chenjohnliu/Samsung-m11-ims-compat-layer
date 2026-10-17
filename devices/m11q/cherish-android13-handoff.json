@@ -47,9 +47,9 @@
     {
       "name": "android_packages_services_Telecomm",
       "url": "https://github.com/chenjohnliu/android_packages_services_Telecomm.git",
-      "ref": "m11q-vowifi-audio-path",
+      "ref": "refs/tags/archive/m11q-vowifi-audio-path-20261017",
       "revision": "8e1a9a333a5692343f8bede5a2fe2dcac0d44489",
-      "role": "Android Telecom audio-path source."
+      "role": "Historical donor provenance; the current Cherish pin is recorded in devices/m11q/cherish-source-index.json."
     },
     {
       "name": "android_kernel_samsung_sdm450",

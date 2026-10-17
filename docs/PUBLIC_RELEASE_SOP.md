@@ -505,8 +505,8 @@ Remaining reproducibility work:
   that fails before making partial changes.
 - Carry the published crDroid Telecom and m11q incoming-media commits in the
   clean-checkout workflow. The local manifest must pin Telecom commit
-  `66d3d91d238436c9a04cd4b653f3db02db4f901e` from branch
-  `m11q-vowifi-audio-path` before `repo sync`; see the restoration guide. Test
+  `66d3d91d238436c9a04cd4b653f3db02db4f901e`, preserved by tag
+  `archive/m11q-vowifi-audio-path-20261017`, before `repo sync`; see the restoration guide. Test
   the carrier policy on each listed PLMN before claiming broader
   cross-ROM/carrier support.
 

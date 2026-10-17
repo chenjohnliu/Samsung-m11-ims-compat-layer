@@ -36,4 +36,4 @@ evidence remain recorded in [the emergency audit](EMERGENCY_CALLING_AUDIT.md).
 
 The full local inventory contained 14 regular files, including 13 patches: these three IMS-related patches and ten non-IMS patches. The non-IMS group comprises eight build/product/app/OTA customization patches and two microG patches (one saved under `crdroid`). Local files remain useful copies; the three IMS patches now also have exact public copies and hashes here.
 
-The non-IMS `microg_play_integrity.patch` is omitted from this IMS supplement. Its four public commits already exist on [the frameworks/base m11q-volte branch](https://github.com/chenjohnliu/android_frameworks_base/tree/m11q-volte): `eaf637ff`, `253643b4`, `b1fc884b`, and `b205e278`.
+The non-IMS `microg_play_integrity.patch` is omitted from this IMS supplement. Its four public commits are preserved by the [frameworks/base archive tag](https://github.com/chenjohnliu/android_frameworks_base/tree/archive/m11q-volte-20261017): `eaf637ff`, `253643b4`, `b1fc884b`, and `b205e278`.

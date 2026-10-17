@@ -55,15 +55,12 @@ project. The baseline is not an additional layer on top of the historical
 
 ## Older forks and historical checkpoints
 
-The `m11q-emergency-capability-mask` ref and the `m11q-volte` refs for
-`frameworks/opt/telephony`, `packages/services/Telephony` and `system/netd` were
-retired on 2026-10-17 and preserved as lightweight tags at their recorded donor
-commits. Their archive tags and exact SHAs are listed in the
-[branch retirement record](M11Q_BRANCH_RETIREMENT_20261017.md) and the
-machine-readable index. The `frameworks/base:m11q-volte` ref remains for its
-separate microG and Play Integrity history; the device-tree `m11q-volte` ref
-remains the live default and release target; and the Telecom
-`m11q-vowifi-audio-path` ref remains for the crDroid replay path.
+Six non-current platform donor refs were retired on 2026-10-17 and preserved by
+archive tags at their recorded commits. Their archive tags and exact SHAs
+are listed in the [branch retirement record](M11Q_BRANCH_RETIREMENT_20261017.md)
+and machine-readable index. The six platform repositories use
+`cherish-13-m11q-ims` as their default branch. The device repository retains
+`m11q-volte` as its default and release branch.
 
 None of these donor refs identifies the current Cherish integration. In
 particular, the old Telecom donor follows a LineageOS-derived base; its changes
@@ -78,7 +75,7 @@ state explicit. For the remaining dependencies, Cherish's locked manifest itself
 selects some LineageOS or AOSP projects; their source origin does not turn the
 target ROM into crDroid or require a second repository for the same source pin.
 
-The `frameworks/base:m11q-volte` donor also contains microG and Play Integrity
+The frameworks/base donor history also contains microG and Play Integrity
 changes outside the IMS checkpoint. This index describes the IMS source recipe;
 it does not silently import those separate customizations or claim an exact
 snapshot of every file in a previously built ROM.
@@ -86,13 +83,14 @@ snapshot of every file in a previously built ROM.
 The Telecom repository was recreated at the same URL as a direct fork of
 `CherishOS/android_packages_services_Telecomm`, replacing its earlier crDroid
 fork relationship. Its default branch is `cherish-13-m11q-ims`. The current
-Cherish integration commit and the historical `m11q-vowifi-audio-path` commit
-were restored unchanged; the 29 inherited crDroid branches remain in the
-verified local backup rather than being republished. See the
+Cherish integration commit and historical donor commit were restored unchanged;
+the latter is preserved by the archive tag in the retirement record. The 29
+inherited crDroid branches remain in the verified local backup rather than
+being republished. See the
 [fork-origin verification record](../devices/m11q/telecomm-fork-origin.json).
 
-The remaining repositories were retained: the five other platform forks
-already have CherishOS parents, and the device fork remains based on ifoodplayer.
+The five other platform forks already have CherishOS parents, and the device
+fork remains based on ifoodplayer with its existing branch arrangement.
 Checkpoint and APK hash contracts, source commit pins and patch paths stay
 stable so the existing integration recipe and historical M11 links continue
 to work.

@@ -44,6 +44,10 @@
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_base",
         "branch": "m11q-volte",
+        "ref_status": "archived_as_tag",
+        "archive_tag": "archive/m11q-volte-20261017",
+        "archive_commit": "73178bfc7d1e81b64b02d2b24c14ef24a8a1ecdf",
+        "retired_date": "2026-10-17",
         "recorded_commits": [
           "73178bfc7d1e81b64b02d2b24c14ef24a8a1ecdf"
         ],
@@ -326,6 +330,10 @@
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_packages_services_Telecomm",
         "branch": "m11q-vowifi-audio-path",
+        "ref_status": "archived_as_tag",
+        "archive_tag": "archive/m11q-vowifi-audio-path-20261017",
+        "archive_commit": "8e1a9a333a5692343f8bede5a2fe2dcac0d44489",
+        "retired_date": "2026-10-17",
         "recorded_commits": [
           "66d3d91d238436c9a04cd4b653f3db02db4f901e",
           "8e1a9a333a5692343f8bede5a2fe2dcac0d44489"

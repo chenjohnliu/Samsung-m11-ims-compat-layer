@@ -42,7 +42,7 @@ SIM1 與 SIM2 是分開測試的，兩者沒有同時啟用 IMS。這不代表�
 
 ## 從哪裡開始
 
-**想找完整原始碼或 patch：**先看[原始碼與 patch 總索引](docs/SOURCE_INDEX.md)。六個平台 fork 與裝置樹的 Cherish 分支統一為 `cherish-13-m11q-ims`；總表列出固定 commit 與對應 patch。使用該完整分支後，同一專案的 patch 不需要再套一次。其餘七個上游專案依總表的固定版本與 patch 順序整合；四個舊分支已轉為封存 tag，另三個仍有獨立用途而保留，詳見[分支整理紀錄](docs/M11Q_BRANCH_RETIREMENT_20261017.md)。
+**想找完整原始碼或 patch：**先看[原始碼與 patch 總索引](docs/SOURCE_INDEX.md)。六個平台 fork 的預設分支為 `cherish-13-m11q-ims`；總表列出固定 commit 與對應 patch。裝置樹另依其現有分支及固定 commit 使用。使用完整 Cherish 分支後，同一專案的 patch 不需要再套一次。其餘七個上游專案依總表的固定版本與 patch 順序整合；六個舊平台分支已改由封存 tag 保存，詳見[分支整理紀錄](docs/M11Q_BRANCH_RETIREMENT_20261017.md)。
 
 **想使用 ROM：**下載 [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) 或 [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid) 版本，並依照各版本的安裝說明操作。本專案不提供可直接刷入的套件。
 

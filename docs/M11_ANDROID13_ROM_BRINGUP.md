@@ -143,7 +143,8 @@ donor branch for that synchronized Cherish source route. The device
 crDroid port described below.
 
 For the historical crDroid port, use the public M11 device-tree `m11q-volte`
-branch at its recorded handoff revision. Its IMS integration history is present through `97206c0e`;
+branch at its recorded handoff revision. Its IMS integration history is
+present through `97206c0e`;
 [`9aebafe`](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/9aebafee57492a75cadd115ae80ea21db378a760)
 updates the payload verifier and generation instructions. The historical
 `d11cbe58` policy described below is retired; do not select it as the current
@@ -172,13 +173,14 @@ refs based on CherishOS, and the manually adapted crDroid source revisions.
 For a matching CherishOS checkout, require clean Git trees and confirm each
 checkout is at the recorded base revision before using the commands below to
 replay only the IMS commits in order. Do not switch an entire project to the
-fork branch: `frameworks/base:m11q-volte` also contains unrelated microG and
-Play Integrity changes. This command sequence is reconstructed from the public
-commit map and has not been replayed from a fresh checkout in this task.
+fork branch: the frameworks/base donor commit also contains unrelated microG
+and Play Integrity changes. This command sequence is reconstructed from the
+public commit map and has not been replayed from a fresh checkout in this task.
 
 ```bash
 git -C frameworks/base fetch \
-  https://github.com/chenjohnliu/android_frameworks_base.git m11q-volte
+  https://github.com/chenjohnliu/android_frameworks_base.git \
+  refs/tags/archive/m11q-volte-20261017
 git -C frameworks/base cherry-pick \
   e9346dd40f6095d85c8ac90f46e935ab7c60e240 \
   15a303b8fa069ff03b6aa9a0964067b152742fac \
@@ -238,9 +240,9 @@ baselines, integrate the M11 payload/device files, restore the paired
 framework/netd/Telephony changes, then add the crDroid-specific incoming-WFC
 audio fix. The crDroid Telecom change must be pinned in the local manifest
 before `repo sync`: use
-`chenjohnliu/android_packages_services_Telecomm` at branch
-`m11q-vowifi-audio-path`, revision
-`66d3d91d238436c9a04cd4b653f3db02db4f901e`. The existing ROM project at
+`chenjohnliu/android_packages_services_Telecomm` at revision
+`66d3d91d238436c9a04cd4b653f3db02db4f901e`, preserved by tag
+`archive/m11q-vowifi-audio-path-20261017`. The existing ROM project at
 `packages/services/Telecomm` must be replaced using its manifest project
 identity. The corresponding M11 resource and SELinux integration is in device
 tree commit `29fc1533`; without the manifest pin, a later sync can reset the

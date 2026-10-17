@@ -1,8 +1,8 @@
 # M11Q branch retirement, 2026-10-17
 
-Four historical donor branches were retired after their exact tips were
-preserved as archive tags in the same repositories. Three other donor branches
-remain for distinct source or release-history reasons. All seven
+Six non-current platform donor branches were retired after their exact tips
+were preserved as archive tags in the same repositories. The device-tree
+`m11q-volte` branch remains active by explicit user preference. All seven
 `cherish-13-m11q-ims` commits remain at the pins in the
 [source index](SOURCE_INDEX.md); this housekeeping does not change Android
 source trees or provide new device validation.
@@ -15,6 +15,8 @@ source trees or provide new device validation.
 | [android_frameworks_opt_telephony](https://github.com/chenjohnliu/android_frameworks_opt_telephony) | `m11q-volte` | `archive/m11q-volte-20261017` | [6c209a7d4fb239e8c8826d1c303f26dd6417dd5a](https://github.com/chenjohnliu/android_frameworks_opt_telephony/commit/6c209a7d4fb239e8c8826d1c303f26dd6417dd5a) |
 | [android_packages_services_Telephony](https://github.com/chenjohnliu/android_packages_services_Telephony) | `m11q-volte` | `archive/m11q-volte-20261017` | [26d0551acfa76e1fbcbc63e1114327e578badef7](https://github.com/chenjohnliu/android_packages_services_Telephony/commit/26d0551acfa76e1fbcbc63e1114327e578badef7) |
 | [android_system_netd](https://github.com/chenjohnliu/android_system_netd) | `m11q-volte` | `archive/m11q-volte-20261017` | [8e455b91f8aa5b52771fbcf0250a7181f16ec43e](https://github.com/chenjohnliu/android_system_netd/commit/8e455b91f8aa5b52771fbcf0250a7181f16ec43e) |
+| [android_frameworks_base](https://github.com/chenjohnliu/android_frameworks_base) | `m11q-volte` | `archive/m11q-volte-20261017` | [73178bfc7d1e81b64b02d2b24c14ef24a8a1ecdf](https://github.com/chenjohnliu/android_frameworks_base/commit/73178bfc7d1e81b64b02d2b24c14ef24a8a1ecdf) |
+| [android_packages_services_Telecomm](https://github.com/chenjohnliu/android_packages_services_Telecomm) | `m11q-vowifi-audio-path` | `archive/m11q-vowifi-audio-path-20261017` | [8e1a9a333a5692343f8bede5a2fe2dcac0d44489](https://github.com/chenjohnliu/android_packages_services_Telecomm/commit/8e1a9a333a5692343f8bede5a2fe2dcac0d44489) |
 
 The IMS framework donor and the synchronized Cherish commit have identical
 complete trees (`7debdb23edb288a03ae7ec5550b0ced2711be7b8`), as do the netd pair
@@ -26,7 +28,7 @@ companion, and the phone service's single-active-SIM fallback, remain in the
 current patch recipe. Archive tags preserve the original implementations and
 their ancestry independently of those adaptations.
 
-At the time of removal, none of these four refs was a default or protected
+At the time of removal, none of these six refs was a default or protected
 branch, an open PR head/base in the fork, or a release target. Each archive tag
 was checked against the original full commit SHA before removal. Branch
 deletions used an expected-head lease so a concurrent new commit would stop
@@ -34,22 +36,25 @@ the operation. The tags and all seven current Cherish pins were checked again
 afterward. No repository, upstream branch, release or existing release tag
 was deleted.
 
-## Branches retained
+The two additional archive tags preserve histories that still serve as
+references: frameworks/base contains microG / Play Integrity changes, and
+Telecom contains the crDroid incoming-audio donor. These donor histories are
+not the current Cherish build route and should not be imported wholesale into
+`cherish-13-m11q-ims`.
+
+## Branch retained
 
 | Repository and branch | Observed tip | Reason |
 | --- | --- | --- |
-| `android_frameworks_base:m11q-volte` | `73178bfc7d1e81b64b02d2b24c14ef24a8a1ecdf` | Contains additional microG / Play Integrity history outside the IMS checkpoint. It is not a redundant copy of the Cherish IMS branch. |
-| `android_packages_services_Telecomm:m11q-vowifi-audio-path` | `8e1a9a333a5692343f8bede5a2fe2dcac0d44489` | The historical crDroid restoration instructions still use this LineageOS-derived donor history, including the earlier `66d3d91d238436c9a04cd4b653f3db02db4f901e` pin. Cherish has an adapted implementation; complete donor equivalence was not established. |
-| `android_device_samsung_m11q:m11q-volte` | `47722f9924a85c73c319eeaae652b46d188de74a` | Still the repository default and the `target_commitish` of release `20261010-13-CrDroid`. It also includes release-history documentation absent from the indexed Cherish tree. The actual release tag remains its fixed source identity. |
+| `android_device_samsung_m11q:m11q-volte` | `47722f9924a85c73c319eeaae652b46d188de74a` | Retained by explicit user preference as the device repository's default/release branch, including release-history documentation absent from the indexed Cherish tree. The `20261010-13-CrDroid` release tag and assets remain unchanged. |
 
-These are historical donor or release branches, not the current Cherish build
-route. Keeping them does not mean their entire contents should be imported
-into `cherish-13-m11q-ims`.
+The device-tree branch remains the existing default and release target; the
+six platform repositories use `cherish-13-m11q-ims` as their default.
 
 ## Reference updates and recovery
 
 - [ROM bring-up](M11_ANDROID13_ROM_BRINGUP.md) directs current Cherish integration
-  to the seven indexed pins and fetches the four retired donors by archive tag
+  to the seven indexed pins and fetches retired platform donors by archive tag
   in its historical replay example.
 - [The machine-readable index](../devices/m11q/cherish-source-index.json) keeps
   each original donor branch name and recorded SHA as provenance and adds the

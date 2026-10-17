@@ -175,13 +175,13 @@ branch head.
 | [`android_system_netd`](https://github.com/chenjohnliu/android_system_netd) | `m11q-volte` / `8e455b91` | `0a1e4b250e79` | [`8e455b91`](https://github.com/chenjohnliu/android_system_netd/commit/8e455b91f8aa5b52771fbcf0250a7181f16ec43e) |
 
 The branch names in this table describe the recorded donor history. On
-2026-10-17, the four donor refs other than `frameworks/base` were replaced by
-archive tags at the same exact commits. Use the tag fetches in the
+2026-10-17, all five donor refs were retired and preserved by archive tags at
+the same exact commits. Use the tag fetches in the
 [bring-up guide](M11_ANDROID13_ROM_BRINGUP.md) and the
 [retirement record](M11Q_BRANCH_RETIREMENT_20261017.md); the commit links above
 continue to identify the original source.
 
-The `android_frameworks_base:m11q-volte` branch also contains microG and Play
+The `android_frameworks_base` donor commit also contains microG and Play
 Integrity changes between the Samsung API commit and the ePDG commits. Those
 commits are unrelated to IMS and were not restored.
 
@@ -280,9 +280,10 @@ ROM revisions in the baseline table.
 6. Add the incoming-VoWiFi media correction after the base port: pin
    `packages/services/Telecomm` to the published
    `chenjohnliu/android_packages_services_Telecomm` commit
-   `66d3d91d238436c9a04cd4b653f3db02db4f901e` on
-   `m11q-vowifi-audio-path`, and include device-tree commit `29fc1533` or its
-   equivalent m11q-gated resource and SELinux changes. The local manifest must
+   `66d3d91d238436c9a04cd4b653f3db02db4f901e`, preserved by the
+   `archive/m11q-vowifi-audio-path-20261017` tag, and include device-tree commit
+   `29fc1533` or its equivalent m11q-gated resource and SELinux changes. The
+   local manifest must
    replace the ROM's existing Telecomm project identity before `repo sync`;
    otherwise syncing can discard the fork checkout.
 7. Historical note: the Taiwan Mobile idle WFC-to-LTE workaround was separate
