@@ -22,3 +22,46 @@ bash tools/diagnostics/test_ims_media_probe.sh
 The collectors retain their original local path defaults. Review each script's
 options and paths before using it on a different machine. No script is run
 automatically by committing these sources.
+
+## Wi-Fi cycle capture privacy
+
+`capture_ims_wifi_cycle_termux.sh` is a standalone Bash/Termux collector; its
+redactor uses Termux GNU sed, with no Python dependency on the phone. It also
+requires coreutils `od` to generate a per-capture address fingerprint salt.
+
+The Wi-Fi cycle collector keeps raw logcat, dumps, runtime identity, and user
+observations under `_PRIVATE_DO_NOT_SHARE/`. `PRIVATE_FULL_CAPTURE.tar.gz`
+archives those original bytes before share sanitization is attempted. Neither
+that directory nor that archive is safe to publish. Keep the whole capture
+directory private: `SHARE_THIS/` can still contain unsanitized or partially
+sanitized text after an interrupted or failed run.
+
+Only `SHARE_THIS.tar.gz` is the intended sharing artifact. Its text files are
+sanitized again before packing. Unexpected directories, symlinks, NUL-containing
+files, identifier-like filenames, and sanitization failures stop publication.
+The share tar is written to a temporary file and renamed only after tar succeeds;
+capture directories are never reused. Use neutral snapshot labels such as
+`a_baseline`, not names, phone numbers, or subscriber identifiers.
+
+The redactor covers common labelled IMSI/ICCID/IMEI/IMPI/IMPU aliases, quoted and
+array values, SIP/TEL URIs and identity/authentication headers, NAI/email values,
+Taiwan mobile/landline and international formatted phone numbers, MAC, IPv4,
+and full/compressed/mixed IPv6 addresses with scope identifiers. Clock and ISO
+timestamps, fault codes such as 503/5065, RAT/slot/call IDs, and handover markers
+remain available. Address-line fingerprints are salted within each capture;
+the salt is private, so use them for comparisons within that run, not across runs.
+
+This is heuristic redaction, not a guarantee of anonymity. Unlabelled names,
+free text, escaped/multiline/encoded values, unusual phone formats, and unknown
+credential formats can escape filtering. Some ambiguous numeric text or header
+content may be removed. Device/build/operator details and event timing can still
+identify a capture indirectly. Manually review every share archive before
+publishing. This change does not sanitize other collectors, existing captures,
+or Git history; `.gitignore` also does not remove already tracked data.
+
+Host regression tests use invented fixtures and fake Android commands only:
+
+```sh
+python3 -m unittest discover -s tests -p test_ims_wifi_cycle_privacy.py -v
+bash -n tools/diagnostics/capture_ims_wifi_cycle_termux.sh
+```

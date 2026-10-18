@@ -39,7 +39,12 @@ OBSERVATIONS="$SHARE_ROOT/USER_OBSERVATIONS.tsv"
 ROOT_LOGCAT_PID=""
 WAKE_LOCK_HELD="false"
 
-mkdir -p "$SHARE_ROOT" "$PRIVATE_ROOT"
+mkdir -p "$OUTPUT_ROOT"
+if ! mkdir -m 700 "$CAPTURE_ROOT"; then
+    printf '擷取目錄已存在或無法建立；請稍後重試或換輸出目錄。\n' >&2
+    exit 1
+fi
+mkdir -m 700 "$SHARE_ROOT" "$PRIVATE_ROOT"
 
 cleanup() {
     if [ -n "$ROOT_LOGCAT_PID" ]; then
@@ -66,7 +71,9 @@ require_command grep
 require_command sed
 require_command mv
 require_command rmdir
+require_command rm
 require_command sha256sum
+require_command od
 
 if command -v termux-wake-lock >/dev/null 2>&1; then
     termux-wake-lock >/dev/null 2>&1 || true
@@ -81,6 +88,16 @@ case "$ROOT_ID" in
         exit 1
         ;;
 esac
+
+# Salt address fingerprints per capture: keep continuity within this run without
+# publishing an unsalted hash that can be brute-forced against IPv4 addresses.
+ADDRESS_FINGERPRINT_SALT="$(od -An -N32 -tx1 -w32 /dev/urandom)"
+ADDRESS_FINGERPRINT_SALT="$(printf '%s' "$ADDRESS_FINGERPRINT_SALT" | sed 's/[[:space:]]//g')"
+if ! printf '%s\n' "$ADDRESS_FINGERPRINT_SALT" | grep -Eq '^[0-9a-f]{64}$'; then
+    printf 'Unable to generate address fingerprint salt.\n' >&2
+    exit 1
+fi
+printf '%s\n' "$ADDRESS_FINGERPRINT_SALT" >"$PRIVATE_ROOT/address_fingerprint_salt.txt"
 
 add_marker() {
     marker="$1_$(date +%Y%m%d_%H%M%S)"
@@ -99,21 +116,40 @@ capture_private() {
 }
 
 redact_stream() {
-    # SHARE_THIS is best effort; inspect it before publishing.
-    sed -E \
+    # Termux sed only: no Python/Perl dependency on the phone.
+    # IPv6 requires either :: compression or eight groups (six with a v4 tail).
+    # A clock such as 12:34:56.789 is NOT an IPv6 address.
+    local h='[[:xdigit:]]{1,4}' v4='([0-9]{1,3}\.){3}[0-9]{1,3}' ipv6 mixed fields
+    ipv6="($h:){7}$h|($h:){1,7}:|($h:){1,6}:$h|($h:){1,5}(:$h){1,2}|($h:){1,4}(:$h){1,3}|($h:){1,3}(:$h){1,4}|($h:){1,2}(:$h){1,5}|$h:((:$h){1,6})|:((:$h){1,7}|:)"
+    mixed="($h:){6}$v4|::($h:){0,5}$v4|($h:){1,5}:($h:){0,4}$v4"
+    fields='m?(imsi|icc_?id|imei(sv)?|impi|impu|msisdn|subscriber_?id|line1number|phone(_?number)?|caller|callee|dial_?number|sim_?serial_?number|android_?id|serial(no|_?number)?|bssid|ssid|nai|private_?identity|public_?identity|impi_list|impu_list)[0-9]?'
+    # First remove structured values, including quotes, arrays and spaced numbers.
+    # Then remove addresses before long numbers, so numeric IPv6 groups stay intact.
+    LC_ALL=C sed -E \
+        -e "s#(^|[^[:alnum:]_])($fields)[\"']?[[:space:]]*[:=][[:space:]]*(\"[^\"]*\"|'[^']*'|\[[^]]*\]|[+]?[0-9][0-9 ()+.-]*[0-9]|[^,;[:space:]}]+)#\1\2=[redacted-field]#gI" \
+        -e 's#((^|[[:space:]])(From|To|Contact|P-Asserted-Identity|P-Preferred-Identity|P-Associated-URI|Authorization|Proxy-Authorization):).*#\1 [redacted-header]#gI' \
+        -e 's#((sip[s]?|tel):)[+]?[0-9]([ .()-]*[0-9]){8,}#\1[redacted-phone]#gI' \
+        -e ':localphones' \
+        -e 's#(^|[^[:alnum:]:.])((\+?886[ .()-]*0?|0)9([ .()-]*[0-9]){8})([^[:alnum:]]|$)#\1[redacted-phone]\5#g' \
+        -e 't localphones' \
+        -e ':phones' \
+        -e 's#(^|[^[:alnum:]:.])((\+[1-9]|00[1-9]|886|0)[ .()-]*[0-9]([ .()-]*[0-9]){7,})([^[:alnum:]]|$)#\1[redacted-phone]\5#g' \
+        -e 't phones' \
         -e 's#([sS][iI][pP][sS]?:|[tT][eE][lL]:)[^[:space:]"<>]+#\1[redacted-uri]#g' \
         -e 's#[Uu][Rr][Nn]:[Gg][Ss][Mm][Aa]:[Ii][Mm][Ee][Ii]:[^,;[:space:]]+#[redacted-imei-urn]#g' \
-        -e 's#([[:alnum:]_.%+-]+)@([[:alnum:]-]+\.)+[[:alpha:]]{2,}#[redacted-identity]#g' \
-        -e 's#(^|[^[:alnum:]_])(imsi|iccid|imei|impi|impu|msisdn|subscriberid|subscriber_id|android_id|serialnumber|serial_number|bssid|ssid|p-asserted-identity)[[:space:]]*[:=][[:space:]]*("[^"]*"|[^,;[:space:]]+)#\1\2=[redacted-field]#gI' \
-        -e 's#[0-9]{9,}#[redacted-number]#g' \
+        -e 's#[[:alnum:]_.%+-]+@[[:alnum:]_.:%-]+#[redacted-identity]#g' \
+        -e "s#(^|[^[:alnum:]_])($mixed)(%[[:alnum:]_.-]+)?#\1[redacted-ipv6]#g" \
+        -e "s#(^|[^[:alnum:]_])($ipv6)(%[[:alnum:]_.-]+)?#\1[redacted-ipv6]#g" \
+        -e "s#$v4#[redacted-ipv4]#g" \
         -e 's#([[:xdigit:]]{2}[:-]){5}[[:xdigit:]]{2}#[redacted-mac]#g' \
-        -e 's#([0-9]{1,3}\.){3}[0-9]{1,3}#[redacted-ipv4]#g' \
-        -e 's#([[:xdigit:]]{1,4}:){2,}[[:xdigit:]:]*(%[[:alnum:]_.-]+)?#[redacted-ipv6]#g'
+        -e ':numbers' \
+        -e 's#(^|[^[:alnum:].])\+?[0-9]{9,}[Ff]?([^[:alnum:]]|$)#\1[redacted-number]\2#g' \
+        -e 't numbers'
 }
 
 sanitize_share_files() {
     # Refuse publication if share files are unexpected or sanitization fails.
-    local staging="$CAPTURE_ROOT/.share-sanitized" share_file
+    local staging="$CAPTURE_ROOT/.share-sanitized" share_file share_name safe_name
     if [ -e "$staging" ] || [ -L "$staging" ]; then
         printf 'Share staging path already exists: %s\n' "$staging" >&2
         return 1
@@ -125,7 +161,26 @@ sanitize_share_files() {
             printf 'Refusing non-regular share item: %s\n' "$share_file" >&2
             return 1
         fi
-        redact_stream <"$share_file" >"$staging/${share_file##*/}" || return 1
+        share_name="${share_file##*/}"
+        # Filenames are public too. Refuse unsafe labels rather than leak them.
+        case "$share_name" in
+            *[!a-zA-Z0-9_.-]*) printf 'Unsafe share filename; use a neutral snapshot label.\n' >&2; return 1 ;;
+        esac
+        if printf '%s\n' "$share_name" | grep -Eq '([0-9][._-]*){9,}'; then
+            printf 'Identifier-like share filename; use a neutral snapshot label.\n' >&2
+            return 1
+        fi
+        safe_name="$(printf '%s\n' "$share_name" | redact_stream)" || return 1
+        if [ "$safe_name" != "$share_name" ]; then
+            printf 'Sensitive share filename; use a neutral snapshot label.\n' >&2
+            return 1
+        fi
+        # NUL bytes indicate binary input, which sed cannot safely sanitize.
+        if IFS= read -r -d '' _binary_prefix <"$share_file"; then
+            printf 'Refusing binary share item.\n' >&2
+            return 1
+        fi
+        redact_stream <"$share_file" >"$staging/$share_name" || return 1
     done
     for share_file in "$staging"/* "$staging"/.[!.]* "$staging"/..?*; do
         [ -f "$share_file" ] || continue
@@ -232,8 +287,8 @@ snapshot() {
             remainder="${line#* }"
             remainder="${remainder#${remainder%%[! ]*}}"
             state="${remainder%% *}"
-            fingerprint="$(printf '%s' "$line" | sha256sum | sed 's/[[:space:]].*//')"
-            printf '%s state=%s full_line_sha256=%s\n' "$name" "$state" "$fingerprint"
+            fingerprint="$(printf '%s\n%s' "$ADDRESS_FINGERPRINT_SALT" "$line" | sha256sum | sed 's/[[:space:]].*//')"
+            printf '%s state=%s capture_salted_line_sha256=%s\n' "$name" "$state" "$fingerprint"
         done
     } >"$SHARE_ROOT/${phase}_summary.txt"
 }
@@ -246,7 +301,10 @@ record_call_result() {
     read -r icon
     printf '備註（沒有可直接按 Enter）：'
     read -r notes
-    printf '%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$phase" "$result" "$icon" "$notes" | redact_stream >>"$OBSERVATIONS"
+    local observed_at
+    observed_at="$(date -Iseconds)"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$observed_at" "$phase" "$result" "$icon" "$notes" >>"$PRIVATE_ROOT/USER_OBSERVATIONS.tsv"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$observed_at" "$phase" "$result" "$icon" "$notes" | redact_stream >>"$OBSERVATIONS"
     LAST_CALL_RESULT="$result"
 }
 
@@ -360,9 +418,11 @@ case "$SAMSUNG_DIALER_PATH" in *package:*) SAMSUNG_DIALER_AVAILABLE=true ;; esac
     printf 'samsung_ims_settings_available=%s\n' "$IMS_SETTINGS_AVAILABLE"
     printf 'samsung_dialer_available=%s\n' "$SAMSUNG_DIALER_AVAILABLE"
     printf 'root_available=true\n'
-    printf 'root_shell_identity=%s\n' "$ROOT_ID" | redact_stream
-} | redact_stream >"$SHARE_ROOT/runtime_identity.txt"
+    printf 'root_shell_identity=%s\n' "$ROOT_ID"
+} >"$PRIVATE_ROOT/runtime_identity.txt"
+redact_stream <"$PRIVATE_ROOT/runtime_identity.txt" >"$SHARE_ROOT/runtime_identity.txt"
 
+printf 'timestamp\tphase\tcall_result\ticon\tnotes\n' >"$PRIVATE_ROOT/USER_OBSERVATIONS.tsv"
 printf 'timestamp\tphase\tcall_result\ticon\tnotes\n' >"$OBSERVATIONS"
 LAST_CALL_RESULT=""
 
@@ -401,7 +461,10 @@ if [ "$CAPTURE_MODE" = handover ]; then
         snapshot "$manual_phase"
         printf '備註（切換時間、通話結果、雙向語音、最後想要的網路）：'
         read -r manual_notes || manual_notes=''
-        printf '%s\t%s\tmanual\tmanual\t%s\n' "$(date -Iseconds)" \
+        observed_at="$(date -Iseconds)"
+        printf '%s\t%s\tmanual\tmanual\t%s\n' "$observed_at" \
+            "$manual_phase" "$manual_notes" >>"$PRIVATE_ROOT/USER_OBSERVATIONS.tsv"
+        printf '%s\t%s\tmanual\tmanual\t%s\n' "$observed_at" \
             "$manual_phase" "$manual_notes" | redact_stream >>"$OBSERVATIONS"
     done
 else
@@ -457,12 +520,23 @@ if [ -f "$RAW_LOG" ]; then
         >"$SHARE_ROOT/key_timeline_redacted.txt" || true
 fi
 
-sanitize_share_files
+write_capture_archives() {
+    local private_archive="$CAPTURE_ROOT/PRIVATE_FULL_CAPTURE.tar.gz"
+    local share_archive="$CAPTURE_ROOT/SHARE_THIS.tar.gz"
+    local share_temporary="$CAPTURE_ROOT/.SHARE_THIS.tar.gz.tmp"
+    # Private bytes never pass through redact_stream, even if sharing fails.
+    tar -czf "$private_archive" -C "$PRIVATE_ROOT" . || return 1
+    sanitize_share_files || return 1
+    if ! tar -czf "$share_temporary" -C "$SHARE_ROOT" .; then
+        rm -f "$share_temporary"
+        return 1
+    fi
+    mv -f "$share_temporary" "$share_archive"
+}
 
+write_capture_archives
 SHARE_ARCHIVE="$CAPTURE_ROOT/SHARE_THIS.tar.gz"
 PRIVATE_ARCHIVE="$CAPTURE_ROOT/PRIVATE_FULL_CAPTURE.tar.gz"
-tar -czf "$SHARE_ARCHIVE" -C "$SHARE_ROOT" .
-tar -czf "$PRIVATE_ARCHIVE" -C "$PRIVATE_ROOT" .
 
 printf '\n擷取完成。脫敏版仍請人工檢查後再公開：\n%s\n' "$SHARE_ARCHIVE"
 printf '\n完整版可能含電話號碼、IP 與 IMS 身分資料，請先保留在手機：\n%s\n' "$PRIVATE_ARCHIVE"
