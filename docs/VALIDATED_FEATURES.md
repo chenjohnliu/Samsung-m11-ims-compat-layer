@@ -30,8 +30,8 @@ matrix has not been repeated on this source revision. See the
 | Phone validation | Maintainer-run builds, flashing, calls, SMS and handover tests |
 
 The ROM releases contain their own installation instructions:
-[CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) and
-[crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid).
+[CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261017-13-Cherish) and
+[crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261018-13-CrDroid).
 
 ## Feature scope and validation
 

@@ -46,7 +46,7 @@ SIM1 與 SIM2 是分開測試的，兩者沒有同時啟用 IMS。這不代表�
 
 **想找完整原始碼或 patch：**先看[原始碼與 patch 總索引](docs/SOURCE_INDEX.md)。六個平台 fork 的預設分支為 `cherish-13-m11q-ims`；總表列出固定 commit 與對應 patch。裝置樹另依其現有分支及固定 commit 使用。使用完整 Cherish 分支後，同一專案的 patch 不需要再套一次。其餘七個上游專案依總表的固定版本與 patch 順序整合；六個舊平台分支已改由封存 tag 保存，詳見[分支整理紀錄](docs/M11Q_BRANCH_RETIREMENT_20261017.md)。
 
-**想使用 ROM：**下載 [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) 或 [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid) 版本，並依照各版本的安裝說明操作。本專案不提供可直接刷入的套件。
+**想使用 ROM：**下載 [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261017-13-Cherish) 或 [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261018-13-CrDroid) 版本，並依照各版本的安裝說明操作。本專案不提供可直接刷入的套件。
 
 **想重現 CherishOS 移植：**請從 [Android 13 原始碼整合交接指南](docs/CHERISH_ANDROID13_IMS_HANDOFF.md)開始。該指南會帶你找到固定版本的原始碼檢查點、先前的兩份補充修補、2026-10-16 VoWiFi 修正，以及原廠輸入檔案的處理流程。依序套用一次，不要再疊加舊的修補系列。
 

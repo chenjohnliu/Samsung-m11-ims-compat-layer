@@ -44,7 +44,7 @@ The [2026-10-16 source supplement](docs/CHERISH_VOWIFI_FIXES_20261016.md) adds i
 
 ## Where to start
 
-**To use a ROM:** download the [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261012-13-Cherish) or [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261010-13-CrDroid) release and follow its installation instructions. This repository is not a flashable package.
+**To use a ROM:** download the [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261017-13-Cherish) or [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261018-13-CrDroid) release and follow its installation instructions. This repository is not a flashable package.
 
 **To reproduce the CherishOS port:** start with the [Android 13 source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md). It points to the pinned source checkpoint, the two earlier supplemental source patches, the 2026-10-16 VoWiFi corrections and the stock-input workflow. Apply them in order once; do not stack the historical patch series on top.
 
