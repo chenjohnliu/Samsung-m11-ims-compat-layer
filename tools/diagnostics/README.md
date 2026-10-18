@@ -51,10 +51,27 @@ timestamps, fault codes such as 503/5065, RAT/slot/call IDs, and handover marker
 remain available. Address-line fingerprints are salted within each capture;
 the salt is private, so use them for comparisons within that run, not across runs.
 
+Additional aliases cover original/calling/called/remote numbers, Wi-Fi/WLAN SSID
+and BSSID, IPsec/IKE/ESP/XFRM authentication/encryption keys and PSKs, and
+authorization/access/refresh/bearer tokens. Colon and equals assignments,
+camelCase/underscore names, quoted/array values, and unquoted multiword SSIDs
+are covered. Standalone Bearer/Basic token payloads and common XFRM algorithm
+plus hex-key output are masked too. Known diagnostic fields, clocks, and markers
+bound unquoted free-text values so following handover information can survive.
+SIP Digest headers are removed as a whole because their parameters are sensitive.
+
+The fake Android packaging test feeds the review fixtures through raw logcat,
+summary commands, runtime properties, logger stderr, and manual observations.
+It checks every final share file, explicitly including
+`key_timeline_redacted.txt`, while comparing the private log bytes to the original
+synthetic fixture. None of these tests invokes Android commands on a real device.
+
 This is heuristic redaction, not a guarantee of anonymity. Unlabelled names,
 free text, escaped/multiline/encoded values, unusual phone formats, and unknown
 credential formats can escape filtering. Some ambiguous numeric text or header
-content may be removed. Device/build/operator details and event timing can still
+content may be removed. Unquoted free-text boundaries are heuristic: a value that
+looks like diagnostic metadata can be misinterpreted, and unknown trailing fields
+may be removed. Device/build/operator details and event timing can still
 identify a capture indirectly. Manually review every share archive before
 publishing. This change does not sanitize other collectors, existing captures,
 or Git history; `.gitignore` also does not remove already tracked data.

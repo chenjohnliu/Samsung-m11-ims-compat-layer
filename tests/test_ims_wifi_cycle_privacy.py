@@ -39,6 +39,14 @@ SECRET_LINES = [
     'BSSID=aa:bb:cc:dd:ee:ff', 'fixture-user@example.org',
     '203.0.113.21 fe80::abcd:1234', 'call 0912-345-678 or 0912 345 678',
 ]
+REVIEW_LINES = [
+    'M11W2L origNumber:0912-345-678',
+    'M11W2L WIFI_SSID: SecretHome',
+    'IpSec ipsec_key: CAFEBABECAFEBABECAFEBABE',
+    'Epdg Authorization=Bearer fixture-token',
+]
+REVIEW_SECRETS = ('0912-345-678', 'SecretHome', 'CAFEBABECAFEBABECAFEBABE', 'fixture-token')
+SECRET_LINES.extend(REVIEW_LINES)
 PRIVATE_BYTES = (DIAGNOSTIC + '\n'.join(SECRET_LINES) + '\n').encode()
 
 
@@ -71,6 +79,7 @@ class WifiCyclePrivacyTests(unittest.TestCase):
                      'phase=cycle1_vowifi marker=SNAPSHOT_lte_20261018_123456\n',
                      'epdg_data0 state=UP rmnet_data1 IMS slot=0 cause=503 5065\n',
                      'std::function Result::toString\n',
+                     'IpSec enc cbc(aes) cause=503 exp_result_code=5065\n',
                      'Phone Id = 0 iwlan_handover_policy_string_array=source=IWLAN,target=EUTRAN\n',
                      'telephony_jar_sha256=' + 'abc123456789def01' * 4 + '\n'):
             with self.subTest(line=line):
@@ -126,6 +135,105 @@ class WifiCyclePrivacyTests(unittest.TestCase):
         self.assertNotIn('fixture-user@ims', self.redact('identity=fixture-user@ims\n'))
         self.assertNotIn('89888612345678901234', self.redact('card 89888612345678901234F\n'))
         self.assertNotIn('fixture-token', self.redact('Authorization: Bearer fixture-token\n'))
+
+    def test_review_regressions_preserve_diagnostic_suffix(self):
+        prefix = '10-18 12:34:56.123456789 I '
+        suffix = ' cause=503 exp_result_code=5065 callId=487 RAT=18 W2L L2W marker=SNAPSHOT_lte_20261018_123456'
+        for line in REVIEW_LINES:
+            with self.subTest(line=line):
+                out = self.redact(prefix + line + suffix + '\n')
+                for secret in REVIEW_SECRETS:
+                    self.assertNotIn(secret, out)
+                self.assertTrue(out.startswith(prefix))
+                self.assertTrue(out.endswith(suffix + '\n'), out)
+                self.assertNotIn('\x1e', out)
+
+    def test_phone_and_wifi_field_variants(self):
+        for field in ('origNumber', 'orig_number', 'mOrigNumber', 'originalNumber', 'originNumber',
+                      'originating_number', 'callingNumber', 'called_number',
+                      'dialedNumber', 'dialled_number', 'remoteNumber', 'peer_number',
+                      'fromNumber', 'to_number'):
+            for separator in (':', '=', ' : ', ' = '):
+                with self.subTest(field=field, separator=separator):
+                    out = self.redact(f'M11W2L {field}{separator}0912-345-678 RAT=18\n')
+                    self.assertNotIn('0912', out)
+                    self.assertNotIn('345-678', out)
+                    self.assertIn('RAT=18', out)
+        for field in ('WIFI_SSID', 'wifiSsid', 'mWifiSsid', 'WLAN_SSID', 'SSID'):
+            for value in ('SecretHome', 'Secret Home', '"Secret Home"', "'Secret Home'",
+                          '["Secret Home", "Other Home"]'):
+                with self.subTest(field=field, value=value):
+                    out = self.redact(f'M11W2L {field}: {value} callId=487 RAT=18 W2L cause=503\n')
+                    self.assertNotIn('Secret', out)
+                    self.assertNotIn('Home', out)
+                    self.assertNotIn('Other', out)
+                    self.assertTrue(out.endswith('callId=487 RAT=18 W2L cause=503\n'))
+
+    def test_ipsec_key_aliases_and_xfrm_algorithm_forms(self):
+        for field in ('ipsec_key', 'ipSecKey', 'mIpSecKey', 'ip_sec_key',
+                      'ipsec_auth_key', 'ipsec_enc_key', 'ipsec_encryption_key',
+                      'authKey', 'mAuthKey', 'mEncKey', 'enc_key', 'integrity_key', 'cipherKey',
+                      'ike_key', 'esp_key', 'xfrm_key', 'SK_d', 'SK_ai', 'SK_er',
+                      'pre_shared_key', 'PSK', 'wpa_psk', 'password'):
+            for value in ('CAFEBABECAFEBABECAFEBABE', '"fixture key"',
+                          '["fixture key", "other key"]'):
+                with self.subTest(field=field, value=value):
+                    out = self.redact(f'IpSec {field}: {value}; cause=503 RAT=18\n')
+                    self.assertNotIn('CAFEBABE', out)
+                    self.assertNotIn('fixture', out)
+                    self.assertNotIn('other', out)
+                    self.assertIn('cause=503 RAT=18', out)
+        for form in ('auth-trunc hmac(sha256)', 'enc cbc(aes)', 'aead rfc4106(gcm(aes))'):
+            out = self.redact(f'IpSec {form} 0xCAFEBABECAFEBABECAFEBABE 128 cause=503\n')
+            self.assertNotIn('CAFEBABE', out)
+            self.assertIn(form, out)
+            self.assertIn('128 cause=503', out)
+
+    def test_authorization_and_bearer_variants(self):
+        for field in ('Authorization', 'authorization', 'Proxy-Authorization',
+                      'proxy_authorization', 'authToken', 'access_token', 'refreshToken',
+                      'bearer_token', 'Bearer'):
+            for value in ('Bearer fixture-token', 'bEaReR eyJ.fixture.signature==',
+                          'Basic Zml4dHVyZTpwYXNz', '"Bearer fixture-token"',
+                          '"fixture-token"'):
+                for separator in (':', '=', ' = '):
+                    with self.subTest(field=field, value=value, separator=separator):
+                        out = self.redact(f'Epdg {field}{separator}{value} callId=487 RAT=18 cause=503 exp_result_code=5065\n')
+                        self.assertNotIn('fixture-token', out)
+                        self.assertNotIn('eyJ.fixture.signature', out)
+                        self.assertNotIn('Zml4dHVyZTpwYXNz', out)
+                        self.assertTrue(out.endswith('callId=487 RAT=18 cause=503 exp_result_code=5065\n'), out)
+        out = self.redact('Epdg Bearer fixture-token, Basic Zml4dHVyZTpwYXNz; cause=503\n')
+        self.assertNotIn('fixture-token', out)
+        self.assertNotIn('Zml4dHVyZTpwYXNz', out)
+        self.assertIn('cause=503', out)
+
+    def test_credential_values_cannot_impersonate_diagnostics(self):
+        for token in ('503', '5065', '12:34:56.123456789'):
+            for scheme in ('Bearer', 'Basic'):
+                out = self.redact(f'Epdg Authorization={scheme} {token}; cause=503 RAT=18\n')
+                self.assertNotIn(scheme + ' ' + token, out)
+                self.assertNotIn(token, out.split(';')[0])
+                self.assertIn('cause=503 RAT=18', out)
+        for value in ('503', '5065', 'W2L', 'L2W', '12:34:56.123456789'):
+            out = self.redact(f'WIFI_SSID: {value}; cause=503 RAT=18\n')
+            self.assertNotIn(value, out.split(';')[0])
+            self.assertIn('cause=503 RAT=18', out)
+        out = self.redact('IMSI=466 503 5065 123456; cause=503 RAT=18\n')
+        self.assertNotIn('123456', out)
+        self.assertNotIn('5065', out)
+        self.assertIn('cause=503 RAT=18', out)
+        for separator in (': ', '='):
+            header = ('Epdg Authorization' + separator +
+                      'Digest username="fixture-user", nonce="fixture-nonce", response="CAFEBABECAFEBABE"\n')
+            out = self.redact(header)
+            for secret in ('fixture-user', 'fixture-nonce', 'CAFEBABE'):
+                self.assertNotIn(secret, out)
+        suffix = ' Call ID:487 RAT:18 CODEX_IMS_CYCLE HANDOVER_COMPLETE'
+        out = self.redact('12:34:56.789 WIFI_SSID: Secret Home' + suffix + '\n')
+        self.assertNotIn('Secret', out)
+        self.assertNotIn('Home', out)
+        self.assertTrue(out.endswith(suffix + '\n'), out)
 
     def test_redaction_is_idempotent(self):
         data = PRIVATE_BYTES.decode()
@@ -276,7 +384,7 @@ elif cmd.startswith('logcat '):
     raw = re.search(r">'([^']+)'", cmd).group(1)
     err = re.search(r"2>'([^']+)'", cmd).group(1)
     Path(raw).write_text(fixture)
-    Path(err).write_text('fixture 0912 345 678 fe80::1\n')
+    Path(err).write_text(fixture)
     state.write_text(raw)
     print('12345')
 elif cmd.startswith('log -t '):
@@ -292,7 +400,7 @@ else:
     print(fixture, end='')
 '''
             for name, content in {'su': mock, 'sleep': '#!/bin/sh\nexit 0\n',
-                                  'getprop': '#!/bin/sh\nprintf "fixture-build\\n"\n',
+                                  'getprop': '#!/bin/sh\ncat "$MOCK_FIXTURE"\n',
                                   'termux-wake-lock': '#!/bin/sh\nexit 0\n',
                                   'termux-wake-unlock': '#!/bin/sh\nexit 0\n'}.items():
                 path = binpath / name; path.write_text(content); path.chmod(0o700)
@@ -302,7 +410,7 @@ else:
                        MOCK_FIXTURE=str(fixture))
             outroot = root / 'captures'
             p = subprocess.run(['bash', str(SCRIPT), str(outroot)],
-                               input='baseline\nfixture note 0912-345-678 fe80::1\nsecond\nfixture note\nstop\n',
+                               input='baseline\n' + ' | '.join(REVIEW_LINES) + '\nsecond\nfixture note\nstop\n',
                                capture_output=True, text=True, env=env, timeout=30)
             self.assertEqual(p.returncode, 0, p.stderr)
             captures = list(outroot.glob('ims_wifi_cycle_*'))
@@ -310,10 +418,30 @@ else:
             capture = captures[0]
             with tarfile.open(capture / 'PRIVATE_FULL_CAPTURE.tar.gz') as private:
                 self.assertTrue(private.extractfile('./logcat_all_private.txt').read().startswith(PRIVATE_BYTES))
-                self.assertIn(b'0912-345-678 fe80::1', private.extractfile('./USER_OBSERVATIONS.tsv').read())
+                raw_notes = private.extractfile('./USER_OBSERVATIONS.tsv').read().decode()
+                for line in REVIEW_LINES:
+                    self.assertIn(line, raw_notes)
                 self.assertIn(PRIVATE_BYTES, private.extractfile('./baseline/secims.txt').read())
             with tarfile.open(capture / 'SHARE_THIS.tar.gz') as share:
-                all_text = '\n'.join(share.extractfile(m).read().decode() for m in share if m.isfile())
+                files = {m.name: share.extractfile(m).read().decode() for m in share if m.isfile()}
+                self.assertEqual(set(files), {'./USER_OBSERVATIONS.tsv', './runtime_identity.txt',
+                                             './baseline_summary.txt', './second_summary.txt',
+                                             './capture_health.txt', './logcat_stderr_redacted.txt',
+                                             './key_timeline_redacted.txt'})
+                for name, text in files.items():
+                    with self.subTest(share_file=name):
+                        for secret in REVIEW_SECRETS:
+                            self.assertNotIn(secret, text)
+                        self.assertNotIn('\x1e', text)
+                for name in ('./key_timeline_redacted.txt', './baseline_summary.txt',
+                             './runtime_identity.txt', './logcat_stderr_redacted.txt'):
+                    # Prove the fixture passed through this path, not just that a
+                    # filter discarded the entire source line.
+                    self.assertIn('origNumber', files[name])
+                    self.assertIn('WIFI_SSID', files[name])
+                    self.assertIn('ipsec_key', files[name])
+                    self.assertIn('Authorization', files[name])
+                all_text = '\n'.join(files.values())
                 self.assertNotIn('0912-345-678', all_text)
                 self.assertNotIn('fe80::1', all_text)
                 self.assertNotIn('466920123456789', all_text)

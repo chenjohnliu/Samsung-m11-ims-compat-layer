@@ -119,15 +119,27 @@ redact_stream() {
     # Termux sed only: no Python/Perl dependency on the phone.
     # IPv6 requires either :: compression or eight groups (six with a v4 tail).
     # A clock such as 12:34:56.789 is NOT an IPv6 address.
-    local h='[[:xdigit:]]{1,4}' v4='([0-9]{1,3}\.){3}[0-9]{1,3}' ipv6 mixed fields
+    local h='[[:xdigit:]]{1,4}' v4='([0-9]{1,3}\.){3}[0-9]{1,3}' ipv6 mixed fields aliases secrets free_fields guards
     ipv6="($h:){7}$h|($h:){1,7}:|($h:){1,6}:$h|($h:){1,5}(:$h){1,2}|($h:){1,4}(:$h){1,3}|($h:){1,3}(:$h){1,4}|($h:){1,2}(:$h){1,5}|$h:((:$h){1,6})|:((:$h){1,7}|:)"
     mixed="($h:){6}$v4|::($h:){0,5}$v4|($h:){1,5}:($h:){0,4}$v4"
-    fields='m?(imsi|icc_?id|imei(sv)?|impi|impu|msisdn|subscriber_?id|line1number|phone(_?number)?|caller|callee|dial_?number|sim_?serial_?number|android_?id|serial(no|_?number)?|bssid|ssid|nai|private_?identity|public_?identity|impi_list|impu_list)[0-9]?'
+    aliases='orig_?number|origin_?number|original_?number|originating_?number|calling_?number|called_?number|dialed_?number|dialled_?number|remote_?number|peer_?number|from_?number|to_?number|wifi_?ssid|wlan_?ssid|wifi_?bssid|wlan_?bssid'
+    secrets='ip_?sec_?key|ip_?sec_?auth_?key|ip_?sec_?enc_?key|ip_?sec_?encryption_?key|auth_?key|enc_?key|encryption_?key|integrity_?key|cipher_?key|ike_?key|esp_?key|xfrm_?key|sk_d|sk_ai|sk_ar|sk_ei|sk_er|sk_pi|sk_pr|pre_?shared_?key|psk|wpa_?psk|authorization|proxy[-_]?authorization|bearer|bearer_?token|access_?token|auth_?token|refresh_?token|password|passwd'
+    fields="m?(imsi|icc_?id|imei(sv)?|impi|impu|msisdn|subscriber_?id|line1number|phone(_?number)?|caller|callee|dial_?number|sim_?serial_?number|android_?id|serial(no|_?number)?|bssid|ssid|nai|private_?identity|public_?identity|impi_list|impu_list|$aliases|$secrets)[0-9]?"
+    # Flat alternatives keep the value/boundary backreferences stable below.
+    free_fields="m?ssid|m?wifi_?ssid|m?wlan_?ssid|m?${secrets//|/|m?}"
+    # Bound unquoted multiword secrets at known diagnostic fields/events. The
+    # temporary ASCII record separator is removed before any output is written.
+    guards='(call[ _]?id|session[ _]?id|rat|cause|error_?code|exp_?result_?code|result_?code|source|target|phase|marker|timestamp|captured_at|state|retry|duration_ms)[[:blank:]]*[:=]|W2L\b|L2W\b|CODEX_IMS_CYCLE\b|HANDOVER_[[:alnum:]_-]+|SNAPSHOT_[[:alnum:]_-]+|IMS_WIFI_CYCLE_CAPTURE_[[:alnum:]_-]+|[0-9]{2}:[0-9]{2}:[0-9]{2}|503\b|5065\b'
     # First remove structured values, including quotes, arrays and spaced numbers.
     # Then remove addresses before long numbers, so numeric IPv6 groups stay intact.
     LC_ALL=C sed -E \
+        -e 's#\b(Bearer|Basic)[[:blank:]]+[[:alnum:]_.~+/-]+=*#\1 [redacted-token]#gI' \
+        -e 's#(\bm?(Authorization|Proxy[-_]?Authorization)["'\'' ]?[[:blank:]]*[:=][[:blank:]]*Digest).*#\1 [redacted-header]#gI' \
         -e "s#(^|[^[:alnum:]_])($fields)[\"']?[[:space:]]*[:=][[:space:]]*(\"[^\"]*\"|'[^']*'|\[[^]]*\]|[+]?[0-9][0-9 ()+.-]*[0-9]|[^,;[:space:]}]+)#\1\2=[redacted-field]#gI" \
-        -e 's#((^|[[:space:]])(From|To|Contact|P-Asserted-Identity|P-Preferred-Identity|P-Associated-URI|Authorization|Proxy-Authorization):).*#\1 [redacted-header]#gI' \
+        -e "s#([^:=[:blank:]])([[:blank:]]+)($guards)#\1\x1e\2\3#gI" \
+        -e 's#\b(auth(-trunc)?|enc|aead)[[:blank:]]+([^[:blank:]]+)[[:blank:]]+(0x)?[[:xdigit:]]{16,}#\1 \3 [redacted-key]#gI' \
+        -e "s#\b($free_fields)[\"']?[[:blank:]]*[:=][[:blank:]]*(\"[^\"]*\"|'[^']*'|\[[^]]*\]|[^,;=\"'[:space:][:cntrl:]]+([[:blank:]]+[^,;=\"'[:space:][:cntrl:]]+)*)([[:space:][:cntrl:],;]|$)#\1=[redacted-field]\4#gI" \
+        -e 's#((^|[[:space:]])(From|To|Contact|P-Asserted-Identity|P-Preferred-Identity|P-Associated-URI):).*#\1 [redacted-header]#gI' \
         -e 's#((sip[s]?|tel):)[+]?[0-9]([ .()-]*[0-9]){8,}#\1[redacted-phone]#gI' \
         -e ':localphones' \
         -e 's#(^|[^[:alnum:]:.])((\+?886[ .()-]*0?|0)9([ .()-]*[0-9]){8})([^[:alnum:]]|$)#\1[redacted-phone]\5#g' \
@@ -144,7 +156,8 @@ redact_stream() {
         -e 's#([[:xdigit:]]{2}[:-]){5}[[:xdigit:]]{2}#[redacted-mac]#g' \
         -e ':numbers' \
         -e 's#(^|[^[:alnum:].])\+?[0-9]{9,}[Ff]?([^[:alnum:]]|$)#\1[redacted-number]\2#g' \
-        -e 't numbers'
+        -e 't numbers' \
+        -e 's/\x1e//g'
 }
 
 sanitize_share_files() {
