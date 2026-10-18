@@ -55,6 +55,47 @@ def _module(name: str, relative: str):
     return module
 
 
+def _source_receipts():
+    return _module("sveservice_source_verified_receipt", "tools/source_verified_receipt.py")
+
+
+def verify_dex_header(path: Path) -> int:
+    data = path.read_bytes()
+    if (len(data) < 0x70 or not re.fullmatch(rb"dex\n[0-9]{3}\x00", data[:8]) or
+            int.from_bytes(data[32:36], "little") != len(data) or
+            int.from_bytes(data[36:40], "little") != 0x70 or
+            int.from_bytes(data[40:44], "little") != 0x12345678):
+        raise BuildError("invalid or truncated DEX header")
+    return len(data)
+
+
+def verify_serialized_output(dex_path: Path, dex_sha256: str, apk_sha256: str,
+                             expected: dict, source_verified: bool) -> None:
+    dex_size = verify_dex_header(dex_path)
+    if not source_verified and dex_size != expected["classes_dex_size"]:
+        raise BuildError("output DEX size drift")
+    if not source_verified and (dex_sha256 != expected["classes_dex_sha256"] or
+                                apk_sha256 != expected["unsigned_apk_sha256"]):
+        raise BuildError("deterministic DEX/APK pin mismatch")
+
+
+def verify_source_roundtrip(source_root: Path, output_root: Path) -> int:
+    """Compare every decoded class across assembly/redecode, including metadata."""
+    base = _module("sveservice_roundtrip_base", "tools/build_epdgservice.py")
+    roundtrip = _module("sveservice_roundtrip_normalizer", "tools/build_epdgservice_w2l_trial.py")
+    before = base._smali_inventory(source_root)
+    after = base._smali_inventory(output_root)
+    if set(after) != set(before):
+        raise BuildError("source-verified class inventory drift")
+    for relative in sorted(before):
+        source_file = source_root / relative
+        output_file = output_root / relative
+        if roundtrip.normalized_smali(source_file.read_text(encoding="utf-8")) != \
+                roundtrip.normalized_smali(output_file.read_text(encoding="utf-8")):
+            raise BuildError(f"source-verified instruction/metadata round-trip drift: {relative}")
+    return len(after)
+
+
 def _hash(value, label: str) -> str:
     if not isinstance(value, str) or not HASH_RE.fullmatch(value):
         raise BuildError(f"invalid configured SHA-256 for {label}")
@@ -197,7 +238,8 @@ def _verify_output_tree(root: Path, transform, contract: dict) -> None:
 
 
 def build(config_path: Path, stock_path: Path, apktool_path: Path, java_value: str,
-          output_path: Path, report_path: Path | None = None) -> dict:
+          output_path: Path, report_path: Path | None = None,
+          source_verified: bool = False) -> dict:
     config = load_config(config_path)
     if report_path is not None and output_path.resolve(strict=False) == report_path.resolve(strict=False):
         raise BuildError("output APK and report must be different paths")
@@ -244,15 +286,17 @@ def build(config_path: Path, stock_path: Path, apktool_path: Path, java_value: s
             raise BuildError("rebuilt DEX is missing")
         dex.write_bytes(rebuilt_data["classes.dex"])
         expected_output = config["output"]
-        if dex.stat().st_size != expected_output["classes_dex_size"] or \
-                sha256_file(dex) != expected_output["classes_dex_sha256"]:
+        verify_dex_header(dex)
+        if not source_verified and dex.stat().st_size != expected_output["classes_dex_size"]:
+            raise BuildError("output DEX size drift")
+        if not source_verified and sha256_file(dex) != expected_output["classes_dex_sha256"]:
             raise BuildError("deterministic DEX pin mismatch")
         try:
             assembly = apk.build_archive(stock, output_path, {"classes.dex": dex}, {})
         except (OSError, apk.SafetyError, zipfile.BadZipFile) as exc:
             raise BuildError(f"APK assembly failed: {exc}") from exc
-        if assembly["output_sha256"] != expected_output["unsigned_apk_sha256"]:
-            raise BuildError("deterministic APK pin mismatch")
+        verify_serialized_output(dex, sha256_file(dex), assembly["output_sha256"],
+                                 expected_output, source_verified)
         changed = sorted(item["entry"] for item in assembly["changed_entries"])
         if changed != expected_output["changed_entries"]:
             raise BuildError("assembled changed-entry set drift")
@@ -265,10 +309,14 @@ def build(config_path: Path, stock_path: Path, apktool_path: Path, java_value: s
         _apktool(java, jar, jvm_args, ["d", "-f", "-o", str(verify), str(output_path)],
                  "output verification decode")
         _verify_output_tree(verify / "smali", transform, contract)
+        roundtrip_classes = None
+        if source_verified:
+            roundtrip_classes = verify_source_roundtrip(decoded / "smali", verify / "smali")
         report = {
             "schema_version": 1,
             "artifact": "sveservice.apk",
-            "status": "PASS",
+            "status": "SOURCE_VERIFIED" if source_verified else "PASS",
+            "mode": "source-verified" if source_verified else "strict",
             "stock_apk_sha256": config["stock"]["sha256"],
             "output_apk_sha256": output_hash,
             "output_dex_sha256": sha256_file(dex),
@@ -281,6 +329,31 @@ def build(config_path: Path, stock_path: Path, apktool_path: Path, java_value: s
                 "all_unrelated_zip_entries_byte_identical",
             ],
         }
+        if source_verified:
+            receipt_api = _source_receipts()
+            source_classification = {
+                "source_classification_verified": True,
+                "device": config["device"]["codename"],
+                "model": config["device"]["model"],
+                "stock_build": config["device"]["stock_build"],
+                "stock_apk_sha256": config["stock"]["sha256"],
+                "stock_classes_dex_sha256": config["stock"]["entries"]["classes.dex"],
+                "apktool_sha256": sha256_file(jar),
+                "java_sha256": sha256_file(java),
+                "transformation_id": contract["transformation_id"],
+                "transformation_contract_sha256": sha256_file(contract_path),
+                "transformed_class_paths": sorted(transform.EXPECTED_PATHS),
+                "roundtrip_classes_verified": roundtrip_classes,
+            }
+            report.update({
+                "strict_pins_verified": False,
+                "source_invariants_verified": True,
+                "runtime_validated": False,
+                "release_eligible": False,
+                "source_verified_receipt": receipt_api.make_source_verified_receipt(
+                    "sveservice-sv1-source-verified", output_path,
+                    {"classes.dex": sha256_file(dex)}, source_classification),
+            })
     if report_path is not None:
         try:
             apk.atomic_json(report_path, report)
@@ -297,10 +370,12 @@ def main(argv=None) -> int:
     parser.add_argument("--java", default="java", help="Java launcher path or command")
     parser.add_argument("--output-apk", required=True, type=Path)
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--source-verified", action="store_true",
+                         help="publish generated hashes with source/round-trip verification; strict remains default")
     args = parser.parse_args(argv)
     try:
         result = build(args.config, args.stock_apk, args.apktool_jar, args.java,
-                       args.output_apk, args.report)
+                       args.output_apk, args.report, args.source_verified)
     except (OSError, UnicodeError, BuildError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

@@ -101,6 +101,26 @@ class LegacyEpdgPrefixCompatTests(unittest.TestCase):
         self.assertFalse(strict.discover_pins)
         self.assertEqual(strict.output, Path("out.apk"))
 
+    def test_source_verified_only_bypasses_serialized_output_hashes(self):
+        pins = {"schema_version": 1, "transformation_id": T.TRANSFORMATION_ID,
+                "classes_dex_sha256": "a" * 64, "unsigned_apk_sha256": "b" * 64}
+        changed = {**pins, "classes_dex_sha256": "c" * 64, "unsigned_apk_sha256": "d" * 64}
+        with self.assertRaisesRegex(T.BuildError, "pin drift"):
+            T.verify_output_pins(changed, pins)
+        T.verify_output_pins(changed, pins, True)
+        with self.assertRaisesRegex(T.BuildError, "identity drift"):
+            T.verify_output_pins({**changed, "transformation_id": "other"}, pins, True)
+
+    def test_source_verified_parser_is_opt_in_and_requires_explicit_receipt_arg(self):
+        common = ["--base-apk", "base.apk", "--apktool-jar", "apktool.jar",
+                  "--java", "java", "--report", "report.json", "--output", "out.apk"]
+        strict = T.parser().parse_args(common)
+        self.assertFalse(strict.source_verified)
+        self.assertIsNone(strict.source_receipt)
+        source = T.parser().parse_args(common + ["--source-verified", "--source-receipt", "ec2.json"])
+        self.assertTrue(source.source_verified)
+        self.assertEqual(source.source_receipt, Path("ec2.json"))
+
     def test_fixed_input_and_base_pins_are_promoted_hashes(self):
         for value in (T.INPUT_SHA256, T.BASE_APK_SHA256, T.BASE_DEX_SHA256,
                       T.BASE.APKTOOL_SHA256, T.BASE.JAVA_SHA256):

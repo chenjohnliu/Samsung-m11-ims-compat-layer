@@ -67,7 +67,7 @@ def _trial_overlay(overlay, root, targets, additions):
         shutil.copyfile(source, destination)
 
 
-def verify_classes(stock, verified, ec1, trial):
+def verify_classes(stock, verified, ec1, trial, source_verified=False):
     """Verify every class, including untouched stock and exact added classes."""
     ec1_targets = {item["path"]: item for item in ec1["targets"]}
     targets = {item["path"]: item for item in trial["targets"]}
@@ -75,6 +75,7 @@ def verify_classes(stock, verified, ec1, trial):
     normalizations = {item["path"]: item for item in ec1["roundtrip_normalizations"]}
     if set(verified) != set(stock) | set(additions):
         raise BuildError("final trial class inventory drift")
+    transformed_paths = set(targets) | set(additions) | set(ec1_targets) | set(normalizations)
     for path in sorted(verified):
         if path in targets:
             expected = targets[path].get("redecoded_sha256", targets[path]["output_sha256"])
@@ -88,8 +89,42 @@ def verify_classes(stock, verified, ec1, trial):
             expected = normalizations[path]["output_sha256"]
         else:
             expected = stock[path]
-        if verified[path] != expected:
+        if verified[path] != expected and not (
+                source_verified and path in transformed_paths):
             raise BuildError(f"final trial class hash drift: {path}")
+
+
+def _normalize_static_default_field(line):
+    match = re.fullmatch(
+        r"\.field\s+((?:(?:public|private|protected|static|final|volatile|transient|synthetic|enum)\s+)*)"
+        r"([A-Za-z_$][\w$]*):([^\s=]+)(?:\s*=\s*(\S+))?", line)
+    if not match:
+        return line
+    modifiers, name, descriptor, value = match.groups()
+    if value is None or "static" not in modifiers.split():
+        return line
+    is_default = False
+    if descriptor == "Z":
+        is_default = value == "false"
+    elif descriptor in {"B", "S", "C", "I", "J"}:
+        numeric = value[:-1] if descriptor == "J" and value[-1:] in {"l", "L"} else value
+        try:
+            parsed = int(numeric, 0)
+            is_default = parsed == 0
+        except ValueError:
+            is_default = False
+    elif descriptor in {"F", "D"}:
+        numeric = value[:-1] if value[-1:] in {"f", "F", "d", "D"} else value
+        if not numeric.startswith("-"):
+            if numeric in {"0", "0.0", "0.", ".0"}:
+                is_default = True
+            elif re.fullmatch(r"0[xX]0(?:\.0*)?[pP][+-]?0", numeric):
+                is_default = True
+    elif descriptor.startswith(("L", "[")):
+        is_default = value == "null"
+    if is_default:
+        return f".field {modifiers}{name}:{descriptor}"
+    return line
 
 
 def normalized_smali(text):
@@ -129,22 +164,39 @@ def normalized_smali(text):
                 in_data = False
         def normalize(line):
             line = re.sub(r"(?<![\w$]):([A-Za-z_]\w*)", lambda m: f":@{labels[m[1]]}" if m[1] in labels else m[0], line)
-            # Branch width is selected by the assembler, not control flow.
-            return re.sub(r"^goto(?:/16|/32)? ", "goto ", line)
+            # Encoding width is selected by the assembler, not program behavior.
+            line = re.sub(r"^goto(?:/16|/32)? ", "goto ", line)
+            return re.sub(r"^const-string/jumbo ", "const-string ", line)
         methods[header] = ([normalize(line) for line in statements], [normalize(line) for line in catches])
     outside = pattern.sub("", text)
-    declarations = sorted(line.strip() for line in outside.splitlines() if line.strip() and not line.lstrip().startswith("#"))
+    declarations = sorted(_normalize_static_default_field(line.strip())
+                         for line in outside.splitlines()
+                         if line.strip() and not line.lstrip().startswith("#"))
     return declarations, methods
 
 
-def verify_roundtrip_sources(source, verified, contract):
+def verify_roundtrip_sources(source, verified, contract, source_verified=False):
     paths = [item["path"] for item in contract["targets"] + contract["additions"]]
+    if source_verified:
+        before_inventory = BASE._smali_inventory(source)
+        after_inventory = BASE._smali_inventory(verified)
+        if set(after_inventory) != set(before_inventory):
+            raise BuildError("source-verified final class inventory drift")
+        paths = sorted(before_inventory)
     for path in paths:
         before = normalized_smali((source / path).read_text(encoding="utf-8"))
         after = normalized_smali((verified / path).read_text(encoding="utf-8"))
         if before != after:
             raise BuildError(f"trial instruction/exception round-trip drift: {path}")
     return len(paths)
+
+
+def verify_output_pins(observed, pins, source_verified=False):
+    if (observed["schema_version"] != pins["schema_version"] or
+            observed["transformation_id"] != pins["transformation_id"]):
+        raise BuildError("trial output identity drift")
+    if not source_verified and observed != pins:
+        raise BuildError("trial final APK/DEX pin drift")
 
 
 def build(args):
@@ -162,6 +214,9 @@ def build(args):
     if hashlib.sha256(entries.get("classes.dex", b"")).hexdigest() != artifact["classes_dex_sha256"]:
         raise BuildError("stock classes.dex identity drift")
     discovery = args.discover_pins
+    source_verified = args.source_verified
+    if discovery and source_verified:
+        raise BuildError("pin discovery and source-verified publication are mutually exclusive")
     pins = None if discovery else load_pins(args.pins)
     if args.report.exists() or args.report.is_symlink() or (args.output and (args.output.exists() or args.output.is_symlink())):
         raise BuildError("refusing to overwrite output or report")
@@ -200,22 +255,25 @@ def build(args):
             raise BuildError("unrelated trial APK entries changed")
         BASE._run(command + ["d", "-f", "-o", str(verified), str(candidate)], "trial APK re-decode")
         final_classes = BASE._smali_inventory(verified / "smali")
-        roundtrip_count = verify_roundtrip_sources(decoded / "smali", verified / "smali", contract)
+        roundtrip_count = verify_roundtrip_sources(
+            decoded / "smali", verified / "smali", contract, source_verified)
         observed_redecoded = {item["path"]: final_classes[item["path"]] for item in contract["targets"] + contract["additions"]}
         final_contract = contract
         if discovery:
             # Only these reviewed classes may discover canonical text hashes;
             # every instruction and exception range has already been checked.
             final_contract = {**contract, **{key: [{**item, "redecoded_sha256": observed_redecoded[item["path"]]} for item in contract[key]] for key in ("targets", "additions")}}
-        verify_classes(stock_classes, final_classes, ec1_contract, final_contract)
+        verify_classes(stock_classes, final_classes, ec1_contract, final_contract, source_verified)
         references = _module("ec2_reference_verifier", "tools/verify_epdgservice_w2l_refs.py")
         reference_result = references.verify(verified / "smali")
         observed = {"schema_version": 1, "transformation_id": "EC2-active-w2l-trial", "classes_dex_sha256": dex_hash, "unsigned_apk_sha256": apk_hash}
-        if pins is not None and observed != pins:
-            raise BuildError("trial final APK/DEX pin drift")
+        if pins is not None:
+            verify_output_pins(observed, pins, source_verified)
         payload = {
-            "schema_version": 1, "status": "PASS", "transformation_id": trial.TRANSFORMATION_ID,
-            "mode": "pin-discovery" if discovery else "strict", "observed_build_pins": observed,
+            "schema_version": 1, "status": "SOURCE_VERIFIED" if source_verified else "PASS",
+            "transformation_id": trial.TRANSFORMATION_ID,
+            "mode": "source-verified" if source_verified else ("pin-discovery" if discovery else "strict"),
+            "observed_build_pins": observed,
             "observed_redecoded_pins": observed_redecoded,
             "instruction_roundtrip_validation": {"classes_verified": roundtrip_count, "status": "PASS"},
             "inputs": {"stock_apk_sha256": artifact["apk_sha256"], "stock_classes_dex_sha256": artifact["classes_dex_sha256"]},
@@ -227,6 +285,31 @@ def build(args):
                        "all_redecoded_classes_verified": True, "unrelated_zip_entries_preserved": True},
             "safety": {"rom_build_run": False, "saved_decoded_payload_used": False, "saved_final_payload_used": False},
         }
+        if source_verified:
+            receipt_api = _module("ec2_source_verified_receipt", "tools/source_verified_receipt.py")
+            source_classification = {
+                "source_classification_verified": True,
+                "stock_apk_sha256": artifact["apk_sha256"],
+                "stock_classes_dex_sha256": artifact["classes_dex_sha256"],
+                "apktool_sha256": BASE.APKTOOL_SHA256,
+                "java_sha256": BASE.JAVA_SHA256,
+                "transformations": [
+                    {"id": ec1_result["transformation_id"], "files": ec1_result["files"]},
+                    {"id": trial.TRANSFORMATION_ID, "files": trial_result["files"]},
+                ],
+                "published_input_class_anchors_verified": True,
+                "helper_references_verified": True,
+                "all_class_instruction_metadata_roundtrip_count": roundtrip_count,
+            }
+            payload.update({
+                "strict_pins_verified": False,
+                "source_invariants_verified": True,
+                "runtime_validated": False,
+                "release_eligible": False,
+                "source_verified_receipt": receipt_api.make_source_verified_receipt(
+                    "epdgservice-ec2-source-verified", candidate,
+                    {"classes.dex": dex_hash}, source_classification),
+            })
         if discovery:
             if not args.report.parent.is_dir() or args.report.parent.is_symlink():
                 raise BuildError("unsafe report parent")
@@ -252,6 +335,8 @@ def parser():
     result.add_argument("--pins", type=Path, default=DEFAULT_PINS)
     result.add_argument("--work-dir", type=Path)
     result.add_argument("--discover-pins", action="store_true")
+    result.add_argument("--source-verified", action="store_true",
+                        help="publish actual serialization hashes after source/inventory/round-trip checks")
     result.add_argument("--keep-work", action="store_true", help="retain private decoded files for host diagnostics")
     return result
 

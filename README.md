@@ -1,5 +1,7 @@
 # Samsung Galaxy M11 IMS compatibility layer
 
+The current crDroid IMS source route is documented in the [seven-project source-verified recipe](docs/CRDROID_IMS_SOURCE_VERIFIED_20261018.md). The [2026-10-18 validation note](docs/USER-VALIDATION_20261018.md) separates the maintainer's successful call/handover tests from the read-only device checks.
+
 **Working VoLTE, Wi-Fi Calling and IMS SMS on Android 13 custom ROMs for the Samsung Galaxy M11.**
 
 This project adapts Samsung's stock IMS stack to **CherishOS 4.12** and **crDroid 9.20** on the Galaxy M11 (`SM-M115F`, `m11q`). It publishes the compatibility code, Android source patches, transformation tools and development records used to make that port work.

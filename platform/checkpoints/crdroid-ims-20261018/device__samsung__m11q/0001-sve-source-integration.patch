@@ -1,0 +1,57 @@
+diff --git a/ims/Android.mk b/ims/Android.mk
+index fe1873c..dfe7b9c 100755
+--- a/ims/Android.mk
++++ b/ims/Android.mk
+@@ -297,6 +297,7 @@ LOCAL_MULTILIB := 32
+ LOCAL_DEX_PREOPT := false
+ LOCAL_OPTIONAL_USES_LIBRARIES := svemanager
+ LOCAL_ENFORCE_USES_LIBRARIES := false
++LOCAL_JNI_SHARED_LIBRARIES := libm11q_sve_compat lib_android_FrameCapture
+ LOCAL_PREBUILT_JNI_LIBS := \
+     proprietary/app/sveservice/lib/arm/libAudioFWInterface.so \
+     proprietary/app/sveservice/lib/arm/libAudioTranscoder.so \
+@@ -305,12 +306,10 @@ LOCAL_PREBUILT_JNI_LIBS := \
+     proprietary/app/sveservice/lib/arm/libSRTP.so \
+     proprietary/app/sveservice/lib/arm/libSTE.so \
+     proprietary/app/sveservice/lib/arm/libSamsungAPVoiceEngine.so \
+-    proprietary/app/sveservice/lib/arm/lib_android_FrameCapture.so \
+     proprietary/app/sveservice/lib/arm/libamrnb_float.so \
+     proprietary/app/sveservice/lib/arm/libamrwb_float.so \
+     proprietary/app/sveservice/lib/arm/libevs_float.so \
+     proprietary/app/sveservice/lib/arm/libfloatingfeature.so \
+-    proprietary/app/sveservice/lib/arm/libm11q_sve_compat.so \
+     proprietary/app/sveservice/lib/arm/libmediarelayengine.so \
+     proprietary/app/sveservice/lib/arm/libnativecfms.so \
+     proprietary/app/sveservice/lib/arm/libresampler_ims.so \
+diff --git a/ims/compat/sve/Android.bp b/ims/compat/sve/Android.bp
+new file mode 100644
+index 0000000..00b8268
+--- /dev/null
++++ b/ims/compat/sve/Android.bp
+@@ -0,0 +1,26 @@
++cc_library_shared {
++    name: "libm11q_sve_compat",
++    srcs: ["m11q_sve_compat.cpp"],
++    compile_multilib: "32",
++    cpp_std: "gnu++17",
++    stl: "libc++",
++    cflags: [
++        "-fno-exceptions",
++        "-fno-rtti",
++    ],
++    header_libs: ["libmedia_headers"],
++    shared_libs: [
++        "framework-permission-aidl-cpp",
++        "libaudioclient",
++        "libgui",
++        "liblog",
++        "libutils",
++    ],
++}
++
++cc_library_shared {
++    name: "lib_android_FrameCapture",
++    srcs: ["m11q_framecapture_stub.c"],
++    compile_multilib: "32",
++    stl: "none",
++}

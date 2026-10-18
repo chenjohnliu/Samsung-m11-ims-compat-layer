@@ -382,9 +382,40 @@ def _validate_mode(args: argparse.Namespace, config: dict) -> str:
             raise BuildError("candidate-invariants mode requires needs-promotion pins")
         if args.output is not None:
             raise BuildError("candidate-invariants mode does not publish an APK; omit --output")
+    elif mode == "source-verified":
+        if args.output is None:
+            raise BuildError("source-verified mode requires --output")
     else:
         raise BuildError("unsupported build mode")
     return mode
+
+
+def _verify_primary_roundtrip(before: Path, after: Path, normalizer) -> int:
+    """Compare every primary class's instructions and metadata after re-decode."""
+    def inventory(root: Path) -> dict[str, Path]:
+        if root.is_symlink() or not root.is_dir():
+            raise BuildError("primary smali tree is missing or unsafe")
+        result = {}
+        for item in root.rglob("*.smali"):
+            if item.is_symlink() or not item.is_file():
+                raise BuildError("unsafe primary smali entry")
+            result[item.relative_to(root).as_posix()] = item
+        if not result:
+            raise BuildError("primary smali inventory is empty")
+        return result
+
+    original, final = inventory(before), inventory(after)
+    if set(original) != set(final):
+        raise BuildError("primary class inventory changed during final re-decode")
+    for relative in sorted(original):
+        try:
+            left = normalizer.normalized_smali(original[relative].read_text(encoding="utf-8"))
+            right = normalizer.normalized_smali(final[relative].read_text(encoding="utf-8"))
+        except (UnicodeError, RuntimeError, ValueError) as exc:
+            raise BuildError(f"primary smali round-trip could not be verified: {relative}: {exc}") from exc
+        if left != right:
+            raise BuildError(f"primary instruction/metadata roundtrip drift: {relative}")
+    return len(final)
 
 
 def _candidate_payload(common: dict, observed_zip: dict, expected: dict) -> dict:
@@ -474,6 +505,10 @@ def build(args: argparse.Namespace) -> dict:
         stubs = _module("m11_stubs", "tools/generate_compile_stubs.py")
         abi = _module("m11_abi", "tools/verify_framework_abi.py")
         packer = _module("m11_packer", "tools/apk_entry_replace.py")
+        roundtrip = (_module("m11_primary_roundtrip", "tools/build_imsservice_w2l_trial.py")
+                     if mode == "source-verified" else None)
+        source_receipts = (_module("m11_source_verified_receipt", "tools/source_verified_receipt.py")
+                           if mode == "source-verified" else None)
         contracts = {name: ROOT / relative for name, relative in config["transformation_contracts"].items()}
         transform_reports = {}
 
@@ -581,6 +616,10 @@ def build(args: argparse.Namespace) -> dict:
         verified = stage / "verified"
         _run(apktool + ["d", "-f", "-p", str(framework_dir), str(aligned), "-o", str(verified)],
              "redecode final candidate")
+        primary_roundtrip_classes = None
+        if mode == "source-verified":
+            primary_roundtrip_classes = _verify_primary_roundtrip(
+                decoded / "smali", verified / "smali", roundtrip)
         tree = ET.parse(verified / "AndroidManifest.xml")
         bc1._validate_result(tree, bc1.load_contract(contracts["BC1-modern-mmtel-discovery"]))
         for marker in ("Lcom/sec/internal/google/ModernCallRelay;->constructionListener",
@@ -659,6 +698,55 @@ def build(args: argparse.Namespace) -> dict:
             payload = _candidate_payload(common, zip_result,
                                          config["final_dex_invariants"])
             _publish_report(report, payload)
+        elif mode == "source-verified":
+            source_classification = {
+                "source_classification_verified": True,
+                "producer": "crdroid13-public-source-20261017",
+                "device": config["device"],
+                "framework": {"classification": abi_result["classification"],
+                              "sha256": abi_result["framework_sha256"]},
+                "stock_inputs_sha256": {
+                    "stock_apk": sha256_file(stock),
+                    "stock_framework_res_apk": sha256_file(framework_res),
+                    "stock_imsmanager_jar": sha256_file(imsmanager),
+                    "payload_manifest": sha256_file(payload_path),
+                },
+                "toolchain_sha256": common["toolchain"],
+                "bridge_source_sha256": config["bridge_source"]["files"],
+                "transformation_contract_sha256": {
+                    name: sha256_file(contract_path)
+                    for name, contract_path in contracts.items()},
+                "transformation_ids": list(transform_reports),
+                "invariants": {
+                    "framework_abi_verified": True,
+                    "all_transformations_verified": True,
+                    "compile_stub_excluded_from_bridge": True,
+                    "all_primary_classes_instruction_metadata_roundtrip": True,
+                    "primary_classes_roundtrip_verified": primary_roundtrip_classes,
+                    "bridge_class_inventory_verified": True,
+                    "unrelated_zip_entries_preserved": True,
+                    "zip_alignment_verified": True,
+                    "final_redecode_verified": True,
+                    "final_source_hooks_verified": True,
+                },
+            }
+            receipt = source_receipts.make_source_verified_receipt(
+                "imsservice-source-verified", aligned, zip_result["dex_sha256"],
+                source_classification)
+            payload = {**common, "status": "SOURCE_VERIFIED",
+                "strict_pins_verified": False, "source_invariants_verified": True,
+                "artifact_published": True, "release_eligible": False,
+                "runtime_validated": False,
+                "source_verified_receipt": receipt,
+                "observed_final_invariants": {
+                    "entries": zip_result["dex_sha256"],
+                    "unsigned_apk_sha256": zip_result["apk_sha256"]},
+                "configured_final_invariants": config["final_dex_invariants"],
+                "output": {**zip_result, "signed": False,
+                           "strict_pins_verified": False,
+                           "source_invariants_verified": True,
+                           "runtime_validated": False}}
+            _publish_pair(aligned, output, report, payload)
         else:
             payload = {**common, "status": "PASS",
                 "strict_pins_verified": True, "artifact_published": True,
@@ -668,7 +756,10 @@ def build(args: argparse.Namespace) -> dict:
             _publish_pair(aligned, output, report, payload)
         return payload
     finally:
-        shutil.rmtree(stage, ignore_errors=True)
+        if getattr(args, "keep_work", False):
+            print(f"Private producer work retained: {stage}", file=sys.stderr)
+        else:
+            shutil.rmtree(stage, ignore_errors=True)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -689,13 +780,14 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--javap", required=True, type=Path)
     result.add_argument("--r8-jar", required=True, type=Path)
     result.add_argument("--zipalign", required=True, type=Path)
-    result.add_argument("--mode", choices=("strict", "candidate-invariants"),
+    result.add_argument("--mode", choices=("strict", "candidate-invariants", "source-verified"),
                         default="strict")
     result.add_argument("--output", type=Path,
-                        help="strict-mode unsigned APK output; forbidden in candidate mode")
+                        help="unsigned APK output; required by strict and source-verified modes")
     result.add_argument("--report", required=True, type=Path)
     result.add_argument("--work-dir", type=Path,
                         help="private temporary parent; use a native filesystem for speed")
+    result.add_argument("--keep-work", action="store_true", help="retain private producer intermediates for diagnostics")
     result.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     result.add_argument("--payload-manifest", type=Path, default=DEFAULT_PAYLOAD)
     return result
@@ -711,9 +803,9 @@ def main(argv=None) -> int:
     summary = {"status": payload["status"], "mode": payload["mode"],
                "artifact_role": payload["artifact_role"],
                "deployment_eligible": payload["deployment_eligible"]}
-    if payload["mode"] == "strict":
+    if payload["mode"] in {"strict", "source-verified"}:
         summary["apk_sha256"] = payload["output"]["apk_sha256"]
-    else:
+    if payload["mode"] == "candidate-invariants":
         summary["observed_final_invariants"] = payload["observed_final_invariants"]
     print(json.dumps(summary, sort_keys=True))
     return 0

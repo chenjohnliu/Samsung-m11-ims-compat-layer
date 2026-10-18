@@ -38,12 +38,68 @@ class TrialBuilderTests(unittest.TestCase):
 '''
         canonical = source.replace(":yes", ":cond_1").replace(":done", ":cond_2").replace("goto ", "goto/16 ").replace("\n :table\n", "\n nop\n :table\n")
         self.assertEqual(M.normalized_smali(source), M.normalized_smali(canonical))
+        jumbo_fixture = ".class LString;\n.method static m()V\n const-string v0, \"x\"\n return-void\n.end method\n"
+        self.assertEqual(M.normalized_smali(jumbo_fixture.replace("const-string ", "const-string/jumbo ")),
+                         M.normalized_smali(jumbo_fixture))
+        self.assertNotEqual(M.normalized_smali(jumbo_fixture.replace('"x"', '"y"').replace("const-string ", "const-string/jumbo ")),
+                            M.normalized_smali(jumbo_fixture))
         for old, new in ((" :cond_1\n :cond_2", " :cond_2\n :cond_1"),
                          ("const/4 v0, 0x1", "const/4 v0, 0x2"),
                          ("{:start .. :end}", "{:done .. :end}"),
                          ("packed-switch p0", "packed-switch v0")):
             with self.subTest(old=old):
                 self.assertNotEqual(M.normalized_smali(source), M.normalized_smali(canonical.replace(old, new)))
+
+    def test_source_roundtrip_covers_untouched_classes_and_rejects_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            before, after = root / "before", root / "after"
+            before.mkdir(); after.mkdir()
+            source = ".class public LOther;\n.super Ljava/lang/Object;\n.method public m()V\n return-void\n.end method\n"
+            (before / "Other.smali").write_text(source, encoding="utf-8")
+            (after / "Other.smali").write_text(source, encoding="utf-8")
+            self.assertEqual(M.verify_roundtrip_sources(before, after, {"targets": [], "additions": []}, True), 1)
+            (after / "Other.smali").write_text(source.replace("return-void", "nop\n return-void"), encoding="utf-8")
+            with self.assertRaisesRegex(M.BuildError, "round-trip drift"):
+                M.verify_roundtrip_sources(before, after, {"targets": [], "additions": []}, True)
+            (after / "Other.smali").unlink()
+            (after / "Added.smali").write_text(source.replace("LOther;", "LAdded;"), encoding="utf-8")
+            with self.assertRaisesRegex(M.BuildError, "inventory drift"):
+                M.verify_roundtrip_sources(before, after, {"targets": [], "additions": []}, True)
+
+    def test_source_verified_only_bypasses_serialized_output_hashes(self):
+        pins = {"schema_version": 1, "transformation_id": "EC2-active-w2l-trial",
+                "classes_dex_sha256": "a" * 64, "unsigned_apk_sha256": "b" * 64}
+        changed = {**pins, "classes_dex_sha256": "c" * 64, "unsigned_apk_sha256": "d" * 64}
+        with self.assertRaisesRegex(M.BuildError, "pin drift"):
+            M.verify_output_pins(changed, pins)
+        M.verify_output_pins(changed, pins, True)
+        with self.assertRaisesRegex(M.BuildError, "identity drift"):
+            M.verify_output_pins({**changed, "transformation_id": "other"}, pins, True)
+
+    def test_source_verified_parser_is_opt_in(self):
+        args = M.parser().parse_args(["--stock-apk", "stock.apk", "--apktool-jar", "apktool.jar",
+                                     "--java", "java", "--report", "report.json", "--output", "out.apk"])
+        self.assertFalse(args.source_verified)
+        args = M.parser().parse_args(["--stock-apk", "stock.apk", "--apktool-jar", "apktool.jar",
+                                     "--java", "java", "--report", "report.json", "--output", "out.apk",
+                                     "--source-verified"])
+        self.assertTrue(args.source_verified)
+
+    def test_static_explicit_defaults_normalize_only_when_semantically_exact(self):
+        def field(declaration):
+            return ".class public LFields;\n.super Ljava/lang/Object;\n" + declaration + "\n"
+        self.assertEqual(M.normalized_smali(field(".field public static final FLAG:Z = false")),
+                         M.normalized_smali(field(".field public static final FLAG:Z")))
+        self.assertEqual(M.normalized_smali(field(".field public static COUNT:I = 0x0")),
+                         M.normalized_smali(field(".field public static COUNT:I")))
+        for declared, absent in (
+                (".field public static final FLAG:Z = true", ".field public static final FLAG:Z"),
+                (".field private static final FLAG:Z = false", ".field public static final FLAG:Z"),
+                (".field public static final FLAG:I = 0", ".field public static final FLAG:Z"),
+                (".field public static final VALUE:F = -0.0f", ".field public static final VALUE:F")):
+            with self.subTest(declared=declared):
+                self.assertNotEqual(M.normalized_smali(field(declared)), M.normalized_smali(field(absent)))
 
     def test_redecoded_pin_is_separate_and_strict(self):
         ec1 = {"targets": [], "roundtrip_normalizations": []}
@@ -67,6 +123,19 @@ class TrialBuilderTests(unittest.TestCase):
             M.verify_classes(stock, {**verified, "unexpected": "new"}, ec1, trial)
         with self.assertRaisesRegex(M.BuildError, "inventory"):
             M.verify_classes(stock, {k: v for k, v in verified.items() if k != "helper"}, ec1, trial)
+
+    def test_source_verified_uses_semantic_roundtrip_for_transformed_final_hashes_only(self):
+        stock = {"changed": "stock", "plain": "plain"}
+        ec1 = {"targets": [{"path": "changed", "output_sha256": "old-final-pin"}],
+               "roundtrip_normalizations": []}
+        trial = {"targets": []}
+        verified = {"changed": "redecoded-but-different-text", "plain": "plain"}
+        with self.assertRaisesRegex(M.BuildError, "hash drift"):
+            M.verify_classes(stock, verified, ec1, trial)
+        M.verify_classes(stock, verified, ec1, trial, source_verified=True)
+        with self.assertRaisesRegex(M.BuildError, "hash drift"):
+            M.verify_classes(stock, {**verified, "plain": "changed"}, ec1, trial,
+                             source_verified=True)
 
     def test_ec2_overlap_overrides_ec1_final_hash(self):
         M.verify_classes({"both": "stock"}, {"both": "ec2"},

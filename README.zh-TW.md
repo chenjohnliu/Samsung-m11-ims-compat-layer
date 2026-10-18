@@ -1,5 +1,7 @@
 # Samsung Galaxy M11 IMS 相容層
 
+最新 crDroid IMS 整合請看[七專案來源驗證移植指南](docs/CRDROID_IMS_SOURCE_VERIFIED_20261018.md)及 [2026-10-18 驗證紀錄](docs/USER-VALIDATION_20261018.md)，其中分別記錄維護者完成的通話／切換測試與本次手機唯讀檢查。
+
 **在 Samsung Galaxy M11 的 Android 13 自訂 ROM 上使用 VoLTE、Wi-Fi 通話與 IMS 簡訊。**
 
 本專案將 Samsung 原廠 IMS 通訊堆疊調整為可搭配 Galaxy M11（`SM-M115F`、`m11q`）上的 **CherishOS 4.12** 與 **crDroid 9.20** 使用，並公開相容程式碼、Android 原始碼修補、轉換工具與開發紀錄。

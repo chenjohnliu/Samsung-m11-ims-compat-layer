@@ -1,5 +1,7 @@
 # crDroid Android 13 IMS source restoration
 
+> **2026-10-18 update:** use the [current seven-project IMS source recipe](CRDROID_IMS_SOURCE_VERIFIED_20261018.md) and [dated validation note](USER-VALIDATION_20261018.md). This document preserves earlier development history; its readiness statements do not describe the current port.
+
 > **Current reader note (2026-10-13):** This is a historical development
 > snapshot. See [`VALIDATED_FEATURES.md`](VALIDATED_FEATURES.md) for the latest
 > feature acceptance and [`CHERISH_ANDROID13_IMS_HANDOFF.md`](CHERISH_ANDROID13_IMS_HANDOFF.md)

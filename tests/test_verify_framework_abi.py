@@ -58,6 +58,30 @@ class FrameworkAbiTests(unittest.TestCase):
         self.assertEqual(report["classification"], "golden")
         self.assertTrue(all(item["match"] for item in report["abi"]))
 
+    def test_compatible_mode_ignores_missing_or_different_sourcefile_headers(self):
+        self.write_config("0" * 64)
+        outputs = {
+            CLASS_A: ABI_A.replace("IFirst.java", "FrameworkSource.java"),
+            CLASS_B: ABI_B.split("\n", 1)[1],
+        }
+        report = verify(
+            self.jar, self.config, "compatible", "synthetic-javap", self.runner(outputs)
+        )
+        self.assertEqual(report["classification"], "compatible-abi-only")
+        self.assertTrue(all(item["match"] for item in report["abi"]))
+
+    def test_different_sourcefile_header_does_not_hide_method_drift(self):
+        outputs = {
+            CLASS_A: ABI_A.replace("IFirst.java", "Different.java").replace(
+                "void first();", "void changed();"
+            ),
+            CLASS_B: ABI_B,
+        }
+        with self.assertRaisesRegex(VerificationError, "ABI mismatch"):
+            verify(
+                self.jar, self.config, "compatible", "synthetic-javap", self.runner(outputs)
+            )
+
     def test_compatible_mode_accepts_hash_difference_with_exact_abi(self):
         self.write_config("0" * 64)
         report = verify(

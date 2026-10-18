@@ -1,0 +1,9 @@
+# User-reported crDroid IMS validation — 2026-10-18
+
+The user reports completing an Android 13 / crDroid 13.0 build and flash, then validating separate SIM1 and SIM2 incoming and outgoing voice calls, an incoming VoWiFi call, and both physical-range handover directions: leaving Wi-Fi coverage (VoWiFi to VoLTE) and returning to Wi-Fi coverage (VoLTE to VoWiFi). The report does not specify whether each handover occurred during an active call, so this note makes no such assumption.
+
+A separate read-only device snapshot showed slot 0 IMS registered for `smsip` and `mmtel` over IWLAN. The inspected recent log window had no fatal IMS/SVE crash markers. The two SVE native helper libraries were present on the device and matched the current build outputs. These checks do not cryptographically bind the reported calls to a specific ROM ZIP, so the call and handover results remain user-reported; they were not independently repeated for this publication preparation.
+
+The SVE source integration is published in [device commit a125368a53a8ace26d91f778f28a12b240f46dbb](https://github.com/chenjohnliu/android_device_samsung_m11q/commit/a125368a53a8ace26d91f778f28a12b240f46dbb). The compatibility source index retains its pinned device base plus patch route. That newer commit contains the integration plus later documentation changes, so it is not the indexed final tree. For strict index validation, use the pinned base and patch; if your source already contains the commit, do not apply the SVE patch again.
+
+These results do not validate concurrent dual-SIM IMS, ViLTE, emergency calls, other carriers, or unreported features. Android `ImsCommonTests` were not run because no APK/runtime harness was available; the emergency-capability behavior has only source/host-test coverage, and no emergency call was placed. See the source recipe for the distinction between patch replay, source integration, ROM build, and runtime evidence.

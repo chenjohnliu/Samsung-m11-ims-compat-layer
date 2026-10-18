@@ -44,7 +44,7 @@ def load_pins(path):
     return pins
 
 
-def verify_envelope(before, after, contract, discovery=False):
+def verify_envelope(before, after, contract, discovery=False, source_verified=False):
     original = BASE._smali_inventory(before)
     final = BASE._smali_inventory(after)
     targets = {x["path"]: x for x in contract["targets"]}
@@ -57,7 +57,8 @@ def verify_envelope(before, after, contract, discovery=False):
         # instructions, register operands, metadata and exception ranges.
         if normalized_smali((before / path).read_text(encoding="utf-8")) != normalized_smali((after / path).read_text(encoding="utf-8")):
             raise BuildError(f"BV1 instruction/metadata roundtrip drift: {path}")
-        if path in reviewed and not discovery and final[path] != reviewed[path]["redecoded_sha256"]:
+        if (path in reviewed and not discovery and not source_verified
+                and final[path] != reviewed[path]["redecoded_sha256"]):
             raise BuildError(f"BV1 canonical class pin drift: {path}")
     return len(final), {path: final[path] for path in reviewed}
 
@@ -94,17 +95,29 @@ def verify_references(root, contract, manager_root=None):
 def build(args):
     import transform_bv1_w2l_ip_continuity as trial
     contract = trial.load_contract(args.contract)
-    base = BASE._pinned(args.base_apk, "current reproducible IMS baseline", BASE_APK)
+    source_verified = args.source_verified_input_report is not None
+    receipt_api = BASE._module("bv1_source_verified_receipt", "tools/source_verified_receipt.py")
+    upstream = None
+    if source_verified:
+        base = BASE._regular(args.base_apk, "source-verified IMS input APK")
+        upstream = receipt_api.verify_source_verified_input(
+            args.source_verified_input_report, base,
+            "imsservice-source-verified", ["imsservice-source-verified"])
+    else:
+        base = BASE._pinned(args.base_apk, "current reproducible IMS baseline", BASE_APK)
     manager = BASE._pinned(args.imsmanager_jar, "stock native imsmanager dependency", IMSMANAGER_SHA256)
     java = BASE._pinned(args.java, "Java runtime", BASE.JAVA_SHA256)
     apktool = BASE._pinned(args.apktool_jar, "apktool JAR", BASE.APKTOOL_SHA256)
     entries = BASE._zip_entries(base)
-    if (hashlib.sha256(entries.get("classes.dex", b"")).hexdigest() != BASE_DEX
-            or hashlib.sha256(entries.get("classes2.dex", b"")).hexdigest() != BRIDGE_DEX):
+    if (not source_verified and
+            (hashlib.sha256(entries.get("classes.dex", b"")).hexdigest() != BASE_DEX
+             or hashlib.sha256(entries.get("classes2.dex", b"")).hexdigest() != BRIDGE_DEX)):
         raise BuildError("BV1 baseline DEX drift")
     discovery = args.discover_pins
-    pins = None if discovery else load_pins(args.pins)
-    if discovery and args.output or not discovery and not args.output:
+    pins = None if discovery or source_verified else load_pins(args.pins)
+    if source_verified and discovery:
+        raise BuildError("source-verified input mode cannot combine with pin discovery")
+    if ((discovery and args.output) or (not discovery and not args.output)):
         raise BuildError("discovery publishes report only; strict mode requires output")
     for path in (args.report, args.output):
         if path and (path.exists() or path.is_symlink() or not path.parent.is_dir() or path.parent.is_symlink()):
@@ -135,24 +148,54 @@ def build(args):
                 or any(after_entries[k] != v for k, v in entries.items() if k not in changes_allowed)):
             raise BuildError("BV1 unrelated ZIP/bridge DEX changed")
         BASE._run(command + ["d", "-r", str(candidate), "-o", str(final)], "BV1 candidate decode")
-        count, canonical = verify_envelope(source / "smali", final / "smali", contract, discovery)
+        count, canonical = verify_envelope(source / "smali", final / "smali", contract,
+                                           discovery, source_verified)
         reference = verify_references(final / "smali", contract, manager_root / "smali")
         observed = {"schema_version": 1, "transformation_id": IDENTITY,
                     "classes_dex_sha256": BASE.sha256_file(dex), "unsigned_apk_sha256": BASE.sha256_file(candidate)}
+        actual_bridge_dex_sha256 = hashlib.sha256(after_entries["classes2.dex"]).hexdigest()
         if pins is not None and pins != observed:
             raise BuildError("BV1 final APK/DEX pin drift")
+        source_classification = None
+        receipt = None
+        if source_verified:
+            source_classification = {
+                "source_classification_verified": True,
+                "root_source_classification": upstream["source_classification"],
+                "verified_stage": IDENTITY,
+                "stage_invariants": {
+                    "input_receipt_and_apk_dex_matched": True,
+                    "input_class_pins_and_anchors_verified": True,
+                    "all_class_instruction_metadata_roundtrip": True,
+                    "native_helper_references_verified": True,
+                    "unrelated_zip_and_bridge_preserved": True,
+                    "final_redecode_verified": True,
+                },
+            }
+            receipt = receipt_api.make_source_verified_receipt(
+                "bv1-source-verified", candidate,
+                {"classes.dex": observed["classes_dex_sha256"],
+                 "classes2.dex": actual_bridge_dex_sha256},
+                source_classification, upstream)
         payload = {"schema_version": 1, "transformation_id": IDENTITY, "status": "PASS",
-                   "mode": "pin-discovery" if discovery else "strict", "observed_build_pins": observed,
+                   "mode": ("pin-discovery" if discovery else
+                            "source-verified" if source_verified else "strict"),
+                   "observed_build_pins": observed,
                    "observed_redecoded_pins": canonical, "transformations": changes,
-                   "inputs": {"base_apk_sha256": BASE_APK, "base_classes_dex_sha256": BASE_DEX,
+                   "inputs": {"base_apk_sha256": BASE.sha256_file(base), "base_classes_dex_sha256": hashlib.sha256(entries["classes.dex"]).hexdigest(),
                               "imsmanager_jar_sha256": IMSMANAGER_SHA256},
                    "toolchain": {"apktool_sha256": BASE.APKTOOL_SHA256, "java_sha256": BASE.JAVA_SHA256},
                    "instruction_roundtrip_validation": {"status": "PASS", "classes_verified": count},
                    "helper_reference_validation": reference,
-                   "output": {**observed, "strict_pins_verified": not discovery, "artifact_published": not discovery,
+                    "output": {**observed, "strict_pins_verified": not discovery and not source_verified, "artifact_published": not discovery,
                               "all_redecoded_classes_verified": True, "unrelated_zip_entries_preserved": True,
-                              "classes2_dex_sha256": BRIDGE_DEX, "runtime_validated": False, "signed": False},
+                               "classes2_dex_sha256": actual_bridge_dex_sha256, "runtime_validated": False, "signed": False},
                    "safety": {"rom_build_run": False, "saved_decoded_payload_used": False}}
+        if source_verified:
+            payload.update({"status": "SOURCE_VERIFIED",
+                "strict_pins_verified": False, "source_invariants_verified": True,
+                "artifact_published": True, "release_eligible": False,
+                "runtime_validated": False, "source_verified_receipt": receipt})
         if discovery:
             with args.report.open("x", encoding="utf-8", newline="\n") as stream:
                 json.dump(payload, stream, indent=2, sort_keys=True)
@@ -175,6 +218,8 @@ def parser():
     result.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
     result.add_argument("--pins", type=Path, default=DEFAULT_PINS)
     result.add_argument("--discover-pins", action="store_true")
+    result.add_argument("--source-verified-input-report", type=Path,
+                        help="verified source-builder receipt for this exact baseline APK")
     result.add_argument("--keep-work", action="store_true")
     return result
 

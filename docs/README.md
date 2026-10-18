@@ -1,5 +1,7 @@
 # Documentation guide
 
+Current crDroid IMS integration: [seven-project source-verified recipe](CRDROID_IMS_SOURCE_VERIFIED_20261018.md) and [2026-10-18 validation note](USER-VALIDATION_20261018.md).
+
 Start with the question you want to answer. You do not need to read the experiment history to understand the project's working features.
 
 ## Current entry points

@@ -61,15 +61,27 @@ def verify_roundtrip(before, after):
 
 
 def build(args):
-    base = BASE._pinned(args.base_apk, "BV1 unsigned IMS APK", BASE_APK)
+    source_verified = args.source_verified_input_report is not None
+    receipt_api = BASE._module("lg3_source_verified_receipt", "tools/source_verified_receipt.py")
+    upstream = None
+    if source_verified:
+        base = BASE._regular(args.base_apk, "source-verified BV1 APK")
+        upstream = receipt_api.verify_source_verified_input(
+            args.source_verified_input_report, base, "bv1-source-verified",
+            ["imsservice-source-verified", "bv1-source-verified"])
+    else:
+        base = BASE._pinned(args.base_apk, "BV1 unsigned IMS APK", BASE_APK)
     java = BASE._pinned(args.java, "Java runtime", BASE.JAVA_SHA256)
     apktool = BASE._pinned(args.apktool_jar, "apktool JAR", BASE.APKTOOL_SHA256)
     entries = BASE._zip_entries(base)
-    if (hashlib.sha256(entries.get("classes.dex", b"")).hexdigest() != BASE_DEX
-            or hashlib.sha256(entries.get("classes2.dex", b"")).hexdigest() != BV1.BRIDGE_DEX):
+    if (not source_verified and
+            (hashlib.sha256(entries.get("classes.dex", b"")).hexdigest() != BASE_DEX
+             or hashlib.sha256(entries.get("classes2.dex", b"")).hexdigest() != BV1.BRIDGE_DEX)):
         raise BuildError("LG3 baseline DEX drift")
     discovery = args.discover_pins
-    pins = None if discovery else load_pins(args.pins)
+    pins = None if discovery or source_verified else load_pins(args.pins)
+    if source_verified and discovery:
+        raise BuildError("source-verified input mode cannot combine with pin discovery")
     if (discovery and args.output) or (not discovery and not args.output):
         raise BuildError("discovery publishes report only; strict mode requires output")
     for path in (args.report, args.output):
@@ -113,19 +125,46 @@ def build(args):
                     "unsigned_apk_sha256": BASE.sha256_file(candidate)}
         if pins is not None and pins != observed:
             raise BuildError("LG3 final APK/DEX pin drift")
+        source_classification = None
+        receipt = None
+        if source_verified:
+            source_classification = {
+                "source_classification_verified": True,
+                "root_source_classification": upstream["source_classification"],
+                "verified_stage": IDENTITY,
+                "stage_invariants": {
+                    "input_receipt_and_apk_dex_matched": True,
+                    "transform_input_class_pins_and_anchors_verified": True,
+                    "all_class_instruction_metadata_roundtrip": True,
+                    "stock_timer_128000ms_verified": True,
+                    "unrelated_zip_and_bridge_preserved": True,
+                    "final_redecode_verified": True,
+                },
+            }
+            receipt = receipt_api.make_source_verified_receipt(
+                "lg3-source-verified", candidate,
+                {name: hashlib.sha256(after_entries[name]).hexdigest()
+                 for name in after_entries if name.startswith("classes") and name.endswith(".dex")},
+                source_classification, upstream)
         payload = {"status": "PASS", "schema_version": 1, "transformation_id": IDENTITY,
-                   "mode": "pin-discovery" if discovery else "strict",
+                   "mode": ("pin-discovery" if discovery else
+                            "source-verified" if source_verified else "strict"),
                    "stock_timer_f_ms": 128000,
                    "observed_build_pins": observed, "transformation": transformed,
                    "instruction_roundtrip_validation": roundtrip,
-                   "inputs": {"base_apk_sha256": BASE_APK, "base_classes_dex_sha256": BASE_DEX},
+                   "inputs": {"base_apk_sha256": BASE.sha256_file(base), "base_classes_dex_sha256": hashlib.sha256(entries["classes.dex"]).hexdigest()},
                    "toolchain": {"java_sha256": BASE.JAVA_SHA256, "apktool_sha256": BASE.APKTOOL_SHA256},
-                   "output": {"strict_pins_verified": not discovery, "artifact_published": not discovery,
+                    "output": {"strict_pins_verified": not discovery and not source_verified, "artifact_published": not discovery,
                               "all_redecoded_classes_verified": True, "unrelated_zip_entries_preserved": True,
-                              "classes2_dex_sha256": BV1.BRIDGE_DEX,
+                               "classes2_dex_sha256": hashlib.sha256(after_entries["classes2.dex"]).hexdigest(),
                               "signed": False, "runtime_validated": False},
                    "safety": {"rom_build_run": False, "source_tree_changed": False,
                               "saved_decoded_payload_used": False}}
+        if source_verified:
+            payload.update({"status": "SOURCE_VERIFIED",
+                "strict_pins_verified": False, "source_invariants_verified": True,
+                "artifact_published": True, "release_eligible": False,
+                "runtime_validated": False, "source_verified_receipt": receipt})
         if discovery:
             with args.report.open("x", encoding="utf-8", newline="\n") as stream:
                 json.dump(payload, stream, indent=2, sort_keys=True)
@@ -147,6 +186,8 @@ def parser():
     result.add_argument("--output", type=Path)
     result.add_argument("--pins", type=Path, default=DEFAULT_PINS)
     result.add_argument("--discover-pins", action="store_true")
+    result.add_argument("--source-verified-input-report", type=Path,
+                        help="verified BV1 receipt for this exact baseline APK")
     result.add_argument("--keep-work", action="store_true")
     return result
 

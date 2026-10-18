@@ -15,6 +15,7 @@ from typing import Callable
 
 HASH = re.compile(r"^[0-9a-f]{64}$")
 CLASS = re.compile(r"^(?:[A-Za-z_$][\w$]*\.)+[A-Za-z_$][\w$]*$")
+JAVAP_SOURCEFILE = re.compile(r'^Compiled from "(?:[^"\\]|\\.)+"$')
 Runner = Callable[[list[str]], subprocess.CompletedProcess[str]]
 
 
@@ -34,6 +35,10 @@ def normalize_javap(text: str) -> str:
     """Normalize transport-only differences, not ABI whitespace or ordering."""
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     lines = [line.rstrip() for line in text.split("\n")]
+    while lines and not lines[0]:
+        lines.pop(0)
+    if lines and JAVAP_SOURCEFILE.fullmatch(lines[0]):
+        lines.pop(0)
     while lines and not lines[0]:
         lines.pop(0)
     while lines and not lines[-1]:

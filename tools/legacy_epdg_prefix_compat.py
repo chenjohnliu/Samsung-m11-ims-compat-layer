@@ -176,13 +176,35 @@ def _write_report(path: Path, payload: dict) -> None:
         stream.write("\n")
 
 
+def verify_output_pins(observed: dict, pins: dict, source_verified: bool = False) -> None:
+    if (observed["schema_version"] != pins["schema_version"] or
+            observed["transformation_id"] != pins["transformation_id"]):
+        raise BuildError("LG2 output identity drift")
+    if not source_verified and observed != pins:
+        raise BuildError("LG2 final APK/DEX/redecoded pin drift")
+
+
 def build(args: argparse.Namespace) -> dict:
     zipper = _module("lg2_zipper", "tools/apk_entry_replace.py")
-    base_apk = BASE._pinned(args.base_apk, "EC2-r2 unsigned APK", BASE_APK_SHA256)
+    source_verified = args.source_verified
+    upstream = None
+    receipt_api = None
+    if source_verified:
+        if args.discover_pins or not args.source_receipt:
+            raise BuildError("source-verified LG2 requires an EC2 receipt and cannot discover pins")
+        receipt_api = _module("lg2_source_verified_receipt", "tools/source_verified_receipt.py")
+        upstream = receipt_api.verify_source_verified_input(
+            args.source_receipt, args.base_apk, "epdgservice-ec2-source-verified",
+            ["epdgservice-ec2-source-verified"])
+        base_apk = BASE._regular(args.base_apk, "source-verified EC2 APK")
+    else:
+        if args.source_receipt:
+            raise BuildError("--source-receipt requires --source-verified")
+        base_apk = BASE._pinned(args.base_apk, "EC2-r2 unsigned APK", BASE_APK_SHA256)
     java = BASE._pinned(args.java, "Java runtime", BASE.JAVA_SHA256)
     apktool = BASE._pinned(args.apktool_jar, "apktool JAR", BASE.APKTOOL_SHA256)
     before_entries = BASE._zip_entries(base_apk)
-    if hashlib.sha256(before_entries.get("classes.dex", b"")).hexdigest() != BASE_DEX_SHA256:
+    if not source_verified and hashlib.sha256(before_entries.get("classes.dex", b"")).hexdigest() != BASE_DEX_SHA256:
         raise BuildError("EC2-r2 classes.dex identity drift")
     discovery = args.discover_pins
     pins = None if discovery else load_pins(args.pins)
@@ -238,13 +260,16 @@ def build(args: argparse.Namespace) -> dict:
             "classes_dex_sha256": BASE.sha256_file(dex),
             "unsigned_apk_sha256": BASE.sha256_file(candidate),
         }
-        if pins is not None and observed != pins:
-            raise BuildError("LG2 final APK/DEX/redecoded pin drift")
+        if pins is not None:
+            verify_output_pins(observed, pins, source_verified)
         payload = {
-            "schema_version": 1, "status": "PASS", "transformation_id": TRANSFORMATION_ID,
-            "mode": "pin-discovery" if discovery else "strict", "observed_build_pins": observed,
+            "schema_version": 1, "status": "SOURCE_VERIFIED" if source_verified else "PASS",
+            "transformation_id": TRANSFORMATION_ID,
+            "mode": "source-verified" if source_verified else ("pin-discovery" if discovery else "strict"),
+            "observed_build_pins": observed,
             "observed_redecoded_target_sha256": after_classes[TARGET],
-            "inputs": {"base_apk_sha256": BASE_APK_SHA256, "base_classes_dex_sha256": BASE_DEX_SHA256,
+            "inputs": {"base_apk_sha256": upstream["artifact"]["apk_sha256"] if source_verified else BASE_APK_SHA256,
+                       "base_classes_dex_sha256": upstream["artifact"]["dex_sha256"]["classes.dex"] if source_verified else BASE_DEX_SHA256,
                        "epdg_utils_sha256": INPUT_SHA256},
             "toolchain": {"apktool_sha256": BASE.APKTOOL_SHA256, "java_sha256": BASE.JAVA_SHA256},
             "transformation": {"target": TARGET, "methods": ["getMobileInterfacePrefix()Ljava/lang/String;"],
@@ -255,6 +280,31 @@ def build(args: argparse.Namespace) -> dict:
             "safety": {"rom_build_run": False, "source_tree_changed": False,
                        "saved_decoded_payload_used": False},
         }
+        if source_verified:
+            source_classification = {
+                "source_classification_verified": True,
+                "upstream_stage": upstream["stage"],
+                "upstream_stage_chain": upstream["stage_chain"],
+                "upstream_apk_sha256": upstream["artifact"]["apk_sha256"],
+                "upstream_classes_dex_sha256": upstream["artifact"]["dex_sha256"]["classes.dex"],
+                "apktool_sha256": BASE.APKTOOL_SHA256,
+                "java_sha256": BASE.JAVA_SHA256,
+                "transformation_id": TRANSFORMATION_ID,
+                "input_class_anchor_sha256": INPUT_SHA256,
+                "target": TARGET,
+                "changed_entry_inventory_verified": True,
+                "unrelated_classes_and_zip_entries_verified": True,
+            }
+            payload.update({
+                "strict_pins_verified": False,
+                "source_invariants_verified": True,
+                "runtime_validated": False,
+                "release_eligible": False,
+                "source_verified_receipt": receipt_api.make_source_verified_receipt(
+                    "epdgservice-lg2-source-verified", candidate,
+                    {"classes.dex": observed["classes_dex_sha256"]},
+                    source_classification, upstream),
+            })
         if discovery:
             _write_report(args.report, payload)
         else:
@@ -275,6 +325,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--pins", type=Path, default=DEFAULT_PINS)
     result.add_argument("--work-dir", type=Path)
     result.add_argument("--discover-pins", action="store_true")
+    result.add_argument("--source-verified", action="store_true",
+                        help="use an exact receipt-bound EC2 APK and publish source/invariant verification")
+    result.add_argument("--source-receipt", type=Path,
+                        help="SOURCE_VERIFIED EC2 report that cryptographically binds --base-apk")
     result.add_argument("--keep-work", action="store_true")
     return result
 

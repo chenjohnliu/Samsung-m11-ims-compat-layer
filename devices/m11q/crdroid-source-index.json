@@ -1,0 +1,192 @@
+{
+  "checkpoint_manifest": "platform/checkpoints/crdroid-ims-20261018/manifest.json",
+  "format_version": 1,
+  "projects": [
+    {
+      "base_commit": "a6b06469a8cadfc8fd337456f91324bcac579ba6",
+      "base_tree": "73296c8dd8f825a7dfbd76bf1f6938c56c1bece2",
+      "final_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad",
+      "patches": [
+        {
+          "after_tree": "495646ef33d3af68c3c47538a6abb3eacb222c01",
+          "before_tree": "73296c8dd8f825a7dfbd76bf1f6938c56c1bece2",
+          "path": "platform/checkpoints/ims-20261010/frameworks__base/0001-m11q-add-Samsung-IMS-framework-compatibility-APIs.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "88dc9424fa01973ed5e1b99b34411817a89fcbe9b0477bb33cedd6eadef84265"
+        },
+        {
+          "after_tree": "7b007bc870c76148b4132a6cbf3a4f2a7ae00a76",
+          "before_tree": "495646ef33d3af68c3c47538a6abb3eacb222c01",
+          "path": "platform/checkpoints/ims-20261010/frameworks__base/0002-SettingsLib-display-phone-number-from-standard-subsc.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "cf9c814c9e2e47483d5cd07d9d398e7cd6335ad6775cc4c64d4abfb3be2b46e9"
+        },
+        {
+          "after_tree": "ca5771edceb543df3ed410b1f0d1e102b8f1f52e",
+          "before_tree": "7b007bc870c76148b4132a6cbf3a4f2a7ae00a76",
+          "path": "platform/checkpoints/ims-20261010/frameworks__base/0003-SystemUI-derive-VoWiFi-icon-from-IMS-registration-tr.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "d8ce95034acf52a233e8da970d9372bfc686c54aee424cde99735bfa8cba3fdd"
+        },
+        {
+          "after_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad",
+          "before_tree": "ca5771edceb543df3ed410b1f0d1e102b8f1f52e",
+          "path": "platform/systemui/0001-fix-ims-registration-constant-import-package.patch",
+          "provenance_role": "public_buildfix",
+          "sha256": "e44656dd46c3f9518acd4edc7fe1700a42121381bda742855bae2c5c7d6697f2"
+        }
+      ],
+      "path": "frameworks/base",
+      "role": "framework",
+      "source_route": "pinned_public_source_plus_ordered_ims_patches",
+      "source_url": "https://github.com/crdroidandroid/android_frameworks_base.git"
+    },
+    {
+      "base_commit": "a819e6b6bd701838eabf471901c2cad75fba607c",
+      "base_tree": "d09c7e3ece9da7d665ba0b345125d895b6684544",
+      "final_tree": "cb1338ae4ecdc2826dfb9fc5441b55539285c91f",
+      "patches": [
+        {
+          "after_tree": "cb1338ae4ecdc2826dfb9fc5441b55539285c91f",
+          "before_tree": "d09c7e3ece9da7d665ba0b345125d895b6684544",
+          "path": "platform/checkpoints/ims-20261010/frameworks__opt__net__ims/0001-ims-correctly-test-emergency-capability-bit.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "62696e3b124e10ef4b5aaf75a946bf86a1f3414eb8bf9109c0edb5c344f6992e"
+        }
+      ],
+      "path": "frameworks/opt/net/ims",
+      "role": "framework",
+      "source_route": "pinned_public_source_plus_ordered_ims_patches",
+      "source_url": "https://github.com/crdroidandroid/android_frameworks_opt_net_ims.git"
+    },
+    {
+      "base_commit": "5fd790282cca6e61a42892398beccee065ed6101",
+      "base_tree": "4faa6b5357756395864836a9b1002f49c2bc9663",
+      "final_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d",
+      "patches": [
+        {
+          "after_tree": "207ff796769d82fb8cc613f020b71ecbdb80e16d",
+          "before_tree": "4faa6b5357756395864836a9b1002f49c2bc9663",
+          "path": "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0001-m11q-integrate-SEH-APN-bridge-and-IMS-handover-recov.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "0a4a3b84b737de5ab432840ca4a7998f010156e58f79e483b2d8bfc51d9fd0cf"
+        },
+        {
+          "after_tree": "aabbe2b1bafec230ebf8e4dd40e8bae8cdbca23d",
+          "before_tree": "207ff796769d82fb8cc613f020b71ecbdb80e16d",
+          "path": "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0002-m11q-support-single-active-IMS-SIM-in-either-slot.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "efbe9afa09e4d4cce5fcc2d6d21b4081a110716a9f35924d00df5e989691b38c"
+        },
+        {
+          "after_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d",
+          "before_tree": "aabbe2b1bafec230ebf8e4dd40e8bae8cdbca23d",
+          "path": "platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch",
+          "provenance_role": "public_crdroid_supplement",
+          "sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e"
+        }
+      ],
+      "path": "frameworks/opt/telephony",
+      "role": "framework",
+      "source_route": "pinned_public_source_plus_ordered_ims_patches",
+      "source_url": "https://github.com/crdroidandroid/android_frameworks_opt_telephony.git"
+    },
+    {
+      "base_commit": "051cbcadbd9fc321c45600b038ab2901608e18dd",
+      "base_tree": "69e69c9d2047dd19a900b01597da0a6b15cf0e23",
+      "final_tree": "9a73a0db544600afc5c21cad54fe62de0ac90d38",
+      "patches": [
+        {
+          "after_tree": "9a73a0db544600afc5c21cad54fe62de0ac90d38",
+          "before_tree": "69e69c9d2047dd19a900b01597da0a6b15cf0e23",
+          "path": "platform/checkpoints/ims-20261010/packages__services__Telephony/0001-m11q-guard-SIM-WFC-defaults-and-debug-carrier-config.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "29f8f7cce7cf64122233093e02d0934fb59635dcf3f57a73efa5dfd037dcade8"
+        }
+      ],
+      "path": "packages/services/Telephony",
+      "role": "telephony",
+      "source_route": "pinned_public_source_plus_ordered_ims_patches",
+      "source_url": "https://github.com/LineageOS/android_packages_services_Telephony.git"
+    },
+    {
+      "base_commit": "967c341707b6bdc3f9af3386d2dcfe385e00a16a",
+      "base_tree": "754e1e504f4bed29191111128f7c4d51e7de26dd",
+      "final_tree": "07b5848ad158a8716dfd9554658210bd07086aeb",
+      "patches": [
+        {
+          "after_tree": "07b5848ad158a8716dfd9554658210bd07086aeb",
+          "before_tree": "754e1e504f4bed29191111128f7c4d51e7de26dd",
+          "path": "platform/checkpoints/ims-20261010/system__netd/0001-m11q-support-Samsung-legacy-ePDG-network-endpoints.patch",
+          "provenance_role": "historical_public_ims",
+          "sha256": "5278428a87960531e83f36999bee9487c0f17f425d69df18b80b189601cd59cc"
+        }
+      ],
+      "path": "system/netd",
+      "role": "network",
+      "source_route": "pinned_public_source_plus_ordered_ims_patches",
+      "source_url": "https://github.com/crdroidandroid/android_system_netd.git"
+    },
+    {
+      "base_commit": "8e1a9a333a5692343f8bede5a2fe2dcac0d44489",
+      "base_tree": "dc32af3d54348739080e4a931983e48e5782f4ff",
+      "final_tree": "a17bbed8502a960267a2094223509322554deec3",
+      "patches": [
+        {
+          "after_tree": "a17bbed8502a960267a2094223509322554deec3",
+          "before_tree": "dc32af3d54348739080e4a931983e48e5782f4ff",
+          "path": "platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch",
+          "provenance_role": "public_crdroid_supplement",
+          "sha256": "c0a168b8d124b89aaffb1cf1c29163fc19a7c5ac8993b62e56ef9b5c7545d812"
+        }
+      ],
+      "path": "packages/services/Telecomm",
+      "role": "telecom",
+      "source_route": "pinned_public_source_plus_ordered_ims_patches",
+      "source_url": "https://github.com/chenjohnliu/android_packages_services_Telecomm.git"
+    },
+    {
+      "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+      "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+      "final_tree": "e2c444a9c9a528417a088396bc52265c8ae78a98",
+      "patches": [
+        {
+          "after_tree": "e2c444a9c9a528417a088396bc52265c8ae78a98",
+          "before_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+          "path": "platform/checkpoints/crdroid-ims-20261018/device__samsung__m11q/0001-sve-source-integration.patch",
+          "provenance_role": "local_device_source_integration",
+          "sha256": "edd00b0c352281e366f52138b79970e767ab5cc61d077d33c1d346f2a79835b5"
+        }
+      ],
+      "path": "device/samsung/m11q",
+      "role": "device",
+      "source_route": "pinned_public_source_plus_ordered_ims_patches",
+      "source_url": "https://github.com/chenjohnliu/android_device_samsung_m11q.git"
+    }
+  ],
+  "scope": "Seven-project IMS source-verified crDroid compatibility route. Eleven patch bodies reuse existing public paths; one SVE source-integration patch is new. This recipe does not cover the full Android manifest, ROM build, or runtime validation.",
+  "source_coverage": {
+    "android_build_run": false,
+    "complete_android_manifest_coverage": false,
+    "patch_recipe_projects": 7,
+    "public_source_projects": 7,
+    "publication_status": "published",
+    "rom_artifact_reproduction": false,
+    "runtime_validation_run": false
+  },
+  "source_index_status": "public_ims_source_recipe",
+  "source_policy": "Use each pinned public base commit and apply its ordered IMS patch recipe once. Existing public IMS patch bodies are referenced at their existing paths. The device source integration builds the already-public SVE compatibility sources through Soong and links them into sveservice.",
+  "updated_date": "2026-10-18",
+  "validation": {
+    "android_build_run": false,
+    "forward_recipe_tree_match_count": 7,
+    "patch_step_count": 12,
+    "patch_step_reverse_match_count": 12,
+    "reverse_recipe_tree_match_count": 7,
+    "rom_artifact_reproduction": false,
+    "runtime_validation_run": false,
+    "source_index_status": "public_ims_source_recipe",
+    "temporary_index_per_project": true,
+    "report": "devices/m11q/crdroid-source-replay-validation-20261018.json"
+  }
+}
