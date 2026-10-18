@@ -25,7 +25,14 @@ compile-stub-report.json
 /runtime/
 *.log
 *.pcap
+*.pcapng
 *.qxdm
+*.tar.gz
+m11q_logs/
+ims_wifi_cycle_*/
+SHARE_THIS/
+_PRIVATE_DO_NOT_SHARE/
+PRIVATE_ALL/
 
 # Keys and certificates
 *.pk8
@@ -46,3 +53,4 @@ __pycache__/
 .pytest_cache/
 .idea/
 .vscode/
+

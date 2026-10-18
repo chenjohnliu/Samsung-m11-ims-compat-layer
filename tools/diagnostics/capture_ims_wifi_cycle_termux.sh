@@ -64,6 +64,8 @@ require_command su
 require_command tar
 require_command grep
 require_command sed
+require_command mv
+require_command rmdir
 require_command sha256sum
 
 if command -v termux-wake-lock >/dev/null 2>&1; then
@@ -97,12 +99,39 @@ capture_private() {
 }
 
 redact_stream() {
+    # SHARE_THIS is best effort; inspect it before publishing.
     sed -E \
-        -e 's#([sS][iI][pP]:|[tT][eE][lL]:)[^ >;]+#\1[redacted]#g' \
-        -e 's#urn:gsma:imei:[^, ]+#urn:gsma:imei:[redacted]#g' \
-        -e 's#(^|[^0-9A-Fa-f])\+?[0-9]{9,15}([^0-9A-Fa-f]|$)#\1[redacted-number]\2#g' \
-        -e 's#(^|[^0-9])([0-9]{1,3}\.){3}[0-9]{1,3}([^0-9]|$)#\1[redacted-ipv4]\3#g' \
-        -e 's#([0-9A-Fa-f]{1,4}:){3,}[0-9A-Fa-f:]*|[0-9A-Fa-f:]*::[0-9A-Fa-f:]*#[redacted-ipv6]#g'
+        -e 's#([sS][iI][pP][sS]?:|[tT][eE][lL]:)[^[:space:]"<>]+#\1[redacted-uri]#g' \
+        -e 's#[Uu][Rr][Nn]:[Gg][Ss][Mm][Aa]:[Ii][Mm][Ee][Ii]:[^,;[:space:]]+#[redacted-imei-urn]#g' \
+        -e 's#([[:alnum:]_.%+-]+)@([[:alnum:]-]+\.)+[[:alpha:]]{2,}#[redacted-identity]#g' \
+        -e 's#(^|[^[:alnum:]_])(imsi|iccid|imei|impi|impu|msisdn|subscriberid|subscriber_id|android_id|serialnumber|serial_number|bssid|ssid|p-asserted-identity)[[:space:]]*[:=][[:space:]]*("[^"]*"|[^,;[:space:]]+)#\1\2=[redacted-field]#gI' \
+        -e 's#[0-9]{9,}#[redacted-number]#g' \
+        -e 's#([[:xdigit:]]{2}[:-]){5}[[:xdigit:]]{2}#[redacted-mac]#g' \
+        -e 's#([0-9]{1,3}\.){3}[0-9]{1,3}#[redacted-ipv4]#g' \
+        -e 's#([[:xdigit:]]{1,4}:){2,}[[:xdigit:]:]*(%[[:alnum:]_.-]+)?#[redacted-ipv6]#g'
+}
+
+sanitize_share_files() {
+    # Refuse publication if share files are unexpected or sanitization fails.
+    local staging="$CAPTURE_ROOT/.share-sanitized" share_file
+    if [ -e "$staging" ] || [ -L "$staging" ]; then
+        printf 'Share staging path already exists: %s\n' "$staging" >&2
+        return 1
+    fi
+    mkdir -m 700 "$staging" || return 1
+    for share_file in "$SHARE_ROOT"/* "$SHARE_ROOT"/.[!.]* "$SHARE_ROOT"/..?*; do
+        if [ ! -e "$share_file" ] && [ ! -L "$share_file" ]; then continue; fi
+        if [ ! -f "$share_file" ] || [ -L "$share_file" ]; then
+            printf 'Refusing non-regular share item: %s\n' "$share_file" >&2
+            return 1
+        fi
+        redact_stream <"$share_file" >"$staging/${share_file##*/}" || return 1
+    done
+    for share_file in "$staging"/* "$staging"/.[!.]* "$staging"/..?*; do
+        [ -f "$share_file" ] || continue
+        mv -f "$share_file" "$SHARE_ROOT/${share_file##*/}" || return 1
+    done
+    rmdir "$staging"
 }
 
 write_capture_health() {
@@ -194,7 +223,7 @@ snapshot() {
         printf '%s\n' '--- handover policy layers (not an effective merged value) ---'
         redact_stream <"$phase_dir/handover_policy.txt"
         printf '%s\n' '--- registration ---'
-        su -c "dumpsys secims | grep -E 'SIM slot:|UserAgent.*State:|onRegistered: RAT =|updateRegistration:.*rat=|onPdnConnected:|onLost[0-9]+|mIsEpdgConnected|isWifiConnected' | tail -n 160" 2>/dev/null || true
+        su -c "dumpsys secims | grep -E 'SIM slot:|UserAgent.*State:|onRegistered: RAT =|updateRegistration:.*rat=|onPdnConnected:|onLost[0-9]+|mIsEpdgConnected|isWifiConnected' | tail -n 160" 2>/dev/null | redact_stream || true
         printf '%s\n' '--- IMS networks and requests ---'
         su -c "dumpsys connectivity | grep -Ei 'NetworkAgentInfo.*(IWLAN|LTE)|Capabilities:.*IMS|RequestorPkg: com.sec.(imsservice|epdg)|epdg_data|rmnet_data' | tail -n 180" 2>/dev/null | redact_stream || true
         printf '%s\n' '--- interface state and address fingerprints ---'
@@ -217,7 +246,7 @@ record_call_result() {
     read -r icon
     printf '備註（沒有可直接按 Enter）：'
     read -r notes
-    printf '%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$phase" "$result" "$icon" "$notes" >>"$OBSERVATIONS"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$phase" "$result" "$icon" "$notes" | redact_stream >>"$OBSERVATIONS"
     LAST_CALL_RESULT="$result"
 }
 
@@ -332,7 +361,7 @@ case "$SAMSUNG_DIALER_PATH" in *package:*) SAMSUNG_DIALER_AVAILABLE=true ;; esac
     printf 'samsung_dialer_available=%s\n' "$SAMSUNG_DIALER_AVAILABLE"
     printf 'root_available=true\n'
     printf 'root_shell_identity=%s\n' "$ROOT_ID" | redact_stream
-} >"$SHARE_ROOT/runtime_identity.txt"
+} | redact_stream >"$SHARE_ROOT/runtime_identity.txt"
 
 printf 'timestamp\tphase\tcall_result\ticon\tnotes\n' >"$OBSERVATIONS"
 LAST_CALL_RESULT=""
@@ -373,7 +402,7 @@ if [ "$CAPTURE_MODE" = handover ]; then
         printf '備註（切換時間、通話結果、雙向語音、最後想要的網路）：'
         read -r manual_notes || manual_notes=''
         printf '%s\t%s\tmanual\tmanual\t%s\n' "$(date -Iseconds)" \
-            "$manual_phase" "$manual_notes" >>"$OBSERVATIONS"
+            "$manual_phase" "$manual_notes" | redact_stream >>"$OBSERVATIONS"
     done
 else
 printf '\n這個測試不會自動切換 Wi-Fi 或撥號。\n'
@@ -428,10 +457,13 @@ if [ -f "$RAW_LOG" ]; then
         >"$SHARE_ROOT/key_timeline_redacted.txt" || true
 fi
 
+sanitize_share_files
+
 SHARE_ARCHIVE="$CAPTURE_ROOT/SHARE_THIS.tar.gz"
 PRIVATE_ARCHIVE="$CAPTURE_ROOT/PRIVATE_FULL_CAPTURE.tar.gz"
 tar -czf "$SHARE_ARCHIVE" -C "$SHARE_ROOT" .
 tar -czf "$PRIVATE_ARCHIVE" -C "$PRIVATE_ROOT" .
 
-printf '\n擷取完成。請先提供可分享的紅除版：\n%s\n' "$SHARE_ARCHIVE"
+printf '\n擷取完成。脫敏版仍請人工檢查後再公開：\n%s\n' "$SHARE_ARCHIVE"
 printf '\n完整版可能含電話號碼、IP 與 IMS 身分資料，請先保留在手機：\n%s\n' "$PRIVATE_ARCHIVE"
+
