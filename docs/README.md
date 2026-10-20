@@ -10,6 +10,9 @@ Start with the question you want to answer. You do not need to read the experime
 | --- | --- |
 | Where are the full source forks and their corresponding patches? | [Source and patch index](SOURCE_INDEX.md) — current Cherish branches, exact commits and all 14 project recipes |
 | What works, and on which phone/ROM? | [Validated features](VALIDATED_FEATURES.md) |
+| How should I investigate an IMS crash or registration failure? | [IMS debugging runbook](IMS_DEBUGGING.md), [Traditional Chinese entry](IMS_DEBUGGING.zh-TW.md), and [issue template](ISSUE_TEMPLATE.md) |
+| What was reported for the Jio missing-API case? | [Jio M115F case record](cases/JIO_M115F.md) — tester reported VoLTE and VoWiFi working on the supplied `20261019-1423` fix build; exact installed hash and other feature details were not reported |
+| Which API compatibility changes followed the Jio fix? | [IMS API supplement for 2026-10-20](IMS_API_SUPPLEMENT_20261020.md); later preventive changes were host-validated only and were not in the tested Jio artifact |
 | Where can I download a ROM? | [Project README](../README.md#where-to-start) |
 | How do I reproduce the CherishOS source integration? | [Android 13 handoff](CHERISH_ANDROID13_IMS_HANDOFF.md) |
 | Which source changes belong to that checkpoint? | [Combined source checkpoint](CHERISH_SOURCE_CHECKPOINT.md) |
@@ -19,6 +22,8 @@ Start with the question you want to answer. You do not need to read the experime
 | What may be published? | [Patch provenance](PATCH_PROVENANCE.md), [LICENSE](../LICENSE), [NOTICE](../NOTICE) |
 
 For the CherishOS port, follow the handoff's combined checkpoint, the two earlier supplemental patches, and then the 2026-10-16 VoWiFi supplement **once**. Do not also replay the old platform series, separate SystemUI correction or audio renderer over the combined checkpoint. Exact base revisions and application rules are recorded in the linked guides.
+
+The new IMS collector is a read-only convenience for local diagnostics. Its seven host tests use mocked ADB; it has not been tested on a phone. Review and redact its private output before sharing. The manual collection instructions in the runbook remain available independently of the collector.
 
 ## Component references
 

@@ -8,7 +8,7 @@
 
 本移植工作有 ChatGPT/Codex 協助。維護者親自建置並刷入 ROM，在手機上撥打電話、測試簡訊與換手；下方功能狀態以這些實機結果為準。
 
-[English README](README.md) · [原始碼與 patch 總索引](docs/SOURCE_INDEX.md) · [文件導覽](docs/README.md) · [驗證結果與範圍](docs/VALIDATED_FEATURES.md)
+[English README](README.md) · [原始碼與 patch 總索引](docs/SOURCE_INDEX.md) · [文件導覽](docs/README.md) · [驗證結果與範圍](docs/VALIDATED_FEATURES.md) · [IMS 除錯手冊](docs/IMS_DEBUGGING.zh-TW.md)
 
 ## 功能支援狀態
 
@@ -34,11 +34,14 @@ SIM1 與 SIM2 是分開測試的，兩者沒有同時啟用 IMS。這不代表�
 
 - 測試裝置為 **Samsung Galaxy M11 SM-M115F**，原廠輸入為 **M115FXXS5CWK3**，目標系統為 **Android 13**。
 - 實機結果來自**台灣大哥大**與本次測試的 Wi-Fi 環境。原廠設定檔涵蓋較多電信業者的組態，但其他業者與機型尚未通過實機驗證。
+- 另有測試者於 2026-10-20 回報，先前提供的 CherishOS `20261019-1423` Jio 修正版可使用 VoLTE 與 VoWiFi。未提供測試裝置實際安裝檔案的雜湊；此回報沒有說明簡訊、來電/去電方向、重開機、handover 或長時間穩定性，也不代表其他電信業者已通過驗證。詳見 [Jio 案例紀錄](docs/cases/JIO_M115F.md)。下方舊版下載連結並未宣稱包含此 Jio 修正。
 - **不支援兩張 SIM 同時啟用 IMS（DSDS）。**
 - **尚未實際撥打緊急電話測試**，包含透過 Wi-Fi 撥打緊急電話。能力回歸測試不會真的撥出電話。
 - **不支援 ViLTE（IMS 視訊通話）。** 其他音訊配件不在本次驗證範圍內。換手時可能短暫停頓。
 
 請見[目前的功能驗證紀錄](docs/VALIDATED_FEATURES.md)，了解測試證據與限制。較早的失敗紀錄與已退休的實驗仍保留在文件中，作為開發歷程參考。
+
+如需依證據排查電信業者相容性問題，請參閱 [IMS 除錯手冊](docs/IMS_DEBUGGING.zh-TW.md)、[英文完整版](docs/IMS_DEBUGGING.md)與[問題回報模板](docs/ISSUE_TEMPLATE.md)。後續 API 相容性原始碼修改記錄於 [2026-10-20 IMS API 補充說明](docs/IMS_API_SUPPLEMENT_20261020.md)；其中的預防性修改不在 Jio 測試者回報的版本內。
 
 [2026-10-16 原始碼補充修正](docs/CHERISH_VOWIFI_FIXES_20261016.md)處理後來在家用網路重現的初始 VoWiFi 來電音訊與 legacy MTU 問題。已通過文件記載的通話檢查；完整版本回歸矩陣尚未重跑，偶發 VoWiFi 狀態列圖示消失也仍待查。
 

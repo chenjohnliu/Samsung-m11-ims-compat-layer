@@ -8,7 +8,7 @@ This project adapts Samsung's stock IMS stack to **CherishOS 4.12** and **crDroi
 
 The port was developed with **ChatGPT/Codex assistance**. The maintainer built and flashed the ROMs, made real calls, checked SMS and tested handovers on the phone. Those results are the basis for the feature status below.
 
-[繁體中文](README.zh-TW.md) · [Source and patch index](docs/SOURCE_INDEX.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md)
+[繁體中文](README.zh-TW.md) · [Source and patch index](docs/SOURCE_INDEX.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md) · [IMS debugging runbook](docs/IMS_DEBUGGING.md)
 
 ## Feature support
 
@@ -34,11 +34,14 @@ SIM1 and SIM2 were tested separately. This does **not** support two active IMS s
 
 - Tested hardware: **Samsung Galaxy M11 SM-M115F**; stock inputs: **M115FXXS5CWK3**; target: **Android 13**.
 - Runtime results are from **Taiwan Mobile** and the tested Wi-Fi environments. Stock-backed carrier profiles provide wider configuration coverage, but other carriers and models are not runtime-certified.
+- Separately, on 2026-10-20 a Jio tester reported that VoLTE and VoWiFi worked with the previously supplied CherishOS `20261019-1423` fix build. The tester's installed artifact hash was not provided. This report does not add SMS, call-direction, reboot, handover, or long-duration results, and does not certify other carriers; see the [Jio case record](docs/cases/JIO_M115F.md). The older release downloads linked below are not identified as containing this Jio fix.
 - **Concurrent dual-SIM/DSDS IMS is unsupported.**
 - **Actual emergency calling has not been tested**, including emergency calls over Wi-Fi. The capability regression test does not place a call.
 - **ViLTE (IMS video calling) is unsupported.** Other audio accessories are outside the reported validation scope. Brief audio pauses can occur during handover.
 
 See [current validation details](docs/VALIDATED_FEATURES.md) for the evidence and limits. Older failure captures and retired experiments remain in the documentation as development history.
+
+For carrier-neutral failure triage, see the [IMS debugging runbook](docs/IMS_DEBUGGING.md) and [issue template](docs/ISSUE_TEMPLATE.md). The [IMS API supplement (2026-10-20)](docs/IMS_API_SUPPLEMENT_20261020.md) records the later compatibility changes; its preventive changes are not part of the Jio tester's reported build.
 
 The [2026-10-16 source supplement](docs/CHERISH_VOWIFI_FIXES_20261016.md) adds initial incoming Wi-Fi audio and legacy MTU corrections after later home-network failures. These passed the documented call checks; the full release regression matrix has not been repeated, and occasional VoWiFi status-icon disappearance remains unresolved.
 

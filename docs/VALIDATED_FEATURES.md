@@ -1,6 +1,14 @@
 # Validated features and current project status
 
-Updated **2026-10-16 (Asia/Taipei)**. The acceptance matrix below records the 2026-10-13 release tests. Later source revisions have the narrower validation scope described here; dated investigation records describe their original builds and experiments.
+Updated **2026-10-20 (Asia/Taipei)**. The acceptance matrix below records the 2026-10-13 release tests. Later source revisions and the separate Jio tester report have the narrower validation scope described here; dated investigation records describe their original builds and experiments.
+
+## 2026-10-20 Jio tester report
+
+A human-relayed tester report said that VoLTE and VoWiFi both worked on the previously supplied CherishOS `20261019-1423` build containing the `semGetDataServiceState` fix. Record those two results as **PASS (reported)** for the Jio scenario. The tester's installed artifact SHA-256 and fresh crash buffer were not provided, so exact installed-artifact identity and independent log verification remain unverified.
+
+The report did not specify incoming/outgoing call details, SMS over IMS, reboot behavior, handover behavior, or long-duration stability. These are limits of the report, not a reason to withhold the reported VoLTE/VoWiFi result. This carrier-specific report does not change the Taiwan Mobile acceptance matrix below, certify every IMS feature, or establish support for other carriers. See the [Jio M115F case record](cases/JIO_M115F.md).
+
+Later preventive API/factory changes were host-validated only, were not included in this tested artifact, and have not been validated on-device. A crDroid port of those follow-up changes has not been built or device-validated. See the [2026-10-20 IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) for source notes.
 
 ## 2026-10-16 source follow-up
 
