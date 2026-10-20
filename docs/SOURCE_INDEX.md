@@ -6,13 +6,18 @@ The [machine-readable index](../devices/m11q/cherish-source-index.json) lists al
 It also distinguishes the synchronized full-source forks from older donor branches.
 This inventory does not cover every project in the Android manifest.
 
+The [2026-10-20 IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) extends the
+framework/base and Telephony source routes. The original data-service-state
+fix has a Jio tester report; the preventive group and crDroid port remain
+source/host-validated only. The Cherish index now has 22 ordered patches.
+
 ## Latest full-source branches
 
 | Android project | Full source | Equivalent patches |
 | --- | --- | --- |
-| `frameworks/base` | [Framework: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_base/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__base/live-source.patch) |
+| `frameworks/base` | [Framework: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_base/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__base/live-source.patch), then [IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) |
 | `frameworks/opt/net/ims` | [IMS framework: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_opt_net_ims/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__opt__net__ims/live-source.patch), then [capability test](../platform/checkpoints/cherish-20261012-ims-supplement/frameworks__opt__net__ims/emergency-capability-test.patch) |
-| `frameworks/opt/telephony` | [Telephony: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_opt_telephony/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__opt__telephony/live-source.patch), then [legacy IWLAN MTU](../platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch) |
+| `frameworks/opt/telephony` | [Telephony: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_opt_telephony/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__opt__telephony/live-source.patch), [legacy IWLAN MTU](../platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch), then [UICC API service](IMS_API_SUPPLEMENT_20261020.md) |
 | `packages/services/Telephony` | [Phone service: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_packages_services_Telephony/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/packages__services__Telephony/live-source.patch) |
 | `system/netd` | [netd: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_system_netd/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/system__netd/live-source.patch) |
 | `packages/services/Telecomm` | [Telecom: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_packages_services_Telecomm/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/packages__services__Telecomm/live-source.patch), [permission](../platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch), then [initial Wi-Fi audio](../platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch) |
@@ -35,6 +40,16 @@ Their framework APIs, device overlay and other dependencies still come from
 the rest of the [CherishOS handoff](CHERISH_ANDROID13_IMS_HANDOFF.md). A matching
 source tree does not expand the [device validation scope](VALIDATED_FEATURES.md).
 
+## crDroid patch route
+
+The [crDroid index](../devices/m11q/crdroid-source-index.json) keeps seven
+projects and now has 16 ordered patches. It uses the existing pinned public
+upstream bases and complete ordered patch recipes, including the four new
+API suffix patches. All seven final trees and reverse recovery were verified.
+This supplement does not advertise a new full-source crDroid branch in the
+maintainer's Cherish-parent forks. The local crDroid port and the published
+patch route have the same four changed source files.
+
 ## Other projects and the patch route
 
 | Project | Published source recipe |
@@ -47,8 +62,9 @@ source tree does not expand the [device validation scope](VALIDATED_FEATURES.md)
 | `vendor/cherish` | Optional product/OTA customization in the baseline manifest |
 | `build/make` | Optional companion OTA customization in the baseline manifest |
 
-The full patch route is the 2026-10-12 combined baseline, the two applicable
-patches from its IMS supplement, then the two 2026-10-16 VoWiFi patches. The
+The full Cherish patch route is the 2026-10-12 combined baseline, the two applicable
+patches from its IMS supplement, the two 2026-10-16 VoWiFi patches, then the
+four 2026-10-20 API suffix patches. The
 index resolves that global sequence into a separate ordered list for each
 project. The baseline is not an additional layer on top of the historical
 `ims-20261010` patch series.

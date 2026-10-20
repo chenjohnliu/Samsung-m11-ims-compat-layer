@@ -1,6 +1,6 @@
 # crDroid IMS source-verified route — 2026-10-18
 
-This recipe describes the seven-project IMS source closure for the M11q crDroid 13 port. The index pins seven source repositories and twelve ordered patch steps. Eleven patch bodies reuse their existing public files; only the device SVE build/JNI integration is new. The index is not a full Android manifest, Android build receipt, or runtime receipt.
+This recipe describes the seven-project IMS source closure for the M11q crDroid 13 port. The original 2026-10-18 checkpoint had twelve ordered patch steps. The current index adds the four [2026-10-20 API suffix patches](IMS_API_SUPPLEMENT_20261020.md), for sixteen steps. All projects use their pinned public upstream bases and ordered patch recipes. No new full-source crDroid fork branch is advertised. The index is not a full Android manifest, Android build receipt, or runtime receipt; the new crDroid API port has source/host validation only.
 
 ## Source replay and patch application
 
@@ -11,7 +11,7 @@ python3 tools/replay_public_source_index.py \
   --repo-root <compat-checkout> \
   --index devices/m11q/crdroid-source-index.json \
   --source-root <ignored-temp-directory-inside-compat-checkout> \
-  --report <private-work>/crdroid-source-replay.json
+  --report <compat-checkout>/work/reports/crdroid-source-replay.json
 ```
 
 After syncing the seven projects to their indexed bases, preflight and apply the ordered patches:

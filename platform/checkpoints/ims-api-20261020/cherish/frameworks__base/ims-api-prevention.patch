@@ -1,0 +1,90 @@
+--- a/telephony/java/android/telephony/TelephonyManager.java
++++ b/telephony/java/android/telephony/TelephonyManager.java
+@@ -4486,6 +4486,24 @@
+         }
+     }
+ 
++    /** Returns the IMSI for the specified UICC application type. @hide */
++    @Nullable
++    @RequiresPermission(android.Manifest.permission.READ_PRIVILEGED_PHONE_STATE)
++    public String getSubscriberIdForUiccAppType(int subId, int appType) {
++        try {
++            IPhoneSubInfo info = getSubscriberInfoService();
++            if (info == null) {
++                return null;
++            }
++            return info.getSubscriberIdForUiccAppType(subId, appType, getOpPackageName(),
++                    getAttributionTag());
++        } catch (RemoteException ex) {
++            return null;
++        } catch (NullPointerException ex) {
++            return null;
++        }
++    }
++
+     /**
+      * Returns carrier specific information that will be used to encrypt the IMSI and IMPI,
+      * including the public key and the key identifier; or {@code null} if not available.
+@@ -6103,6 +6121,11 @@
+         }
+     }
+ 
++    /** Returns the legacy Samsung call-state API for a subscription. @hide */
++    public @CallState int semGetCallState(int subId) {
++        return getCallState(subId);
++    }
++
+     /**
+      * Device call state: No activity.
+      */
+@@ -6199,6 +6222,12 @@
+         }
+     }
+ 
++    /** Returns the legacy Samsung ISIM IMPU API. @hide */
++    @Nullable
++    public String[] semGetIsimImpu() {
++        return getIsimImpu();
++    }
++
+     /**
+     * @hide
+     */
+@@ -6355,6 +6384,27 @@
+             return DATA_DISCONNECTED;
+         } catch (NullPointerException ex) {
+             return DATA_DISCONNECTED;
++        }
++    }
++
++    /** Returns the legacy data connection state for the specified subscription. @hide */
++    @RequiresFeature(PackageManager.FEATURE_TELEPHONY_DATA)
++    public int semGetDataState(int subId) {
++        try {
++            ITelephony telephony = getITelephony();
++            if (telephony == null) {
++                return DATA_DISCONNECTED;
++            }
++            int state = telephony.getDataStateForSubId(subId);
++            if (state == DATA_DISCONNECTING
++                    && !Compatibility.isChangeEnabled(GET_DATA_STATE_R_VERSION)) {
++                return DATA_CONNECTED;
++            }
++            return state;
++        } catch (RemoteException ex) {
++            return DATA_DISCONNECTED;
++        } catch (NullPointerException ex) {
++            return DATA_DISCONNECTED;
+         }
+     }
+ 
+--- a/telephony/java/com/android/internal/telephony/IPhoneSubInfo.aidl
++++ b/telephony/java/com/android/internal/telephony/IPhoneSubInfo.aidl
+@@ -224,4 +224,7 @@
+      */
+     String getGroupIdLevel2ForSubscriber(int subId, String callingPackage,
+             String callingFeatureId);
++    /** Returns the IMSI for an application type on the specified subscription. */
++    String getSubscriberIdForUiccAppType(int subId, int appType, String callingPackage,
++            String callingFeatureId);
+ }

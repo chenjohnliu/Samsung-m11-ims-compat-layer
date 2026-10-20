@@ -1,0 +1,496 @@
+{
+  "format_version": 1,
+  "date": "2026-10-20",
+  "status": "PASS",
+  "scope": "Source recipe replay and modeled host tests, not Android ROM compilation or device certification.",
+  "rom_build_run_by_agent": false,
+  "roms": {
+    "cherish": {
+      "project_count": 14,
+      "patch_step_count": 22,
+      "forward_and_reverse_full_tree_match": true,
+      "projects": [
+        {
+          "path": "frameworks/base",
+          "base_commit": "bd837f94b5e87a4c4fbc9f40e0c0f597f74baf78",
+          "base_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+          "final_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
+          "reverse_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/frameworks__base/live-source.patch",
+              "sha256": "baed90c07dd789377ee0cdafaca1935a2c60ce56bb476fe3156db029979dc99c",
+              "before_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+              "after_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/data-service-state.patch",
+              "sha256": "0741ee7b4af70b4e12b0ca86ffae5f45cbb641275eeea3af44c02fab5d877ef5",
+              "before_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+              "after_tree": "51de02c06117694ec0866340bd26e75d861c3661"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/ims-api-prevention.patch",
+              "sha256": "670a184de9931f48ea171a2e1b3fe7020fbb0e34902ed7df33445c9b6448a70b",
+              "before_tree": "51de02c06117694ec0866340bd26e75d861c3661",
+              "after_tree": "30a2ad149559a99bbdd618d74376fdd641133496"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/sem-capabilities-factory.patch",
+              "sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc",
+              "before_tree": "30a2ad149559a99bbdd618d74376fdd641133496",
+              "after_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "frameworks/opt/net/ims",
+          "base_commit": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+          "base_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+          "final_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8",
+          "reverse_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/frameworks__opt__net__ims/live-source.patch",
+              "sha256": "15ae3f9fd562feca1d57c7295dc61b73312a01648eeba0c95e5e9f6919151209",
+              "before_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+              "after_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97"
+            },
+            {
+              "patch": "platform/checkpoints/cherish-20261012-ims-supplement/frameworks__opt__net__ims/emergency-capability-test.patch",
+              "sha256": "653cfc1ce53444f8564e0ab3f9026810c704cd80d3c4488200321e1f4fc8a06a",
+              "before_tree": "0252a644a1114209f073bc6bf7f219d0785ffd97",
+              "after_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "frameworks/opt/telephony",
+          "base_commit": "d8ea3f40256b74d228f98448c4e75a15db547921",
+          "base_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+          "final_tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f",
+          "reverse_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/frameworks__opt__telephony/live-source.patch",
+              "sha256": "8a801395b1a0018f1e5040f2be508c1e9e4d5666bfd85359fa59e8f0bb962d47",
+              "before_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+              "after_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac"
+            },
+            {
+              "patch": "platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch",
+              "sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e",
+              "before_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
+              "after_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/cherish/frameworks__opt__telephony/uicc-app-imsi.patch",
+              "sha256": "9a3017e433c047f46b4a5c33c32862a157df2252dbbe5ac92428a316b894424a",
+              "before_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+              "after_tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "packages/services/Telephony",
+          "base_commit": "abbe1d49d26bf05ed6287eaad07a3e94136377d9",
+          "base_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+          "final_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401",
+          "reverse_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/packages__services__Telephony/live-source.patch",
+              "sha256": "1f8cfe987136571abb83e850ae5428970d1494d0d7fca2a066fa06493bd69ff5",
+              "before_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+              "after_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "system/netd",
+          "base_commit": "0a1e4b250e798479cafc3297a4b8a22c5158da29",
+          "base_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+          "final_tree": "ba89c15b79d86144876f596de94cd579221d152e",
+          "reverse_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/system__netd/live-source.patch",
+              "sha256": "455eaa8530913030c27d4bb5fa71e95b381f1d7630cf0b9ce5034e48d8656a16",
+              "before_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+              "after_tree": "ba89c15b79d86144876f596de94cd579221d152e"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "packages/services/Telecomm",
+          "base_commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+          "base_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+          "final_tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+          "reverse_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/packages__services__Telecomm/live-source.patch",
+              "sha256": "cf1f8f93a764ad422d60e0abeff23778d5c790e376f642b67a8bdc3504d706be",
+              "before_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+              "after_tree": "eacda91439eb522e11034aad65eddfa2bc399307"
+            },
+            {
+              "patch": "platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch",
+              "sha256": "66f6e96678a5c0cc0a1000c88284cf0770b04b3c62c22657706b861b07be31cc",
+              "before_tree": "eacda91439eb522e11034aad65eddfa2bc399307",
+              "after_tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd"
+            },
+            {
+              "patch": "platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch",
+              "sha256": "c0a168b8d124b89aaffb1cf1c29163fc19a7c5ac8993b62e56ef9b5c7545d812",
+              "before_tree": "b3b2f8987054b18db82c1d40ca31a5279674b4dd",
+              "after_tree": "b2c191d69d2055770b1d96f6baddff6abe472252"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "packages/services/Mms",
+          "base_commit": "88c00908f6f248edc300e38044cb88e08eea942e",
+          "base_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+          "final_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+          "reverse_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/packages__services__Mms/live-source.patch",
+              "sha256": "bca6c53efaa605d3ffb8df2003193c1ec46969bacec616158cd0da553d2cd733",
+              "before_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+              "after_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "hardware/qcom-caf/msm8953/audio",
+          "base_commit": "b6b4b95176283ccd966e3cf388ec2fc2acbe4ef6",
+          "base_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+          "final_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5",
+          "reverse_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/hardware__qcom-caf__msm8953__audio/live-source.patch",
+              "sha256": "4ed43e3e20725b79e0bc8ddc6bb39b7f2ba90a6f5ec2a7ee0ffb2498504a5d28",
+              "before_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+              "after_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "hardware/qcom-caf/msm8953/display",
+          "base_commit": "6fe03b204444745439fe8d164dc78ee0a5576ca8",
+          "base_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+          "final_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b",
+          "reverse_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/hardware__qcom-caf__msm8953__display/live-source.patch",
+              "sha256": "f1f3a5e0b2631b3da7a401b499c44463ecb9c019ac6d10086cd8b0ccd6c4768c",
+              "before_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+              "after_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "vendor/qcom/opensource/commonsys-intf/display",
+          "base_commit": "ba6b55fdd5e13290a9e97a0f947fd21ee2f228af",
+          "base_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+          "final_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356",
+          "reverse_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/vendor__qcom__opensource__commonsys-intf__display/live-source.patch",
+              "sha256": "a41904cbc416dc67715bfc44d065f684778167d34299c009568396fadc13484c",
+              "before_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+              "after_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "device/cherish/sepolicy",
+          "base_commit": "c6ecfded4535af0ea163bfd1ff1c9f131f6c2507",
+          "base_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+          "final_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d",
+          "reverse_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/device__cherish__sepolicy/live-source.patch",
+              "sha256": "ce264761086cf69c7097b60a33896f900f7d6accd6e2a4465643ded05f4864a7",
+              "before_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+              "after_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "device/samsung/m11q",
+          "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+          "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+          "final_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
+          "reverse_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch",
+              "sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299",
+              "before_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+              "after_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "vendor/cherish",
+          "base_commit": "4b061ffab32779b72e10249fddb1f69a6561d777",
+          "base_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+          "final_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec",
+          "reverse_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/vendor__cherish/live-source.patch",
+              "sha256": "89b5870a368a5c5f5ee61f89309d33be70b5ca924341146dd4f831e3fb80e0f8",
+              "before_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+              "after_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "build/make",
+          "base_commit": "a74a178b502303584cc55ecbf6d2d7d3ae22c8b2",
+          "base_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+          "final_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1",
+          "reverse_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261012/build__make/live-source.patch",
+              "sha256": "74db0fd1eab3e08c74bd3917722d59e0cb0cfeb0ed89ab7b3a096ba0336f7fb0",
+              "before_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+              "after_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1"
+            }
+          ],
+          "status": "PASS"
+        }
+      ],
+      "modeled_host_tests": {
+        "telephony_assertions": 35,
+        "builder_assertions": 6,
+        "result": "PASS",
+        "runner": "tests/java/ims_api_20261020/run_tests.py"
+      },
+      "standalone_aidl": {
+        "result": "PASS",
+        "pre_existing_transaction_ids_unchanged": 34,
+        "appended_method_offset": 34
+      }
+    },
+    "crdroid": {
+      "project_count": 7,
+      "patch_step_count": 16,
+      "forward_and_reverse_full_tree_match": true,
+      "projects": [
+        {
+          "path": "frameworks/base",
+          "base_commit": "a6b06469a8cadfc8fd337456f91324bcac579ba6",
+          "base_tree": "73296c8dd8f825a7dfbd76bf1f6938c56c1bece2",
+          "final_tree": "04efc2425ab53a6c3aaeef52c611e8199fc11752",
+          "reverse_tree": "73296c8dd8f825a7dfbd76bf1f6938c56c1bece2",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/ims-20261010/frameworks__base/0001-m11q-add-Samsung-IMS-framework-compatibility-APIs.patch",
+              "sha256": "88dc9424fa01973ed5e1b99b34411817a89fcbe9b0477bb33cedd6eadef84265",
+              "before_tree": "73296c8dd8f825a7dfbd76bf1f6938c56c1bece2",
+              "after_tree": "495646ef33d3af68c3c47538a6abb3eacb222c01"
+            },
+            {
+              "patch": "platform/checkpoints/ims-20261010/frameworks__base/0002-SettingsLib-display-phone-number-from-standard-subsc.patch",
+              "sha256": "cf9c814c9e2e47483d5cd07d9d398e7cd6335ad6775cc4c64d4abfb3be2b46e9",
+              "before_tree": "495646ef33d3af68c3c47538a6abb3eacb222c01",
+              "after_tree": "7b007bc870c76148b4132a6cbf3a4f2a7ae00a76"
+            },
+            {
+              "patch": "platform/checkpoints/ims-20261010/frameworks__base/0003-SystemUI-derive-VoWiFi-icon-from-IMS-registration-tr.patch",
+              "sha256": "d8ce95034acf52a233e8da970d9372bfc686c54aee424cde99735bfa8cba3fdd",
+              "before_tree": "7b007bc870c76148b4132a6cbf3a4f2a7ae00a76",
+              "after_tree": "ca5771edceb543df3ed410b1f0d1e102b8f1f52e"
+            },
+            {
+              "patch": "platform/systemui/0001-fix-ims-registration-constant-import-package.patch",
+              "sha256": "e44656dd46c3f9518acd4edc7fe1700a42121381bda742855bae2c5c7d6697f2",
+              "before_tree": "ca5771edceb543df3ed410b1f0d1e102b8f1f52e",
+              "after_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/data-service-state.patch",
+              "sha256": "0741ee7b4af70b4e12b0ca86ffae5f45cbb641275eeea3af44c02fab5d877ef5",
+              "before_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad",
+              "after_tree": "69eb25b9295bf0ca764d43cf29b7dcdabf95a2ff"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/ims-api-prevention.patch",
+              "sha256": "670a184de9931f48ea171a2e1b3fe7020fbb0e34902ed7df33445c9b6448a70b",
+              "before_tree": "69eb25b9295bf0ca764d43cf29b7dcdabf95a2ff",
+              "after_tree": "6ce2bffeaa3694b45bbbe50d08420ae0d83cb340"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/sem-capabilities-factory.patch",
+              "sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc",
+              "before_tree": "6ce2bffeaa3694b45bbbe50d08420ae0d83cb340",
+              "after_tree": "04efc2425ab53a6c3aaeef52c611e8199fc11752"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "frameworks/opt/net/ims",
+          "base_commit": "a819e6b6bd701838eabf471901c2cad75fba607c",
+          "base_tree": "d09c7e3ece9da7d665ba0b345125d895b6684544",
+          "final_tree": "cb1338ae4ecdc2826dfb9fc5441b55539285c91f",
+          "reverse_tree": "d09c7e3ece9da7d665ba0b345125d895b6684544",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/ims-20261010/frameworks__opt__net__ims/0001-ims-correctly-test-emergency-capability-bit.patch",
+              "sha256": "62696e3b124e10ef4b5aaf75a946bf86a1f3414eb8bf9109c0edb5c344f6992e",
+              "before_tree": "d09c7e3ece9da7d665ba0b345125d895b6684544",
+              "after_tree": "cb1338ae4ecdc2826dfb9fc5441b55539285c91f"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "frameworks/opt/telephony",
+          "base_commit": "5fd790282cca6e61a42892398beccee065ed6101",
+          "base_tree": "4faa6b5357756395864836a9b1002f49c2bc9663",
+          "final_tree": "97c83f769d6e6cc71f74fd61611fbaa005275710",
+          "reverse_tree": "4faa6b5357756395864836a9b1002f49c2bc9663",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0001-m11q-integrate-SEH-APN-bridge-and-IMS-handover-recov.patch",
+              "sha256": "0a4a3b84b737de5ab432840ca4a7998f010156e58f79e483b2d8bfc51d9fd0cf",
+              "before_tree": "4faa6b5357756395864836a9b1002f49c2bc9663",
+              "after_tree": "207ff796769d82fb8cc613f020b71ecbdb80e16d"
+            },
+            {
+              "patch": "platform/checkpoints/ims-20261010/frameworks__opt__telephony/0002-m11q-support-single-active-IMS-SIM-in-either-slot.patch",
+              "sha256": "efbe9afa09e4d4cce5fcc2d6d21b4081a110716a9f35924d00df5e989691b38c",
+              "before_tree": "207ff796769d82fb8cc613f020b71ecbdb80e16d",
+              "after_tree": "aabbe2b1bafec230ebf8e4dd40e8bae8cdbca23d"
+            },
+            {
+              "patch": "platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch",
+              "sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e",
+              "before_tree": "aabbe2b1bafec230ebf8e4dd40e8bae8cdbca23d",
+              "after_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d"
+            },
+            {
+              "patch": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__opt__telephony/uicc-app-imsi.patch",
+              "sha256": "9a3017e433c047f46b4a5c33c32862a157df2252dbbe5ac92428a316b894424a",
+              "before_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d",
+              "after_tree": "97c83f769d6e6cc71f74fd61611fbaa005275710"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "packages/services/Telephony",
+          "base_commit": "051cbcadbd9fc321c45600b038ab2901608e18dd",
+          "base_tree": "69e69c9d2047dd19a900b01597da0a6b15cf0e23",
+          "final_tree": "9a73a0db544600afc5c21cad54fe62de0ac90d38",
+          "reverse_tree": "69e69c9d2047dd19a900b01597da0a6b15cf0e23",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/ims-20261010/packages__services__Telephony/0001-m11q-guard-SIM-WFC-defaults-and-debug-carrier-config.patch",
+              "sha256": "29f8f7cce7cf64122233093e02d0934fb59635dcf3f57a73efa5dfd037dcade8",
+              "before_tree": "69e69c9d2047dd19a900b01597da0a6b15cf0e23",
+              "after_tree": "9a73a0db544600afc5c21cad54fe62de0ac90d38"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "system/netd",
+          "base_commit": "967c341707b6bdc3f9af3386d2dcfe385e00a16a",
+          "base_tree": "754e1e504f4bed29191111128f7c4d51e7de26dd",
+          "final_tree": "07b5848ad158a8716dfd9554658210bd07086aeb",
+          "reverse_tree": "754e1e504f4bed29191111128f7c4d51e7de26dd",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/ims-20261010/system__netd/0001-m11q-support-Samsung-legacy-ePDG-network-endpoints.patch",
+              "sha256": "5278428a87960531e83f36999bee9487c0f17f425d69df18b80b189601cd59cc",
+              "before_tree": "754e1e504f4bed29191111128f7c4d51e7de26dd",
+              "after_tree": "07b5848ad158a8716dfd9554658210bd07086aeb"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "packages/services/Telecomm",
+          "base_commit": "8e1a9a333a5692343f8bede5a2fe2dcac0d44489",
+          "base_tree": "dc32af3d54348739080e4a931983e48e5782f4ff",
+          "final_tree": "a17bbed8502a960267a2094223509322554deec3",
+          "reverse_tree": "dc32af3d54348739080e4a931983e48e5782f4ff",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch",
+              "sha256": "c0a168b8d124b89aaffb1cf1c29163fc19a7c5ac8993b62e56ef9b5c7545d812",
+              "before_tree": "dc32af3d54348739080e4a931983e48e5782f4ff",
+              "after_tree": "a17bbed8502a960267a2094223509322554deec3"
+            }
+          ],
+          "status": "PASS"
+        },
+        {
+          "path": "device/samsung/m11q",
+          "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+          "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+          "final_tree": "e2c444a9c9a528417a088396bc52265c8ae78a98",
+          "reverse_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+          "patches": [
+            {
+              "patch": "platform/checkpoints/crdroid-ims-20261018/device__samsung__m11q/0001-sve-source-integration.patch",
+              "sha256": "edd00b0c352281e366f52138b79970e767ab5cc61d077d33c1d346f2a79835b5",
+              "before_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+              "after_tree": "e2c444a9c9a528417a088396bc52265c8ae78a98"
+            }
+          ],
+          "status": "PASS"
+        }
+      ],
+      "modeled_host_tests": {
+        "telephony_assertions": 35,
+        "builder_assertions": 6,
+        "result": "PASS",
+        "runner": "tests/java/ims_api_20261020/run_tests.py"
+      },
+      "standalone_aidl": {
+        "result": "PASS",
+        "pre_existing_transaction_ids_unchanged": 34,
+        "appended_method_offset": 34
+      }
+    }
+  },
+  "runtime": {
+    "cherish_original_jio_fix": {
+      "source": "maintainer-relayed tester report on 2026-10-20",
+      "volte": "PASS_REPORTED",
+      "vowifi": "PASS_REPORTED",
+      "sms_call_directions_reboot_handover_long_duration": "NOT_REPORTED",
+      "fresh_crash_buffer_and_installed_hash": "NOT_PROVIDED",
+      "case": "docs/cases/JIO_M115F.md"
+    },
+    "cherish_preventive_group": "NOT_DEVICE_TESTED",
+    "crdroid_new_port": "NOT_BUILT_OR_DEVICE_TESTED",
+    "collector": "7 mocked-ADB host tests passed; no actual device collection validated"
+  }
+}

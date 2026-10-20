@@ -5,7 +5,7 @@
     {
       "base_commit": "a6b06469a8cadfc8fd337456f91324bcac579ba6",
       "base_tree": "73296c8dd8f825a7dfbd76bf1f6938c56c1bece2",
-      "final_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad",
+      "final_tree": "04efc2425ab53a6c3aaeef52c611e8199fc11752",
       "patches": [
         {
           "after_tree": "495646ef33d3af68c3c47538a6abb3eacb222c01",
@@ -34,6 +34,24 @@
           "path": "platform/systemui/0001-fix-ims-registration-constant-import-package.patch",
           "provenance_role": "public_buildfix",
           "sha256": "e44656dd46c3f9518acd4edc7fe1700a42121381bda742855bae2c5c7d6697f2"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/data-service-state.patch",
+          "sha256": "0741ee7b4af70b4e12b0ca86ffae5f45cbb641275eeea3af44c02fab5d877ef5",
+          "before_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad",
+          "after_tree": "69eb25b9295bf0ca764d43cf29b7dcdabf95a2ff"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/ims-api-prevention.patch",
+          "sha256": "670a184de9931f48ea171a2e1b3fe7020fbb0e34902ed7df33445c9b6448a70b",
+          "before_tree": "69eb25b9295bf0ca764d43cf29b7dcdabf95a2ff",
+          "after_tree": "6ce2bffeaa3694b45bbbe50d08420ae0d83cb340"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/sem-capabilities-factory.patch",
+          "sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc",
+          "before_tree": "6ce2bffeaa3694b45bbbe50d08420ae0d83cb340",
+          "after_tree": "04efc2425ab53a6c3aaeef52c611e8199fc11752"
         }
       ],
       "path": "frameworks/base",
@@ -62,7 +80,7 @@
     {
       "base_commit": "5fd790282cca6e61a42892398beccee065ed6101",
       "base_tree": "4faa6b5357756395864836a9b1002f49c2bc9663",
-      "final_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d",
+      "final_tree": "97c83f769d6e6cc71f74fd61611fbaa005275710",
       "patches": [
         {
           "after_tree": "207ff796769d82fb8cc613f020b71ecbdb80e16d",
@@ -84,6 +102,12 @@
           "path": "platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch",
           "provenance_role": "public_crdroid_supplement",
           "sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__opt__telephony/uicc-app-imsi.patch",
+          "sha256": "9a3017e433c047f46b4a5c33c32862a157df2252dbbe5ac92428a316b894424a",
+          "before_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d",
+          "after_tree": "97c83f769d6e6cc71f74fd61611fbaa005275710"
         }
       ],
       "path": "frameworks/opt/telephony",
@@ -164,7 +188,7 @@
       "source_url": "https://github.com/chenjohnliu/android_device_samsung_m11q.git"
     }
   ],
-  "scope": "Seven-project IMS source-verified crDroid compatibility route. Eleven patch bodies reuse existing public paths; one SVE source-integration patch is new. This recipe does not cover the full Android manifest, ROM build, or runtime validation.",
+  "scope": "Seven-project crDroid IMS recipe plus the four 2026-10-20 API suffix patches; no new ROM build or runtime acceptance.",
   "source_coverage": {
     "android_build_run": false,
     "complete_android_manifest_coverage": false,
@@ -175,18 +199,22 @@
     "runtime_validation_run": false
   },
   "source_index_status": "public_ims_source_recipe",
-  "source_policy": "Use each pinned public base commit and apply its ordered IMS patch recipe once. Existing public IMS patch bodies are referenced at their existing paths. The device source integration builds the already-public SVE compatibility sources through Soong and links them into sveservice.",
-  "updated_date": "2026-10-18",
+  "source_policy": "Use each pinned public upstream base commit and apply its complete ordered patch recipe once. The four API suffix patches are included. No new full-source crDroid fork branch is advertised.",
+  "updated_date": "2026-10-20",
   "validation": {
     "android_build_run": false,
     "forward_recipe_tree_match_count": 7,
-    "patch_step_count": 12,
-    "patch_step_reverse_match_count": 12,
+    "patch_step_count": 16,
+    "patch_step_reverse_match_count": 16,
     "reverse_recipe_tree_match_count": 7,
     "rom_artifact_reproduction": false,
     "runtime_validation_run": false,
     "source_index_status": "public_ims_source_recipe",
     "temporary_index_per_project": true,
-    "report": "devices/m11q/crdroid-source-replay-validation-20261018.json"
-  }
+    "report": "devices/m11q/ims-api-source-validation-20261020.json"
+  },
+  "checkpoint_manifests": [
+    "platform/checkpoints/crdroid-ims-20261018/manifest.json",
+    "platform/checkpoints/ims-api-20261020/manifest.json"
+  ]
 }

@@ -1,0 +1,117 @@
+{
+  "format_version": 1,
+  "checkpoint": "ims-api-20261020",
+  "created_date": "2026-10-20",
+  "scope": "Incremental IMS framework API source changes after each ROM's indexed prerequisites.",
+  "rom_build_run_by_agent": false,
+  "runtime_validation": {
+    "cherish_original_data_service_state_fix": "Jio tester-reported VoLTE and VoWiFi success",
+    "cherish_preventive_changes": "not_device_tested",
+    "crdroid_port": "not_built_or_device_tested",
+    "note": "The earlier tested OTA does not include the preventive group."
+  },
+  "dependency_groups": [
+    {
+      "name": "uicc-application-imsi",
+      "projects": [
+        "frameworks/base",
+        "frameworks/opt/telephony"
+      ],
+      "rule": "Apply the client/AIDL and service patches in the same integration batch."
+    }
+  ],
+  "roms": {
+    "cherish": {
+      "projects": [
+        {
+          "path": "frameworks/base",
+          "precondition_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+          "patches": [
+            {
+              "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/data-service-state.patch",
+              "sha256": "0741ee7b4af70b4e12b0ca86ffae5f45cbb641275eeea3af44c02fab5d877ef5",
+              "before_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+              "after_tree": "51de02c06117694ec0866340bd26e75d861c3661"
+            },
+            {
+              "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/ims-api-prevention.patch",
+              "sha256": "670a184de9931f48ea171a2e1b3fe7020fbb0e34902ed7df33445c9b6448a70b",
+              "before_tree": "51de02c06117694ec0866340bd26e75d861c3661",
+              "after_tree": "30a2ad149559a99bbdd618d74376fdd641133496"
+            },
+            {
+              "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/sem-capabilities-factory.patch",
+              "sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc",
+              "before_tree": "30a2ad149559a99bbdd618d74376fdd641133496",
+              "after_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418"
+            }
+          ],
+          "source_fork": {
+            "repository": "https://github.com/chenjohnliu/android_frameworks_base.git",
+            "branch": "cherish-13-m11q-ims",
+            "commit": "24d00aa0f58abb78dcb6e155b3fe4507aad568e7",
+            "tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418"
+          }
+        },
+        {
+          "path": "frameworks/opt/telephony",
+          "precondition_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+          "patches": [
+            {
+              "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__opt__telephony/uicc-app-imsi.patch",
+              "sha256": "9a3017e433c047f46b4a5c33c32862a157df2252dbbe5ac92428a316b894424a",
+              "before_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+              "after_tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f"
+            }
+          ],
+          "source_fork": {
+            "repository": "https://github.com/chenjohnliu/android_frameworks_opt_telephony.git",
+            "branch": "cherish-13-m11q-ims",
+            "commit": "dc925e6f794415b5490beb13dcef3a67342cec3d",
+            "tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f"
+          }
+        }
+      ]
+    },
+    "crdroid": {
+      "projects": [
+        {
+          "path": "frameworks/base",
+          "precondition_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad",
+          "patches": [
+            {
+              "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/data-service-state.patch",
+              "sha256": "0741ee7b4af70b4e12b0ca86ffae5f45cbb641275eeea3af44c02fab5d877ef5",
+              "before_tree": "8a10be53c3ac8e4eb24545ac1ed7b2ee8ca1daad",
+              "after_tree": "69eb25b9295bf0ca764d43cf29b7dcdabf95a2ff"
+            },
+            {
+              "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/ims-api-prevention.patch",
+              "sha256": "670a184de9931f48ea171a2e1b3fe7020fbb0e34902ed7df33445c9b6448a70b",
+              "before_tree": "69eb25b9295bf0ca764d43cf29b7dcdabf95a2ff",
+              "after_tree": "6ce2bffeaa3694b45bbbe50d08420ae0d83cb340"
+            },
+            {
+              "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__base/sem-capabilities-factory.patch",
+              "sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc",
+              "before_tree": "6ce2bffeaa3694b45bbbe50d08420ae0d83cb340",
+              "after_tree": "04efc2425ab53a6c3aaeef52c611e8199fc11752"
+            }
+          ]
+        },
+        {
+          "path": "frameworks/opt/telephony",
+          "precondition_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d",
+          "patches": [
+            {
+              "path": "platform/checkpoints/ims-api-20261020/crdroid/frameworks__opt__telephony/uicc-app-imsi.patch",
+              "sha256": "9a3017e433c047f46b4a5c33c32862a157df2252dbbe5ac92428a316b894424a",
+              "before_tree": "c113f6aa259b9522c8382ae70f0d5ff62568926d",
+              "after_tree": "97c83f769d6e6cc71f74fd61611fbaa005275710"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

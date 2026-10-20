@@ -30,6 +30,7 @@ from typing import Any
 BASELINE_MANIFEST = "platform/checkpoints/cherish-20261012/manifest.json"
 IMS_SUPPLEMENT_MANIFEST = "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json"
 VOWIFI_MANIFEST = "platform/checkpoints/cherish-20261016-vowifi/manifest.json"
+API_MANIFEST = "platform/checkpoints/ims-api-20261020/manifest.json"
 INDEX_PATH = "devices/m11q/cherish-source-index.json"
 EXPECTED_PROJECT_COUNT = 14
 FORK_REPOSITORIES = {
@@ -247,8 +248,27 @@ def validate_index_data(
         raise ValidationError("unsupported source-index format_version")
     manifests = data.get("checkpoint_manifests")
     expected_manifests = [BASELINE_MANIFEST, IMS_SUPPLEMENT_MANIFEST, VOWIFI_MANIFEST]
+    api_file = _inside(repo_root, API_MANIFEST, "IMS API supplement manifest", must_exist=False)
+    if api_file.exists():
+        api = _load_json(api_file)
+        if api.get("format_version") != 1:
+            raise ValidationError("unsupported IMS API supplement format_version")
+        api_projects = _map_unique(
+            api.get("roms", {}).get("cherish", {}).get("projects"),
+            "path", "IMS API supplement projects",
+        )
+        if set(api_projects) != {"frameworks/base", "frameworks/opt/telephony"}:
+            raise ValidationError("IMS API supplement must cover base and telephony together")
+        for project_path, api_entry in api_projects.items():
+            steps = api_entry.get("patches")
+            if not isinstance(steps, list) or not steps:
+                raise ValidationError(f"IMS API supplement has no patches for {project_path}")
+            if api_entry.get("precondition_tree") != expected_chains[project_path][-1]["after_tree"]:
+                raise ValidationError(f"IMS API supplement precondition tree differs for {project_path}")
+            expected_chains[project_path].extend(steps)
+        expected_manifests.append(API_MANIFEST)
     if manifests != expected_manifests:
-        raise ValidationError("checkpoint_manifests must list the baseline and both supplements in order")
+        raise ValidationError("checkpoint_manifests must list the baseline and supplements in order")
 
     entries = _map_unique(data.get("projects"), "path", "source-index projects")
     if set(entries) != set(base_projects):

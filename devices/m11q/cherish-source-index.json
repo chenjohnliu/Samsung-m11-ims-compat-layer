@@ -1,11 +1,12 @@
 {
   "format_version": 1,
-  "updated_date": "2026-10-17",
-  "scope": "Fourteen checkpointed CherishOS Android 13 projects; not the entire Android tree or a new runtime acceptance.",
+  "updated_date": "2026-10-20",
+  "scope": "Fourteen CherishOS projects with the 2026-10-20 IMS API suffix; preventive changes have no new device acceptance.",
   "checkpoint_manifests": [
     "platform/checkpoints/cherish-20261012/manifest.json",
     "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
-    "platform/checkpoints/cherish-20261016-vowifi/manifest.json"
+    "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
+    "platform/checkpoints/ims-api-20261020/manifest.json"
   ],
   "full_source_policy": "Use the pinned synchronized fork commit OR its ordered upstream-base patch recipe per project, never both. Older donor refs are historical records.",
   "projects": [
@@ -21,6 +22,24 @@
           "sha256": "baed90c07dd789377ee0cdafaca1935a2c60ce56bb476fe3156db029979dc99c",
           "before_tree": "766293228a269161c782d365ab3ba86f2db070c9",
           "after_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/data-service-state.patch",
+          "sha256": "0741ee7b4af70b4e12b0ca86ffae5f45cbb641275eeea3af44c02fab5d877ef5",
+          "before_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+          "after_tree": "51de02c06117694ec0866340bd26e75d861c3661"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/ims-api-prevention.patch",
+          "sha256": "670a184de9931f48ea171a2e1b3fe7020fbb0e34902ed7df33445c9b6448a70b",
+          "before_tree": "51de02c06117694ec0866340bd26e75d861c3661",
+          "after_tree": "30a2ad149559a99bbdd618d74376fdd641133496"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/sem-capabilities-factory.patch",
+          "sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc",
+          "before_tree": "30a2ad149559a99bbdd618d74376fdd641133496",
+          "after_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418"
         }
       ],
       "reference_only_patches": [],
@@ -28,8 +47,8 @@
       "synchronized_fork": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_base.git",
         "branch": "cherish-13-m11q-ims",
-        "commit": "9538160b9f5b005c4601cf2baceb7f407522fe71",
-        "tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+        "commit": "24d00aa0f58abb78dcb6e155b3fe4507aad568e7",
+        "tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
         "commits": [
           {
             "sha": "9538160b9f5b005c4601cf2baceb7f407522fe71",
@@ -37,10 +56,31 @@
             "tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
             "patch_path": "platform/checkpoints/cherish-20261012/frameworks__base/live-source.patch",
             "patch_sha256": "baed90c07dd789377ee0cdafaca1935a2c60ce56bb476fe3156db029979dc99c"
+          },
+          {
+            "sha": "771ea14b0044d5c60546941cee948c74bc3c39aa",
+            "parent": "9538160b9f5b005c4601cf2baceb7f407522fe71",
+            "tree": "51de02c06117694ec0866340bd26e75d861c3661",
+            "patch_path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/data-service-state.patch",
+            "patch_sha256": "0741ee7b4af70b4e12b0ca86ffae5f45cbb641275eeea3af44c02fab5d877ef5"
+          },
+          {
+            "sha": "93755bf0cd4cb6e94c1af5aa26cd0e32f9203283",
+            "parent": "771ea14b0044d5c60546941cee948c74bc3c39aa",
+            "tree": "30a2ad149559a99bbdd618d74376fdd641133496",
+            "patch_path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/ims-api-prevention.patch",
+            "patch_sha256": "670a184de9931f48ea171a2e1b3fe7020fbb0e34902ed7df33445c9b6448a70b"
+          },
+          {
+            "sha": "24d00aa0f58abb78dcb6e155b3fe4507aad568e7",
+            "parent": "93755bf0cd4cb6e94c1af5aa26cd0e32f9203283",
+            "tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
+            "patch_path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/sem-capabilities-factory.patch",
+            "patch_sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc"
           }
         ]
       },
-      "final_tree": "0bfb4e7a4a8c3cec06d0adba6c05e82e63882997",
+      "final_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_base",
         "branch": "m11q-volte",
@@ -130,6 +170,12 @@
           "sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e",
           "before_tree": "28462328bcaf788eefcc7f5cabee94a0f1f4b9ac",
           "after_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95"
+        },
+        {
+          "path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__opt__telephony/uicc-app-imsi.patch",
+          "sha256": "9a3017e433c047f46b4a5c33c32862a157df2252dbbe5ac92428a316b894424a",
+          "before_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+          "after_tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f"
         }
       ],
       "reference_only_patches": [],
@@ -137,8 +183,8 @@
       "synchronized_fork": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_opt_telephony.git",
         "branch": "cherish-13-m11q-ims",
-        "commit": "b4e7075580611ff4fa330e09f11fb92c09299ec5",
-        "tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+        "commit": "dc925e6f794415b5490beb13dcef3a67342cec3d",
+        "tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f",
         "commits": [
           {
             "sha": "941d53c8d77140876b3ce719bbeffb66a6c0fe9c",
@@ -153,10 +199,17 @@
             "tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
             "patch_path": "platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch",
             "patch_sha256": "25b33ba570a7cecc92fef5207d2b205c7f4f609c2756c7840b63d6059693782e"
+          },
+          {
+            "sha": "dc925e6f794415b5490beb13dcef3a67342cec3d",
+            "parent": "b4e7075580611ff4fa330e09f11fb92c09299ec5",
+            "tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f",
+            "patch_path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__opt__telephony/uicc-app-imsi.patch",
+            "patch_sha256": "9a3017e433c047f46b4a5c33c32862a157df2252dbbe5ac92428a316b894424a"
           }
         ]
       },
-      "final_tree": "56ec79299da558fa5b3c7ec382ae38c5d09f2d95",
+      "final_tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f",
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_opt_telephony",
         "branch": "m11q-volte",

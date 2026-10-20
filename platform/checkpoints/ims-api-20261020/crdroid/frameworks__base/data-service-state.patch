@@ -1,0 +1,33 @@
+--- a/telephony/java/android/telephony/TelephonyManager.java
++++ b/telephony/java/android/telephony/TelephonyManager.java
+@@ -12431,6 +12431,30 @@
+     }
+ 
+     /**
++     * Samsung IMS compatibility: returns the data registration state for this
++     * manager's subscription, or the default subscription for an unpinned manager.
++     *
++     * @hide
++     */
++    public int semGetDataServiceState() {
++        return semGetDataServiceState(getSubId());
++    }
++
++    /**
++     * Samsung IMS compatibility: returns the data registration state for the
++     * specified subscription. Uses the standard service-state permission checks
++     * without requesting cell location information.
++     *
++     * @hide
++     */
++    public int semGetDataServiceState(int subId) {
++        final ServiceState serviceState = getServiceStateForSubscriber(subId, true, true);
++        // Missing state must not make IMS treat a cellular PANI as registered.
++        return serviceState != null ? serviceState.getDataRegistrationState()
++                : ServiceState.STATE_OUT_OF_SERVICE;
++    }
++
++    /**
+      * Returns the URI for the per-account voicemail ringtone set in Phone settings.
+      *
+      * @param accountHandle The handle for the {@link PhoneAccount} for which to retrieve the

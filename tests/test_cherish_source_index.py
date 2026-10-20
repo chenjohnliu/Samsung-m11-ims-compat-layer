@@ -29,7 +29,20 @@ class CherishSourceIndexTests(unittest.TestCase):
 
     def test_repository_index_and_artifacts_pass_offline(self) -> None:
         result = validate_index_data(self.mutated_index(), REPO_ROOT)
-        self.assertEqual(result, {"projects": 14, "patches": 18, "reference_only": 1, "forks_checked": 0})
+        self.assertEqual(result, {"projects": 14, "patches": 22, "reference_only": 1, "forks_checked": 0})
+
+    def test_api_supplement_cannot_be_omitted_from_manifest_order(self) -> None:
+        data = self.mutated_index()
+        data["checkpoint_manifests"].pop()
+        with self.assertRaisesRegex(ValidationError, "checkpoint_manifests"):
+            self.validate(data)
+
+    def test_api_supplement_cannot_be_omitted_from_patch_chain(self) -> None:
+        data = self.mutated_index()
+        entry = next(p for p in data["projects"] if p["path"] == "frameworks/base")
+        entry["patches"].pop()
+        with self.assertRaisesRegex(ValidationError, "ordered patch count mismatch"):
+            self.validate(data)
 
     def test_patch_hash_drift_is_rejected(self) -> None:
         data = self.mutated_index()

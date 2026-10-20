@@ -1,5 +1,11 @@
 # Independent CherishOS Android 13 IMS handoff — M11
 
+The [2026-10-20 IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) is included
+in the current source index and synchronized framework forks. It separates
+the Jio-tested original data-service-state fix from the later preventive API
+changes, which have source/host validation only. Apply its suffix only when
+using an older indexed source state; the new pinned fork commits include it.
+
 The 2026-10-12 checkpoint contains the source changes used for the user's
 fresh CherishOS 4.12 / Android 13 M11 build. On 2026-10-13, after all six
 previously omitted changes were applied, the user reported a passing manual build,

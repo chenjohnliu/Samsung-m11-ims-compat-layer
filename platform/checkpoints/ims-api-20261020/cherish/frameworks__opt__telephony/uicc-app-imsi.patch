@@ -1,0 +1,42 @@
+--- a/src/java/com/android/internal/telephony/PhoneSubInfoController.java
++++ b/src/java/com/android/internal/telephony/PhoneSubInfoController.java
+@@ -37,6 +37,7 @@
+ import android.telephony.TelephonyFrameworkInitializer;
+ import android.util.EventLog;
+ 
++import com.android.internal.telephony.uicc.IccRecords;
+ import com.android.internal.telephony.uicc.IsimRecords;
+ import com.android.internal.telephony.uicc.UiccCardApplication;
+ import com.android.internal.telephony.uicc.UiccPort;
+@@ -173,6 +174,31 @@
+         }
+     }
+ 
++    @Override
++    public String getSubscriberIdForUiccAppType(int subId, int appType, String callingPackage,
++            String callingFeatureId) {
++        enforceCallingPackageUidMatched(callingPackage);
++        return callPhoneMethodForSubIdWithReadSubscriberIdentifiersCheck(subId, callingPackage,
++                callingFeatureId, "getSubscriberIdForUiccAppType", (phone) -> {
++                    if (phone.getSubId() != subId) {
++                        return null;
++                    }
++                    UiccPort uiccPort = phone.getUiccPort();
++                    if (uiccPort == null) {
++                        return null;
++                    }
++                    UiccCardApplication uiccApp = uiccPort.getApplicationByType(appType);
++                    if (uiccApp == null) {
++                        return null;
++                    }
++                    IccRecords records = uiccApp.getIccRecords();
++                    if (records == null) {
++                        return null;
++                    }
++                    return records.getIMSI();
++                });
++    }
++
+     @Deprecated
+     public String getIccSerialNumber(String callingPackage) {
+         return getIccSerialNumberWithFeature(callingPackage, null);

@@ -1,0 +1,21 @@
+--- a/core/java/com/samsung/android/ims/options/SemCapabilities.java
++++ b/core/java/com/samsung/android/ims/options/SemCapabilities.java
+@@ -60,16 +60,8 @@
+         mTimestamp = builder.mTimestamp;
+     }
+ 
+-    public Builder getBuilder() {
+-        return new Builder()
+-                .setAvailableFeatures(mAvailableFeatures)
+-                .setBotServiceId(mBotServiceId)
+-                .setExtFeature(mExtFeatures)
+-                .setFeature(mFeatures)
+-                .setIsAvailable(mIsAvailable)
+-                .setIsExpired(mIsExpired)
+-                .setLegacyLatching(mIsLegacyLatching)
+-                .setTimestamp(mTimestamp);
++    public static Builder getBuilder() {
++        return new Builder();
+     }
+ 
+     @Override
