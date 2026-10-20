@@ -35,9 +35,8 @@ public final class GoogleModernMmTelFeature extends MmTelFeature {
         synchronized (owner) {
             if (capability == MmTelCapabilities.CAPABILITY_TYPE_VOICE)
                 return owner.voiceEnabledForTech(tech);
-            if (capability == MmTelCapabilities.CAPABILITY_TYPE_SMS
-                    && tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE)
-                return owner.smsEnabled;
+            if (capability == MmTelCapabilities.CAPABILITY_TYPE_SMS)
+                return owner.smsEnabledForTech(tech);
             return false;
         }
     }
@@ -66,8 +65,9 @@ public final class GoogleModernMmTelFeature extends MmTelFeature {
             return true;
         }
         if (pair.getCapability() == MmTelCapabilities.CAPABILITY_TYPE_SMS
-                && pair.getRadioTech() == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) {
-            owner.setSmsEnabled(enabled);
+                && (pair.getRadioTech() == ImsRegistrationImplBase.REGISTRATION_TECH_LTE
+                || pair.getRadioTech() == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN)) {
+            owner.setSmsEnabled(pair.getRadioTech(), enabled);
             return true;
         }
         return false;

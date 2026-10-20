@@ -1,6 +1,17 @@
 # Validated features and current project status
 
-Updated **2026-10-20 (Asia/Taipei)**. The acceptance matrix below records the 2026-10-13 release tests. Later source revisions and the separate Jio tester report have the narrower validation scope described here; dated investigation records describe their original builds and experiments.
+Updated **2026-10-21 (Asia/Taipei)**. The acceptance matrix below records the 2026-10-13 release tests. Later source revisions and tester reports have the narrower validation scope described here; dated investigation records describe their original builds and experiments.
+
+## 2026-10-21 crDroid SMS-over-IWLAN report
+
+After rebuilding and flashing crDroid with the supplementary bridge-source fix,
+the maintainer reported that the requested SMS send/receive tests passed along
+with VoLTE and VoWiFi calls. SMS behavior is maintainer-reported; no fresh
+successful-send trace was reviewed. A subsequent read-only inspection verified
+the tested factory APK identity and hashes. The CherishOS port is source-only and
+has not been built or tested with this change. This result does not establish
+Jio SMS or general carrier support. See the [source change, host harness scope
+and GSI module guidance](SMS_IWLAN_FIX_20261021.md).
 
 ## 2026-10-20 Jio tester report
 

@@ -1,5 +1,7 @@
 # Source forks and patch index
 
+The supplementary [2026-10-21 SMS over IWLAN bridge fix](SMS_IWLAN_FIX_20261021.md) changes compatibility-layer Java sources. It is not part of the historical platform patch chains listed below; keep its three bridge source changes together.
+
 Use this page to locate the source used by the CherishOS Android 13 integration.
 The [machine-readable index](../devices/m11q/cherish-source-index.json) lists all
 14 checkpointed projects, their locked bases, ordered patches and expected trees.

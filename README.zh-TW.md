@@ -43,6 +43,8 @@ SIM1 與 SIM2 是分開測試的，兩者沒有同時啟用 IMS。這不代表�
 
 如需依證據排查電信業者相容性問題，請參閱 [IMS 除錯手冊](docs/IMS_DEBUGGING.zh-TW.md)、[英文完整版](docs/IMS_DEBUGGING.md)與[問題回報模板](docs/ISSUE_TEMPLATE.md)。後續 API 相容性原始碼修改記錄於 [2026-10-20 IMS API 補充說明](docs/IMS_API_SUPPLEMENT_20261020.md)；其中的預防性修改不在 Jio 測試者回報的版本內。
 
+[2026-10-21 IMS over IWLAN 簡訊原始碼修正](docs/SMS_IWLAN_FIX_20261021.md)另行記錄橋接程式修正與 crDroid 簡訊及通話測試回報；CherishOS 尚待自行建置與裝置驗證。
+
 [2026-10-16 原始碼補充修正](docs/CHERISH_VOWIFI_FIXES_20261016.md)處理後來在家用網路重現的初始 VoWiFi 來電音訊與 legacy MTU 問題。已通過文件記載的通話檢查；完整版本回歸矩陣尚未重跑，偶發 VoWiFi 狀態列圖示消失也仍待查。
 
 ## 從哪裡開始

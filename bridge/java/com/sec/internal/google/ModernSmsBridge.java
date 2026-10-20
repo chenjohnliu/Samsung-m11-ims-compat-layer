@@ -54,7 +54,7 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
 
     boolean available() {
         return supportsPhone() && ready && !disposed && attachedBackend != null
-                && owner.smsEnabled && owner.smsAvailable();
+                && owner.smsAvailable();
     }
 
     private boolean callbackCurrent() {
@@ -215,7 +215,7 @@ public final class ModernSmsBridge extends ImsSmsImplBase {
                     : ImsRegistry.getRegistrationManager().getRegistrationInfo()) {
                 if (registration.getPhoneId() != owner.phoneId
                         || !registration.hasService("smsip")
-                        || registration.getCurrentRat() == 18
+                        || !owner.isCurrentSmsTransport(registration.getCurrentRat())
                         || registration.getImsProfile().hasEmergencySupport()
                         || registration.getImsProfile().getCmcType() != 0) continue;
                 String encoded = scaHex(registration.getImsProfile().getSmsPsi());

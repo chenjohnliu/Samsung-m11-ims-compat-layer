@@ -43,6 +43,8 @@ See [current validation details](docs/VALIDATED_FEATURES.md) for the evidence an
 
 For carrier-neutral failure triage, see the [IMS debugging runbook](docs/IMS_DEBUGGING.md) and [issue template](docs/ISSUE_TEMPLATE.md). The [IMS API supplement (2026-10-20)](docs/IMS_API_SUPPLEMENT_20261020.md) records the later compatibility changes; its preventive changes are not part of the Jio tester's reported build.
 
+The [2026-10-21 SMS over IWLAN source follow-up](docs/SMS_IWLAN_FIX_20261021.md) records the separate bridge fix and the maintainer-reported crDroid validation. The CherishOS port remains source-only pending its own build and device test.
+
 The [2026-10-16 source supplement](docs/CHERISH_VOWIFI_FIXES_20261016.md) adds initial incoming Wi-Fi audio and legacy MTU corrections after later home-network failures. These passed the documented call checks; the full release regression matrix has not been repeated, and occasional VoWiFi status-icon disappearance remains unresolved.
 
 ## Where to start

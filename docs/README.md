@@ -2,6 +2,8 @@
 
 Current crDroid IMS integration: [seven-project source-verified recipe](CRDROID_IMS_SOURCE_VERIFIED_20261018.md) and [2026-10-18 validation note](USER-VALIDATION_20261018.md).
 
+The separate SMS-over-IWLAN bridge fix and its 2026-10-21 validation boundary are documented in [SMS over IWLAN follow-up](SMS_IWLAN_FIX_20261021.md).
+
 Start with the question you want to answer. You do not need to read the experiment history to understand the project's working features.
 
 ## Current entry points

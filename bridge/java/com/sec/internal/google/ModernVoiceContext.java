@@ -38,6 +38,7 @@ public final class ModernVoiceContext {
     private static volatile boolean retainedVoiceEnabled;
     private static volatile boolean retainedWfcVoiceEnabled;
     private static volatile boolean retainedSmsEnabled = true;
+    private static volatile boolean retainedWfcSmsEnabled = true;
     final int phoneId;
     final int subscription;
     final ImsRegistrationImplBase registration = new ImsRegistrationImplBase();
@@ -54,7 +55,7 @@ public final class ModernVoiceContext {
     private IImsRegistrationCallback registrationCallback;
     int serviceId = -1;
     long epoch;
-    boolean disposed, voiceEnabled, wfcVoiceEnabled, smsEnabled, registered, nativeVoice;
+    boolean disposed, voiceEnabled, wfcVoiceEnabled, smsEnabled, wfcSmsEnabled, registered, nativeVoice;
     private int registrationTech = -1;
     private boolean scheduled;
     private long publishSequence;
@@ -71,6 +72,7 @@ public final class ModernVoiceContext {
             voiceEnabled = samePair && retainedVoiceEnabled;
             wfcVoiceEnabled = samePair && retainedWfcVoiceEnabled;
             smsEnabled = samePair ? retainedSmsEnabled : true;
+            wfcSmsEnabled = samePair ? retainedWfcSmsEnabled : true;
         }
         registration.onDeregistered(reason("Awaiting native backend"));
         if (voiceEnabled || wfcVoiceEnabled) {
@@ -184,8 +186,14 @@ public final class ModernVoiceContext {
         Log.i(TAG, "Voice enablement remembered=" + enabled + " phoneId=" + phoneId
                 + " tech=" + tech);
     }
-    void setSmsEnabled(boolean enabled) {
-        smsEnabled = enabled;
+    void setSmsEnabled(int tech, boolean enabled) {
+        if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) {
+            smsEnabled = enabled;
+        } else if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) {
+            wfcSmsEnabled = enabled;
+        } else {
+            return;
+        }
         retainEnablement();
     }
     private void retainEnablement() {
@@ -195,6 +203,7 @@ public final class ModernVoiceContext {
             retainedVoiceEnabled = voiceEnabled;
             retainedWfcVoiceEnabled = wfcVoiceEnabled;
             retainedSmsEnabled = smsEnabled;
+            retainedWfcSmsEnabled = wfcSmsEnabled;
         }
     }
     void requireBackend() {
@@ -206,13 +215,18 @@ public final class ModernVoiceContext {
         if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) return wfcVoiceEnabled;
         return false;
     }
+    boolean smsEnabledForTech(int tech) {
+        if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) return smsEnabled;
+        if (tech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) return wfcSmsEnabled;
+        return false;
+    }
     boolean voiceAvailable() {
         return !disposed && backend != null && serviceId >= 0 && registered && nativeVoice
                 && voiceEnabledForTech(registrationTech);
     }
     boolean smsAvailable() {
         return !disposed && backend != null && serviceId >= 0 && registered
-                && hasNormalSmsRegistration();
+                && smsEnabledForTech(registrationTech) && hasNormalSmsRegistration();
     }
     void publish() {
         final GoogleModernMmTelFeature target;
@@ -263,11 +277,17 @@ public final class ModernVoiceContext {
     boolean hasNormalSmsRegistration() {
         try {
             for (ImsRegistration r : ImsRegistry.getRegistrationManager().getRegistrationInfo()) {
-                if (r.getPhoneId() == phoneId && r.hasService("smsip") && r.getCurrentRat() != 18
+                if (r.getPhoneId() == phoneId && r.hasService("smsip")
+                        && isCurrentSmsTransport(r.getCurrentRat())
                         && !r.getImsProfile().hasEmergencySupport()
                         && r.getImsProfile().getCmcType() == 0) return true;
             }
         } catch (RuntimeException e) { Log.e(TAG, "SMS registration snapshot unavailable", e); }
+        return false;
+    }
+    boolean isCurrentSmsTransport(int rat) {
+        if (registrationTech == ImsRegistrationImplBase.REGISTRATION_TECH_LTE) return rat != 18;
+        if (registrationTech == ImsRegistrationImplBase.REGISTRATION_TECH_IWLAN) return rat == 18;
         return false;
     }
     private void restoreNativeVoiceFromRegistration() {
