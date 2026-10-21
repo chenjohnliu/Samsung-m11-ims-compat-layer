@@ -1,6 +1,6 @@
 # Jio IMS issue on M115F — tester-reported functional resolution
 
-**Status: RESOLVED — tester-reported VoLTE and VoWiFi success.** This records the specific functional report received on 2026-10-20. It is not universal IMS certification, proof of every IMS feature, or independently log-verified closure. No private bugreport is included.
+**Status: RESOLVED — tester-reported VoLTE, VoWiFi, and call continuity in both handover directions.** The October 20 voice/Wi-Fi-calling report and the separate October 21 handover follow-up are recorded below. The handover follow-up has no identified ROM build or artifact hash. These reports are not universal IMS certification or independently log-verified closure. No private bugreport is included.
 
 This case follows the [IMS debugging procedure](../IMS_DEBUGGING.md). The decision table below remains as a reusable guide for interpreting possible results in other cases; it is not a request for this tester to repeat tests or provide more logs.
 
@@ -76,10 +76,24 @@ Source: human-relayed tester report. Accept the functional report as provided; n
 | Installed build SHA-256 | Not provided | UNVERIFIED; `20261019-1423` is contextual build information only |
 | Incoming/outgoing call details | Not reported | UNREPORTED |
 | SMS over IMS | Not reported | UNREPORTED |
-| Reboot, handover, long-duration stability | Not reported | UNREPORTED |
+| Reboot, handover, long-duration stability | Not reported in the October 20 report | The October 20 report did not state these results; see the separate October 21 handover follow-up below |
 | ePDG null-framework exception absent | Not reported | UNVERIFIED; functional VoWiFi report does not establish this |
 
-**Closure decision:** resolve the original Jio functional issue as **tester-reported VoLTE and VoWiFi success**. Retain the missing-API diagnosis as strongly supported by original log/source/artifact evidence. Do not describe the result as independently log-verified, do not claim all IMS features were tested, and do not generalize it to all carriers.
+<a id="jio-handover-followup"></a>
+
+## Tester follow-up — 2026-10-21 (handover report)
+
+The same Jio tester separately confirmed that an ongoing call stayed connected when handed over in either direction: Wi-Fi Calling to LTE and LTE to Wi-Fi Calling. This is a tester-reported result. The follow-up did not identify the ROM name/version, build date, or artifact hash; do not assign it to the contextual `20261019-1423` build named in the October 20 report.
+
+| Check | Result | Evidence boundary |
+|---|---|---|
+| Ongoing VoWiFi call hands over to LTE and remains connected | **PASS (reported)** | Human-relayed October 21 tester confirmation; build and artifact identity not provided |
+| Ongoing VoLTE call hands over to Wi-Fi and remains connected | **PASS (reported)** | Human-relayed October 21 tester confirmation; build and artifact identity not provided |
+| SMS, dual-SIM IMS, emergency/video calling, long-duration stability | Not reported | No result was supplied for these behaviors |
+
+This follow-up does not change the October 20 artifact record and does not establish that the separate reports were run on the same build. It records the two handover outcomes without extending the Jio claim to SMS or other unreported features.
+
+**Closure decision:** resolve the original Jio functional issue as **tester-reported VoLTE and VoWiFi success**, with the separate two-direction handover result recorded above. Retain the missing-API diagnosis as strongly supported by original log/source/artifact evidence. Do not describe the functional reports as independently log-verified, do not claim all IMS features were tested, and do not generalize them to all carriers.
 
 ## Reusable decision paths
 

@@ -4,6 +4,8 @@
 
 [English README](README.md) · [原始碼與 patch 索引](docs/SOURCE_INDEX.md) · [文件導覽](docs/README.md) · [驗證結果](docs/VALIDATED_FEATURES.md)
 
+**電信業者測試結果：台灣大哥大**（維護者實測）與**印度 Jio**（測試者回報）均確認 VoLTE、VoWiFi 正常，且雙向 handover 時通話不中斷。請看[下方結果](#carrier-results)。
+
 ## 解碼 `imsservice.apk`
 
 解碼工具會讀取 APK 以及同一版韌體中的 `framework-res.apk`，並將解碼後的檔案寫入新目錄。它不會修改 APK、不會重新打包 APK，也不會建置 Android。
@@ -104,9 +106,20 @@ APK 解碼與 Android 相容修改的建置、套用是不同工作。CherishOS 
 
 若要安裝 ROM，請使用已發布的 [CherishOS 版本](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261020-13-Cherish)或 [crDroid 版本](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261021-13-CrDroid)，並依照其安裝說明操作。本 repository 不提供可刷入的套件。
 
+<a id="carrier-results"></a>
+
+## 電信業者結果
+
+| 電信業者 | VoLTE | VoWiFi | VoWiFi → VoLTE | VoLTE → VoWiFi | 證據來源 |
+| --- | --- | --- | --- | --- | --- |
+| 台灣大哥大，台灣 | 通過 | 通過 | 通過 | 通過 | [維護者實測](docs/VALIDATED_FEATURES.md) |
+| Jio，印度 | 通過 | 通過 | 通過 | 通過 | [測試者回報](docs/cases/JIO_M115F.md#jio-handover-followup) |
+
+兩個 handover 欄位均表示切換期間進行中的通話保持連線。Jio 於 10 月 21 日回報雙向 handover 成功，未提供該次測試的確切 build。下方詳細功能表記錄的是台灣大哥大的測試結果。
+
 ## 功能支援狀態
 
-以下結果是在 Galaxy M11（`SM-M115F`）、Android 13 與台灣大哥大環境，以**一次啟用一張 SIM**進行測試。版本與證據請見[驗證詳情](docs/VALIDATED_FEATURES.md)。最新 crDroid 簡訊結果是維護者回報；尚未回報最新 CherishOS 版本的手機簡訊驗證。
+以下功能表是在 Galaxy M11（`SM-M115F`）、Android 13 與台灣大哥大環境，以**一次啟用一張 SIM**進行測試，與上方 Jio 測試者回報分開列示。版本與證據請見[驗證詳情](docs/VALIDATED_FEATURES.md)。最新 crDroid 簡訊結果是維護者回報；尚未回報最新 CherishOS 版本的手機簡訊驗證。
 
 | 功能 | CherishOS 4.12 | crDroid 9.20 |
 | --- | --- | --- |

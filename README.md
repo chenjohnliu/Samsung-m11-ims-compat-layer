@@ -4,6 +4,8 @@ This project ports Samsung's IMS stack for the Galaxy M11 to Android 13 custom R
 
 [繁體中文](README.zh-TW.md) · [Source and patch index](docs/SOURCE_INDEX.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md)
 
+**Carrier results:** VoLTE, Wi-Fi Calling and uninterrupted handover in both directions have been confirmed on **Taiwan Mobile** (maintainer tests) and **Jio, India** (tester reports). See the [results below](#carrier-results).
+
 ## Decompile `imsservice.apk`
 
 The decompiler reads the APK and the matching `framework-res.apk` from the same firmware. It writes decoded files to a new directory; it does not modify the APK, build an APK, or build Android.
@@ -102,9 +104,20 @@ The latest tested crDroid IMS APK includes the October 21 SMS-over-Wi-Fi change,
 
 For installation, use the published [CherishOS release](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261020-13-Cherish) or [crDroid release](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261021-13-CrDroid) and follow its instructions. This repository is not a flashable package.
 
+<a id="carrier-results"></a>
+
+## Carrier results
+
+| Carrier | VoLTE | VoWiFi | VoWiFi → VoLTE | VoLTE → VoWiFi | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Taiwan Mobile, Taiwan | PASS | PASS | PASS | PASS | [Maintainer tests](docs/VALIDATED_FEATURES.md) |
+| Jio, India | PASS | PASS | PASS | PASS | [Tester reports](docs/cases/JIO_M115F.md#jio-handover-followup) |
+
+Both handover columns mean that the ongoing call stayed connected. The Jio handover success was reported on October 21; its exact tested build was not supplied. The detailed feature matrix below covers the Taiwan Mobile tests.
+
 ## Feature support
 
-These results were validated on a Galaxy M11 (`SM-M115F`) with Android 13 and Taiwan Mobile, using **one active SIM at a time**. See [validation details](docs/VALIDATED_FEATURES.md) for the tested builds and evidence. The latest crDroid SMS result is maintainer-reported; SMS phone validation for the latest CherishOS release has not been reported.
+The feature matrix below was validated on a Galaxy M11 (`SM-M115F`) with Android 13 and Taiwan Mobile, using **one active SIM at a time**. It is separate from the Jio tester report above. See [validation details](docs/VALIDATED_FEATURES.md) for the tested builds and evidence. The latest crDroid SMS result is maintainer-reported; SMS phone validation for the latest CherishOS release has not been reported.
 
 | Feature | CherishOS 4.12 | crDroid 9.20 |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Validated features and current project status
 
-Updated **2026-10-21 (Asia/Taipei)**. The acceptance matrix below records the 2026-10-13 release tests. Later source revisions and tester reports have the narrower validation scope described here; dated investigation records describe their original builds and experiments.
+Updated **2026-10-21 (Asia/Taipei)**. The acceptance matrix below records the 2026-10-13 Taiwan Mobile release tests. Jio tester results are recorded separately and do not expand that carrier-specific matrix. Later source revisions and tester reports have the narrower validation scope described here; dated investigation records describe their original builds and experiments.
 
 ## 2026-10-21 crDroid SMS-over-IWLAN report
 
@@ -8,18 +8,29 @@ After rebuilding and flashing crDroid with the supplementary bridge-source fix,
 the maintainer reported that the requested SMS send/receive tests passed along
 with VoLTE and VoWiFi calls. SMS behavior is maintainer-reported; no fresh
 successful-send trace was reviewed. A subsequent read-only inspection verified
-the tested factory APK identity and hashes. The CherishOS port is source-only and
-has not been built or tested with this change. This result does not establish
+the tested factory APK identity and hashes. The latest CherishOS release was
+built and published on October 21, and its source/ZIP was validated; phone SMS
+validation for that release has not been reported. This crDroid result does not establish
 Jio SMS or general carrier support. See the [source change, host harness scope
 and GSI module guidance](SMS_IWLAN_FIX_20261021.md).
 
+## 2026-10-21 Jio handover tester follow-up
+
+A Jio tester separately confirmed that an ongoing call stayed connected for
+both Wi-Fi Calling → LTE and LTE → Wi-Fi Calling handovers. This is a
+tester-reported result; the follow-up did not identify the ROM build or APK
+hash. Do not associate it with the `20261019-1423` context from the October 20
+report. The two reports do not establish Jio SMS, dual-SIM IMS, emergency or
+video calling, or long-duration stability. See the dated [Jio case
+follow-up](cases/JIO_M115F.md#jio-handover-followup).
+
 ## 2026-10-20 Jio tester report
 
-A human-relayed tester report said that VoLTE and VoWiFi both worked on the previously supplied CherishOS `20261019-1423` build containing the `semGetDataServiceState` fix. Record those two results as **PASS (reported)** for the Jio scenario. The tester's installed artifact SHA-256 and fresh crash buffer were not provided, so exact installed-artifact identity and independent log verification remain unverified.
+A human-relayed tester report received on October 20 said that VoLTE and VoWiFi both worked on the previously supplied CherishOS `20261019-1423` build containing the `semGetDataServiceState` fix. Record those two results as **PASS (reported)** for that Jio scenario. The tester's installed artifact SHA-256 and fresh crash buffer were not provided, so exact installed-artifact identity and independent log verification remain unverified.
 
-The report did not specify incoming/outgoing call details, SMS over IMS, reboot behavior, handover behavior, or long-duration stability. These are limits of the report, not a reason to withhold the reported VoLTE/VoWiFi result. This carrier-specific report does not change the Taiwan Mobile acceptance matrix below, certify every IMS feature, or establish support for other carriers. See the [Jio M115F case record](cases/JIO_M115F.md).
+The October 20 report did not specify incoming/outgoing call details, SMS over IMS, reboot behavior, handover behavior, or long-duration stability. The separate October 21 follow-up above now records the two handover directions, but does not supply a build identity. These carrier-specific reports do not change the Taiwan Mobile acceptance matrix below, certify every IMS feature, or establish support for other carriers. See the [Jio M115F case record](cases/JIO_M115F.md).
 
-Later preventive API/factory changes were host-validated only, were not included in this tested artifact, and have not been validated on-device. A crDroid port of those follow-up changes has not been built or device-validated. See the [2026-10-20 IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) for source notes.
+At the time of the October 20 Jio report, the later preventive API/factory changes had host validation only and were not included in that tester's reported artifact. The October 21 crDroid results above record later ROM call/SMS testing; they do not individually validate every added API path. See the [2026-10-20 IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) for source notes.
 
 ## 2026-10-16 source follow-up
 
@@ -97,4 +108,4 @@ An independent strict rebuild of the **fresh IMS APK** under the historical prod
 
 ## Retired development policy
 
-The earlier carrier-specific fresh-bearer/active-call-disconnect workaround is retired. It is preserved in historical records to explain the investigation, and is not the current integration recipe. The accepted handover behavior preserves the ongoing call and uses the modem-led legacy IWLAN path; the AP-assisted handover experiment remains disabled.
+The earlier carrier-specific fresh-bearer/active-call-disconnect workaround is retired. It is preserved in historical records to explain the investigation, and is not the current integration recipe. In the Taiwan Mobile acceptance, handovers preserve the ongoing call and use the modem-led legacy IWLAN path; the separate Jio continuity report is tester-reported and has no identified build. The AP-assisted handover experiment remains disabled.

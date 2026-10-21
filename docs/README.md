@@ -4,7 +4,7 @@ To inspect your own `imsservice.apk`, start with the [three-step decompile guide
 
 For ROM integration, the [2026-10-18 crDroid source-verified recipe](CRDROID_IMS_SOURCE_VERIFIED_20261018.md) documents an earlier payload producer baseline. It predates the October 21 SMS-over-IWLAN bridge change; see the [October 21 follow-up](SMS_IWLAN_FIX_20261021.md) and [current builder boundary](../README.md#build-or-apply-rom-compatibility-changes). The [October 18 validation note](USER-VALIDATION_20261018.md) records the earlier validation scope.
 
-The separate SMS-over-IWLAN bridge fix and its 2026-10-21 validation boundary are documented in [SMS over IWLAN follow-up](SMS_IWLAN_FIX_20261021.md).
+The separate SMS-over-IWLAN bridge fix and its 2026-10-21 validation boundary are documented in [SMS over IWLAN follow-up](SMS_IWLAN_FIX_20261021.md). A Jio tester separately reported that ongoing calls stayed connected for Wi-Fi-to-LTE and LTE-to-Wi-Fi handovers; the dated report has no identified ROM build or artifact hash.
 
 Start with the question you want to answer. You do not need to read the experiment history to understand the project's working features.
 
@@ -15,7 +15,7 @@ Start with the question you want to answer. You do not need to read the experime
 | Where are the full source forks and their corresponding patches? | [Source and patch index](SOURCE_INDEX.md) — current Cherish branches, exact commits and all 14 project recipes |
 | What works, and on which phone/ROM? | [Validated features](VALIDATED_FEATURES.md) |
 | How should I investigate an IMS crash or registration failure? | [IMS debugging runbook](IMS_DEBUGGING.md), [Traditional Chinese entry](IMS_DEBUGGING.zh-TW.md), and [issue template](ISSUE_TEMPLATE.md) |
-| What was reported for the Jio missing-API case? | [Jio M115F case record](cases/JIO_M115F.md) — tester reported VoLTE and VoWiFi working on the supplied `20261019-1423` fix build; exact installed hash and other feature details were not reported |
+| What was reported for the Jio missing-API case? | [Jio M115F case record](cases/JIO_M115F.md) — October 20 VoLTE/VoWiFi report refers contextually to `20261019-1423`; a separate October 21 follow-up reports both handover directions, with no build/hash identified for that follow-up |
 | Which API compatibility changes followed the Jio fix? | [IMS API supplement for 2026-10-20](IMS_API_SUPPLEMENT_20261020.md); later preventive changes were host-validated only and were not in the tested Jio artifact |
 | How do I decompile an IMS APK? | [Requirements, setup and script](../README.md#decompile-imsserviceapk) |
 | Where can I download a ROM? | [Project README](../README.md#rom-downloads) |
