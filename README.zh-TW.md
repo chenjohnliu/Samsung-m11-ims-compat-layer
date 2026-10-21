@@ -17,11 +17,11 @@ mkdir -p "$HOME/src" "$HOME/tools" "$HOME/firmware/m115f-cwk3" "$HOME/work"
 git clone https://github.com/chenjohnliu/Samsung-m11-ims-compat-layer.git "$HOME/src/Samsung-m11-ims-compat-layer"
 ```
 
-將自己 M115F 韌體中的 `imsservice.apk` 與 `framework-res.apk` 複製到私有韌體目錄。兩個檔案必須來自同一版韌體；本 repository 的 manifest 以 `M115FXXS5CWK3`（Android 12）為基準。請妥善保管 Samsung 檔案。
+這兩個 APK 要從自己的 Samsung 手機或韌體取得，本 Git repository 不提供它們。兩個檔案必須來自同一版原廠韌體；本移植以 `M115FXXS5CWK3`（Android 12）為基準。下一步說明取得方法。
 
 ### 2. 設定檔案路徑
 
-以下範例假設 apktool 2.9.3 位於 `~/tools`，兩個韌體檔位於 `~/firmware/m115f-cwk3`。若檔案在其他位置，請修改路徑。每次執行都請選擇新的輸出目錄。
+以下範例將兩個 APK 存在 `~/firmware/m115f-cwk3`，並假設 apktool 2.9.3 位於 `~/tools`。若檔案在其他位置，請修改路徑。每次執行都請選擇新的輸出目錄。
 
 ```sh
 export COMPAT_ROOT="$HOME/src/Samsung-m11-ims-compat-layer"
@@ -30,6 +30,31 @@ export FRAMEWORK_RES="$HOME/firmware/m115f-cwk3/framework-res.apk"
 export APKTOOL="$HOME/tools/apktool_2.9.3.jar"
 export DECODED="$HOME/work/imsservice-cwk3-decoded"
 ```
+
+**方法 A：從仍使用 Samsung 原廠 ROM 的手機拉出檔案。** 安裝 [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools)，開啟 USB 偵錯，接上手機並允許偵錯。`adb devices` 應顯示裝置狀態為 `device`。先查詢 APK 的實際路徑，再複製到電腦：
+
+```sh
+adb devices
+adb shell pm path com.sec.imsservice
+IMS_APK_PATH="$(adb shell pm path com.sec.imsservice | tr -d '\r' | sed -n 's/^package://p' | head -n 1)"
+if [ -n "$IMS_APK_PATH" ]; then
+  adb pull "$IMS_APK_PATH" "$STOCK_APK"
+  adb pull /system/framework/framework-res.apk "$FRAMEWORK_RES"
+else
+  echo "IMS package not found. Check the device connection and package name." >&2
+fi
+```
+
+這會取得手機**目前安裝的** IMS APK。已刷 CherishOS 或 crDroid 的手機會提供修改版，不能把它當成原始 Samsung 輸入。需要重現原廠移植流程時，請使用原廠手機，或以下方法 B。
+
+**方法 B：從原廠韌體解出檔案。** 如果手機已不在原廠 ROM，先取得相符韌體並解開其中的 system 檔案系統。要找的是該檔案系統內的這兩個位置：
+
+```text
+system/priv-app/imsservice/imsservice.apk
+system/framework/framework-res.apk
+```
+
+將它們分別複製到 `$STOCK_APK` 與 `$FRAMEWORK_RES`。Samsung AP 壓縮包可能包含壓縮、sparse 或動態分割區映像，僅解開 AP 壓縮包不一定能直接看到 APK。映像檔解包與 APK 反編譯是不同步驟；[CWK3 解包紀錄](docs/FRESH_EXTRACTION_VALIDATION.md)記載本專案使用的配置及雜湊，其中的映像解包輔助工具並未隨本 repository 提供。
 
 ### 3. 執行解碼工具
 

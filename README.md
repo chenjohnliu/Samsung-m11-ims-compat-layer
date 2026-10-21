@@ -17,11 +17,11 @@ mkdir -p "$HOME/src" "$HOME/tools" "$HOME/firmware/m115f-cwk3" "$HOME/work"
 git clone https://github.com/chenjohnliu/Samsung-m11-ims-compat-layer.git "$HOME/src/Samsung-m11-ims-compat-layer"
 ```
 
-Copy your own M115F firmware's `imsservice.apk` and `framework-res.apk` into the private firmware directory. Use both files from the same firmware build; the published manifest targets `M115FXXS5CWK3` (Android 12). Keep these Samsung files private.
+The two APKs come from your Samsung phone or firmware, not this Git repository. Use both files from the same stock firmware build; the published port targets `M115FXXS5CWK3` (Android 12). The next step explains how to obtain them.
 
 ### 2. Set the file paths
 
-The example below assumes you downloaded apktool 2.9.3 to `~/tools` and copied both firmware files to `~/firmware/m115f-cwk3`. Change these values if your files are elsewhere. Pick a new output directory for each run.
+The example below stores the two APKs in `~/firmware/m115f-cwk3` and assumes apktool 2.9.3 is in `~/tools`. Change these values if your files are elsewhere. Pick a new output directory for each run.
 
 ```sh
 export COMPAT_ROOT="$HOME/src/Samsung-m11-ims-compat-layer"
@@ -30,6 +30,31 @@ export FRAMEWORK_RES="$HOME/firmware/m115f-cwk3/framework-res.apk"
 export APKTOOL="$HOME/tools/apktool_2.9.3.jar"
 export DECODED="$HOME/work/imsservice-cwk3-decoded"
 ```
+
+**Option A — pull from a Samsung phone running stock firmware.** Install [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools), enable USB debugging, connect the phone and accept its debugging prompt. `adb devices` must list it as `device`. Query the APK path instead of assuming which system directory it uses:
+
+```sh
+adb devices
+adb shell pm path com.sec.imsservice
+IMS_APK_PATH="$(adb shell pm path com.sec.imsservice | tr -d '\r' | sed -n 's/^package://p' | head -n 1)"
+if [ -n "$IMS_APK_PATH" ]; then
+  adb pull "$IMS_APK_PATH" "$STOCK_APK"
+  adb pull /system/framework/framework-res.apk "$FRAMEWORK_RES"
+else
+  echo "IMS package not found. Check the device connection and package name." >&2
+fi
+```
+
+This copies the phone's **currently installed** IMS APK. A phone running CherishOS or crDroid supplies its modified APK, not the original Samsung input. Use a stock phone or Option B when you need the original firmware files for the port.
+
+**Option B — extract from your stock firmware.** If the phone no longer runs stock firmware, extract the matching firmware's system filesystem. These are paths inside that extracted filesystem:
+
+```text
+system/priv-app/imsservice/imsservice.apk
+system/framework/framework-res.apk
+```
+
+Copy them to `$STOCK_APK` and `$FRAMEWORK_RES`. Samsung's AP archive can contain compressed/sparse or dynamic-partition images; opening the AP archive alone does not necessarily expose the APKs. Image extraction is separate from APK decompilation; the [CWK3 extraction record](docs/FRESH_EXTRACTION_VALIDATION.md) records the layout and hashes used here. Its image extraction helpers are not bundled with this repository.
 
 ### 3. Run the decompiler
 
