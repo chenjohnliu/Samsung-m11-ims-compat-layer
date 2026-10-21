@@ -1,6 +1,8 @@
 # Documentation guide
 
-Current crDroid IMS integration: [seven-project source-verified recipe](CRDROID_IMS_SOURCE_VERIFIED_20261018.md) and [2026-10-18 validation note](USER-VALIDATION_20261018.md).
+To inspect your own `imsservice.apk`, start with the [three-step decompile guide](../README.md#decompile-imsserviceapk) or [繁體中文步驟](../README.zh-TW.md).
+
+For ROM integration, the [2026-10-18 crDroid source-verified recipe](CRDROID_IMS_SOURCE_VERIFIED_20261018.md) documents an earlier payload producer baseline. It predates the October 21 SMS-over-IWLAN bridge change; see the [October 21 follow-up](SMS_IWLAN_FIX_20261021.md) and [current builder boundary](../README.md#build-or-apply-rom-compatibility-changes). The [October 18 validation note](USER-VALIDATION_20261018.md) records the earlier validation scope.
 
 The separate SMS-over-IWLAN bridge fix and its 2026-10-21 validation boundary are documented in [SMS over IWLAN follow-up](SMS_IWLAN_FIX_20261021.md).
 
@@ -15,7 +17,8 @@ Start with the question you want to answer. You do not need to read the experime
 | How should I investigate an IMS crash or registration failure? | [IMS debugging runbook](IMS_DEBUGGING.md), [Traditional Chinese entry](IMS_DEBUGGING.zh-TW.md), and [issue template](ISSUE_TEMPLATE.md) |
 | What was reported for the Jio missing-API case? | [Jio M115F case record](cases/JIO_M115F.md) — tester reported VoLTE and VoWiFi working on the supplied `20261019-1423` fix build; exact installed hash and other feature details were not reported |
 | Which API compatibility changes followed the Jio fix? | [IMS API supplement for 2026-10-20](IMS_API_SUPPLEMENT_20261020.md); later preventive changes were host-validated only and were not in the tested Jio artifact |
-| Where can I download a ROM? | [Project README](../README.md#where-to-start) |
+| How do I decompile an IMS APK? | [Requirements, setup and script](../README.md#decompile-imsserviceapk) |
+| Where can I download a ROM? | [Project README](../README.md#rom-downloads) |
 | How do I reproduce the CherishOS source integration? | [Android 13 handoff](CHERISH_ANDROID13_IMS_HANDOFF.md) |
 | Which source changes belong to that checkpoint? | [Combined source checkpoint](CHERISH_SOURCE_CHECKPOINT.md) |
 | What must be applied after the checkpoint? | [IMS supplement](CHERISH_LOCAL_IMS_PATCHES_20261012.md) — two new patches; the MMS copy is reference-only |

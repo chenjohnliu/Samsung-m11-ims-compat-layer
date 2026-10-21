@@ -2,6 +2,8 @@
 
 This recipe describes the seven-project IMS source closure for the M11q crDroid 13 port. The original 2026-10-18 checkpoint had twelve ordered patch steps. The current index adds the four [2026-10-20 API suffix patches](IMS_API_SUPPLEMENT_20261020.md), for sixteen steps. All projects use their pinned public upstream bases and ordered patch recipes. No new full-source crDroid fork branch is advertised. The index is not a full Android manifest, Android build receipt, or runtime receipt; the new crDroid API port has source/host validation only.
 
+**Payload version boundary:** the producer commands below describe the October 18 source-verified baseline. They predate the three-file bridge change in the [October 21 SMS-over-IWLAN follow-up](SMS_IWLAN_FIX_20261021.md). The current IMS builder still requires the older bridge hashes in `devices/m11q/imsservice-build.json`, so these commands do not reproduce the October 21 tested crDroid IMS APK. Do not bypass those checks or describe these outputs as the latest tested artifact. The October 21 APK hash identifies the inspected file; an updated producer contract and fresh rebuild receipt are not yet published.
+
 ## Source replay and patch application
 
 Run the following compatibility-repository commands from the compatibility checkout; Android source and device destinations are rooted separately. Use `devices/m11q/crdroid-source-index.json` as the source of truth. Replay verifies every patch hash and forward/reverse tree result without changing project worktrees:

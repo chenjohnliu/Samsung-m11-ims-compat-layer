@@ -1,18 +1,85 @@
 # Samsung Galaxy M11 IMS compatibility layer
 
-The current crDroid IMS source route is documented in the [seven-project source-verified recipe](docs/CRDROID_IMS_SOURCE_VERIFIED_20261018.md). The [2026-10-18 validation note](docs/USER-VALIDATION_20261018.md) separates the maintainer's successful call/handover tests from the read-only device checks.
+This project ports Samsung's IMS stack for the Galaxy M11 to Android 13 custom ROMs. It publishes the compatibility source, ROM integration notes, and a small tool to decompile `imsservice.apk` from your own firmware. It does not contain Samsung firmware or a flashable ROM.
 
-**Working VoLTE, Wi-Fi Calling and IMS SMS on Android 13 custom ROMs for the Samsung Galaxy M11.**
+[繁體中文](README.zh-TW.md) · [Source and patch index](docs/SOURCE_INDEX.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md)
 
-This project adapts Samsung's stock IMS stack to **CherishOS 4.12** and **crDroid 9.20** on the Galaxy M11 (`SM-M115F`, `m11q`). It publishes the compatibility code, Android source patches, transformation tools and development records used to make that port work.
+## Decompile `imsservice.apk`
 
-The port was developed with **ChatGPT/Codex assistance**. The maintainer built and flashed the ROMs, made real calls, checked SMS and tested handovers on the phone. Those results are the basis for the feature status below.
+The decompiler reads the APK and the matching `framework-res.apk` from the same firmware. It writes decoded files to a new directory; it does not modify the APK, build an APK, or build Android.
 
-[繁體中文](README.zh-TW.md) · [Source and patch index](docs/SOURCE_INDEX.md) · [Documentation guide](docs/README.md) · [Validation details](docs/VALIDATED_FEATURES.md) · [IMS debugging runbook](docs/IMS_DEBUGGING.md)
+### 1. Install the requirements and clone this repository
+
+The commands below use Linux or WSL Bash. Use Python 3, Java from JDK 11 or JDK 17, and apktool 2.9.3. Download the [apktool 2.9.3 release](https://github.com/iBotPeaches/Apktool/releases/tag/v2.9.3) JAR separately. Confirm `python3` and `java` are available in your shell. In WSL, keep the decoded output under your Linux home directory to preserve case-sensitive filenames. Clone the public compatibility repository:
+
+```sh
+mkdir -p "$HOME/src" "$HOME/tools" "$HOME/firmware/m115f-cwk3" "$HOME/work"
+git clone https://github.com/chenjohnliu/Samsung-m11-ims-compat-layer.git "$HOME/src/Samsung-m11-ims-compat-layer"
+```
+
+Copy your own M115F firmware's `imsservice.apk` and `framework-res.apk` into the private firmware directory. Use both files from the same firmware build; the published manifest targets `M115FXXS5CWK3` (Android 12). Keep these Samsung files private.
+
+### 2. Set the file paths
+
+The example below assumes you downloaded apktool 2.9.3 to `~/tools` and copied both firmware files to `~/firmware/m115f-cwk3`. Change these values if your files are elsewhere. Pick a new output directory for each run.
+
+```sh
+export COMPAT_ROOT="$HOME/src/Samsung-m11-ims-compat-layer"
+export STOCK_APK="$HOME/firmware/m115f-cwk3/imsservice.apk"
+export FRAMEWORK_RES="$HOME/firmware/m115f-cwk3/framework-res.apk"
+export APKTOOL="$HOME/tools/apktool_2.9.3.jar"
+export DECODED="$HOME/work/imsservice-cwk3-decoded"
+```
+
+### 3. Run the decompiler
+
+Run this from the cloned repository. The wrapper uses `java` from `PATH` by default. Its `--java` option is available if Java has a different executable name or location.
+
+```sh
+cd "$COMPAT_ROOT"
+python3 tools/decompile_imsservice.py \
+  --apk "$STOCK_APK" \
+  --framework-res "$FRAMEWORK_RES" \
+  --apktool "$APKTOOL" \
+  --output "$DECODED"
+```
+
+The output has this layout:
+
+```text
+$DECODED/
+├── framework/                 # isolated apktool framework cache
+├── decoded/
+│   ├── AndroidManifest.xml
+│   ├── res/
+│   ├── smali/
+│   └── smali_classes2/         # present when the APK has another DEX
+└── receipt.json
+```
+
+Inspect `$DECODED/decoded/AndroidManifest.xml`, `res/`, and `smali/`. Smali is a readable form of compiled Android bytecode, not the original Java source. To find the existing Samsung backend and the related package classes:
+
+```sh
+find "$DECODED/decoded" -type f \( -name 'GoogleImsService.smali' -o -name 'GoogleModern*.smali' \)
+```
+
+The stock backend is normally at `smali/com/sec/internal/google/GoogleImsService.smali` (or under `smali_classes2/` if it is in a secondary DEX). `GoogleModernImsService` and `GoogleModernMmTelFeature` are added by this project's compatibility patch, so they will not appear in a stock APK decompile. The tool uses an isolated apktool framework cache for the supplied `framework-res.apk` and records its run in `receipt.json`.
+
+Samsung firmware and decoded files remain subject to Samsung's terms. Keep the inputs and output private; do not publish them with this repository.
+
+## Build or apply ROM compatibility changes
+
+Decompiling an APK is separate from building or applying the Android compatibility changes. For CherishOS, start with the [Android 13 source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md) and [source index](docs/SOURCE_INDEX.md). For crDroid, use the [seven-project source recipe](docs/CRDROID_IMS_SOURCE_VERIFIED_20261018.md). Those guides cover source application, private payload preparation, integration and ROM-level validation; neither is a one-command full ROM build.
+
+The latest tested crDroid IMS APK includes the October 21 SMS-over-Wi-Fi change, while the public APK builder still pins the earlier bridge source hashes. The [October 21 follow-up](docs/SMS_IWLAN_FIX_20261021.md) records the change and inspected APK identity. Rebuilding that exact latest IMS payload from clean inputs requires an updated, reviewed producer contract. The October 18 producer recipe is an earlier baseline, not a recipe for the latest APK. The latest CherishOS release was built, published, and source/ZIP validated, but phone SMS validation for that release has not been reported.
+
+## ROM downloads
+
+For installation, use the published [CherishOS release](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261020-13-Cherish) or [crDroid release](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261021-13-CrDroid) and follow its instructions. This repository is not a flashable package.
 
 ## Feature support
 
-Supported functions below were validated on the tested M11/Taiwan Mobile setup, using **one active SIM at a time**. Unsupported functions and functions without actual device validation are listed separately in the same table.
+These results were validated on a Galaxy M11 (`SM-M115F`) with Android 13 and Taiwan Mobile, using **one active SIM at a time**. See [validation details](docs/VALIDATED_FEATURES.md) for the tested builds and evidence. The latest crDroid SMS result is maintainer-reported; SMS phone validation for the latest CherishOS release has not been reported.
 
 | Feature | CherishOS 4.12 | crDroid 9.20 |
 | --- | --- | --- |
@@ -20,7 +87,7 @@ Supported functions below were validated on the tested M11/Taiwan Mobile setup, 
 | Outgoing and incoming VoLTE calls | Supported | Supported |
 | Outgoing and incoming Wi-Fi Calling (VoWiFi) | Supported | Supported |
 | Two-way call audio and normal hang-up | Supported | Supported |
-| SMS sending and receiving, including the IMS SMS bridge | Supported | Supported |
+| SMS send and receive | Earlier build validated; latest release not reported | Maintainer-reported on October 21 build |
 | Wi-Fi Calling → VoLTE during an ongoing call | Supported | Supported |
 | VoLTE → Wi-Fi Calling during an ongoing call | Supported | Supported |
 | Leaving weak Wi-Fi coverage without dropping the call | Supported | Supported |
@@ -28,47 +95,20 @@ Supported functions below were validated on the tested M11/Taiwan Mobile setup, 
 | Concurrent dual-SIM/DSDS IMS | Not supported | Not supported |
 | Emergency calling over LTE or Wi-Fi | Not validated | Not validated |
 
-SIM1 and SIM2 were tested separately. This does **not** support two active IMS subscriptions together. On the latest CherishOS test, the ongoing call returned to Wi-Fi Calling about **two minutes** after Wi-Fi coverage returned; that timing can vary.
+SIM1 and SIM2 were tested separately; concurrent dual-SIM IMS is unsupported. Other carriers and models are not runtime-certified. Emergency calls have not been placed, ViLTE is unsupported, and brief audio pauses may occur during handover. See the [Jio case record](docs/cases/JIO_M115F.md) for that separate limited report.
 
-## Scope and limitations
-
-- Tested hardware: **Samsung Galaxy M11 SM-M115F**; stock inputs: **M115FXXS5CWK3**; target: **Android 13**.
-- Runtime results are from **Taiwan Mobile** and the tested Wi-Fi environments. Stock-backed carrier profiles provide wider configuration coverage, but other carriers and models are not runtime-certified.
-- Separately, on 2026-10-20 a Jio tester reported that VoLTE and VoWiFi worked with the previously supplied CherishOS `20261019-1423` fix build. The tester's installed artifact hash was not provided. This report does not add SMS, call-direction, reboot, handover, or long-duration results, and does not certify other carriers; see the [Jio case record](docs/cases/JIO_M115F.md). The older release downloads linked below are not identified as containing this Jio fix.
-- **Concurrent dual-SIM/DSDS IMS is unsupported.**
-- **Actual emergency calling has not been tested**, including emergency calls over Wi-Fi. The capability regression test does not place a call.
-- **ViLTE (IMS video calling) is unsupported.** Other audio accessories are outside the reported validation scope. Brief audio pauses can occur during handover.
-
-See [current validation details](docs/VALIDATED_FEATURES.md) for the evidence and limits. Older failure captures and retired experiments remain in the documentation as development history.
-
-For carrier-neutral failure triage, see the [IMS debugging runbook](docs/IMS_DEBUGGING.md) and [issue template](docs/ISSUE_TEMPLATE.md). The [IMS API supplement (2026-10-20)](docs/IMS_API_SUPPLEMENT_20261020.md) records the later compatibility changes; its preventive changes are not part of the Jio tester's reported build.
-
-The [2026-10-21 SMS over IWLAN source follow-up](docs/SMS_IWLAN_FIX_20261021.md) records the separate bridge fix and the maintainer-reported crDroid validation. The CherishOS port remains source-only pending its own build and device test.
-
-The [2026-10-16 source supplement](docs/CHERISH_VOWIFI_FIXES_20261016.md) adds initial incoming Wi-Fi audio and legacy MTU corrections after later home-network failures. These passed the documented call checks; the full release regression matrix has not been repeated, and occasional VoWiFi status-icon disappearance remains unresolved.
-
-## Where to start
-
-**To use a ROM:** download the [CherishOS](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261017-13-Cherish) or [crDroid](https://github.com/chenjohnliu/android_device_samsung_m11q/releases/tag/20261018-13-CrDroid) release and follow its installation instructions. This repository is not a flashable package.
-
-**To reproduce the CherishOS port:** start with the [Android 13 source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md). It points to the pinned source checkpoint, the two earlier supplemental source patches, the 2026-10-16 VoWiFi corrections and the stock-input workflow. Apply them in order once; do not stack the historical patch series on top.
-
-**To understand how it works:** use the [documentation guide](docs/README.md), which separates current integration instructions from component references and historical experiments.
-
-## What is in this repository
+## Project contents
 
 | Directory | Purpose |
 | --- | --- |
+| `tools/` | APK decompilation, stock-payload transformations and verification |
 | `bridge/` | Android/Samsung IMS compatibility code and Android ABI fixtures |
 | `platform/`, `patches/` | Android framework, Telephony, Telecom and ROM integration changes |
-| `tools/` | Stock-payload transformations, source replay and verification |
 | `devices/m11q/` | Pinned input hashes, contracts and source/acceptance inventories |
-| `tests/` | Source and host tests; these do not replace real phone testing |
+| `tests/` | Source and host checks; these do not replace phone testing |
 | `docs/` | Integration guides, technical references and development history |
 
-You supply the matching stock firmware privately. Samsung APKs, JARs, libraries, decoded code, ROM ZIPs and signing keys are not distributed here.
-
-The working port and an exact artifact rebuild are separate results: the latest CherishOS ROM passed phone validation, while reproducing its fresh IMS APK byte for byte under the historical strict producer contracts remains an open tooling boundary. This is not a one-command port for arbitrary ROMs. Details are in the [source handoff](docs/CHERISH_ANDROID13_IMS_HANDOFF.md).
+Use the [documentation guide](docs/README.md) for current entry points. For troubleshooting, see the [IMS debugging runbook](docs/IMS_DEBUGGING.md) and [issue template](docs/ISSUE_TEMPLATE.md).
 
 ## Credits and license
 
