@@ -7,7 +7,7 @@ patch files match their recorded hashes, and that every declared tree chain is
 contiguous. It does not prove that a remote fork still exists or that its
 commit objects are available.
 
-With --forks-root, the synchronized platform and device forks are also
+With --forks-root, the six synchronized platform forks are also
 checked using local Git objects only. Each pinned commit chain is matched to
 the ordered patch files using a temporary Git index, leaving clone refs,
 worktrees, and real indexes untouched.
@@ -31,6 +31,7 @@ BASELINE_MANIFEST = "platform/checkpoints/cherish-20261012/manifest.json"
 IMS_SUPPLEMENT_MANIFEST = "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json"
 VOWIFI_MANIFEST = "platform/checkpoints/cherish-20261016-vowifi/manifest.json"
 API_MANIFEST = "platform/checkpoints/ims-api-20261020/manifest.json"
+LOCAL_MANIFEST = "platform/checkpoints/cherish-20261023-local/manifest.json"
 INDEX_PATH = "devices/m11q/cherish-source-index.json"
 EXPECTED_PROJECT_COUNT = 14
 FORK_REPOSITORIES = {
@@ -40,7 +41,6 @@ FORK_REPOSITORIES = {
     "packages/services/Telephony": "https://github.com/chenjohnliu/android_packages_services_Telephony.git",
     "system/netd": "https://github.com/chenjohnliu/android_system_netd.git",
     "packages/services/Telecomm": "https://github.com/chenjohnliu/android_packages_services_Telecomm.git",
-    "device/samsung/m11q": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
 }
 SYNCED_FORK_PROJECTS = set(FORK_REPOSITORIES)
 FORK_CLONE_NAMES = {
@@ -50,7 +50,6 @@ FORK_CLONE_NAMES = {
     "packages/services/Telephony": "phone_service",
     "system/netd": "netd",
     "packages/services/Telecomm": "telecomm",
-    "device/samsung/m11q": "device",
 }
 OID_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -226,6 +225,58 @@ def _expected_chains(
     return base_projects, chains, references
 
 
+def _extend_local_supplement(
+    repo_root: Path,
+    baseline_projects: dict[str, dict[str, Any]],
+    chains: dict[str, list[dict[str, str]]],
+) -> bool:
+    """Append the dated local customization patches after the published route."""
+    manifest_path = _inside(repo_root, LOCAL_MANIFEST, "local supplement manifest", must_exist=False)
+    if not manifest_path.exists():
+        return False
+
+    manifest = _load_json(manifest_path)
+    if manifest.get("format_version") != 1:
+        raise ValidationError("unsupported local supplement format_version")
+    projects = _map_unique(manifest.get("projects"), "path", "local supplement projects")
+    expected_projects = {"frameworks/base", "device/samsung/m11q"}
+    if set(projects) != expected_projects:
+        raise ValidationError("local supplement must cover frameworks/base and device/samsung/m11q together")
+
+    for project_path in sorted(expected_projects):
+        record = projects[project_path]
+        baseline = baseline_projects[project_path]
+        if record.get("base_commit") != baseline.get("base_commit"):
+            raise ValidationError(f"local supplement base commit differs for {project_path}")
+        previous_tree = chains[project_path][-1]["after_tree"]
+        if record.get("base_tree") != previous_tree:
+            raise ValidationError(f"local supplement precondition tree differs for {project_path}")
+
+        patches = record.get("patches")
+        if not isinstance(patches, list) or not patches:
+            raise ValidationError(f"local supplement has no patches for {project_path}")
+        patch_prefix = LOCAL_MANIFEST.rsplit("/", 1)[0] + "/"
+        for position, patch in enumerate(patches, start=1):
+            if not isinstance(patch, dict):
+                raise ValidationError(f"local supplement patch {position} is invalid for {project_path}")
+            _validate_step_shape(patch, project_path, position)
+            if not patch["path"].startswith(patch_prefix):
+                raise ValidationError(f"local supplement patch path is outside its checkpoint for {project_path}")
+            if patch["before_tree"] != previous_tree:
+                raise ValidationError(f"broken local supplement tree chain for {project_path}, patch {position}")
+            chains[project_path].append({
+                "path": patch["path"],
+                "sha256": patch["sha256"],
+                "before_tree": patch["before_tree"],
+                "after_tree": patch["after_tree"],
+            })
+            previous_tree = patch["after_tree"]
+        if record.get("final_tree") != previous_tree:
+            raise ValidationError(f"local supplement final_tree differs from patch chain for {project_path}")
+
+    return True
+
+
 def _validate_step_shape(step: dict[str, Any], project: str, position: int) -> None:
     for field in ("path", "sha256", "before_tree", "after_tree"):
         if not isinstance(step.get(field), str) or not step[field]:
@@ -267,6 +318,8 @@ def validate_index_data(
                 raise ValidationError(f"IMS API supplement precondition tree differs for {project_path}")
             expected_chains[project_path].extend(steps)
         expected_manifests.append(API_MANIFEST)
+    if _extend_local_supplement(repo_root, base_projects, expected_chains):
+        expected_manifests.append(LOCAL_MANIFEST)
     if manifests != expected_manifests:
         raise ValidationError("checkpoint_manifests must list the baseline and supplements in order")
 
@@ -427,13 +480,10 @@ def _validate_fork_metadata(
         index_path = Path(temp_dir) / "index"
         env = os.environ.copy()
         env["GIT_INDEX_FILE"] = str(index_path)
-        # The pinned device history contains a Unix-valid path that Windows
-        # cannot check out. These commands only update a disposable index.
-        prefix = ["-c", "core.protectNTFS=false"] if project_path == "device/samsung/m11q" else []
-        _git(clone, prefix + ["read-tree", base], env=env)
+        _git(clone, ["read-tree", base], env=env)
         for index, (commit_record, step) in enumerate(zip(commits, expected_steps), start=1):
             patch_path = _inside(publication_root, step["path"], f"{project_path} fork patch")
-            _git(clone, prefix + ["apply", "--cached", "--binary", str(patch_path)], env=env)
+            _git(clone, ["apply", "--cached", "--binary", str(patch_path)], env=env)
             resulting_tree = _git(clone, ["write-tree", "--missing-ok"], env=env)
             commit_tree = _git(clone, ["rev-parse", f"{commit_record['sha']}^{{tree}}"])
             if resulting_tree != step["after_tree"] or resulting_tree != commit_tree:
@@ -463,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--forks-root",
         type=Path,
-        help="optional directory containing the seven local fork clones listed in the source guide",
+        help="optional directory containing the six local fork clones listed in the source guide",
     )
     args = parser.parse_args(argv)
     try:

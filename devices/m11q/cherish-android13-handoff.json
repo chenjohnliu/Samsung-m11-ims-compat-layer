@@ -77,13 +77,15 @@
     ],
     "cherish_target_checkpoint": "platform/checkpoints/cherish-20261012/manifest.json",
     "cherish_ims_supplement": "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
-    "supplement_application_policy": "After the combined baseline checkpoint, apply only the two new Telecom permission and emergency-capability test hunks once. The separate MMS companion copy is already included in the baseline. Non-IMS microG/Play Integrity changes remain separate public donor changes.",
+    "supplement_application_policy": "After the combined baseline checkpoint, apply only the two new Telecom permission and emergency-capability test hunks once. The separate MMS companion copy is already included in the baseline. Later explicitly indexed supplements add the API suffix and the October 23 product/device changes.",
     "replay_policy": "Use the combined Cherish checkpoint instead of layering the historical checkpoint, separate SystemUI patch or SA2 renderer on top.",
     "vowifi_20261016_supplement": "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
     "vowifi_20261016_application_policy": "After the combined checkpoint and earlier IMS supplement, apply the initial incoming Wi-Fi audio and legacy IWLAN MTU patches once; see docs/CHERISH_VOWIFI_FIXES_20261016.md. Earlier checkpoint and APK pins are unchanged.",
     "source_index": "devices/m11q/cherish-source-index.json",
     "source_index_guide": "docs/SOURCE_INDEX.md",
-    "source_selection_policy": "For projects with a synchronized fork pin, use that complete commit OR the ordered patch recipe, never both. Historical source_repositories pins above remain donor/baseline records; current synchronized source pins are in the source index."
+    "source_selection_policy": "For projects with a synchronized fork pin, use that complete commit OR the ordered patch recipe, never both. Historical source_repositories pins above remain donor/baseline records; current synchronized source pins are in the source index.",
+    "local_20261023_supplement": "platform/checkpoints/cherish-20261023-local/manifest.json",
+    "local_20261023_policy": "The current index explicitly includes the two non-IMS product policies and shared device input patches. The previously synchronized Cherish device branch is historical; maintain m11q-volte only."
   },
   "public_source_inventory": {
     "ims_framework_sms_and_subscription_compatibility": [
@@ -374,5 +376,20 @@
     "outgoing_service_test_downlink_pass": true,
     "full_regression_matrix_repeated": false,
     "intermittent_status_icon_disappearance_resolved": false
+  },
+  "current_device_dependencies": {
+    "shared_device": {
+      "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
+      "branch": "m11q-volte",
+      "commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
+      "policy": "Only this device branch is maintained. The existing Cherish device branch is unchanged and historical."
+    },
+    "vendor": {
+      "repository": "https://github.com/chenjohnliu/proprietary_vendor_samsung_m11q.git",
+      "branch": "13-64",
+      "commit": "8aac25babaee78b9243c2ee05aaf8180d88b3902",
+      "role": "Previously published fingerprint backends; proprietary payloads are not copied into this compatibility repository."
+    },
+    "validation": "Fingerprint Focaltech success previously reported; other fingerprint/touch variants and new flashed DT2W boot behavior remain unvalidated."
   }
 }

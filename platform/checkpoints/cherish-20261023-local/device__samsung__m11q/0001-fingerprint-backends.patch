@@ -1,0 +1,214 @@
+diff --git a/blob-fixups/fingerprint-backends.py b/blob-fixups/fingerprint-backends.py
+new file mode 100755
+index 0000000000000000000000000000000000000000..a71c3d6f261c27f756f3f2191f636f84182ee1ff
+--- /dev/null
++++ b/blob-fixups/fingerprint-backends.py
+@@ -0,0 +1,81 @@
++#!/usr/bin/env python3
++"""Version-pinned, reproducible fixups for M11's shared fingerprint HAL."""
++import argparse
++import hashlib
++from pathlib import Path
++import struct
++
++LOADER_ORIGINAL = '8ba64ea8b026f7060fd482889bf1feda526eb55509a22f8a150bce3971e0359b'
++LOADER_PATCHED = '3b0971b45b8e097454c692684a4e50f7ad6eadae68cb50a9c153966fb0e74e3b'
++CDFINGER_ORIGINAL = 'eebbc65cfea4ca15e65d7e19be163f543c68aa64a63a071cef79bc0395abaa52'
++CDFINGER_PATCHED = '2d71af3678cc52e8fa70c8cd51f9a240ec1054fe2007af5db0f41fcd8124e858'
++OLD_ORDER = ['fingerprint.silead', 'cdfinger.fingerprint', 'fingerprint.focaltech', 'fingerprint.egis']
++NEW_ORDER = ['fingerprint.silead', 'fingerprint.focaltech', 'fingerprint.egis', 'cdfinger.fingerprint']
++
++def digest(data):
++    return hashlib.sha256(data).hexdigest()
++
++def patch_loader(data):
++    current = digest(data)
++    if LOADER_PATCHED and current == LOADER_PATCHED:
++        return data
++    if current != LOADER_ORIGINAL:
++        raise ValueError('Unreviewed fingerprint service version: ' + current)
++    if data[:6] != b'\x7fELF\x01\x01':
++        raise ValueError('Expected little-endian ELF32')
++    shoff = struct.unpack_from('<I', data, 32)[0]
++    size, count, _ = struct.unpack_from('<HHH', data, 46)
++    sections = [struct.unpack_from('<IIIIIIIIII', data, shoff + i * size) for i in range(count)]
++    def file_offset(address):
++        for section in sections:
++            if section[1] != 8 and section[3] <= address < section[3] + section[5]:
++                return section[4] + address - section[3]
++        raise ValueError('Address is outside file-backed sections')
++    def string(address):
++        offset = file_offset(address)
++        return data[offset:].split(b'\0', 1)[0].decode()
++    offset = file_offset(0x5f18)
++    pointers = struct.unpack_from('<8I', data, offset)
++    if [string(pointers[i]) for i in range(0, 8, 2)] != OLD_ORDER:
++        raise ValueError('Unexpected module table')
++    if [string(pointers[i]) for i in range(1, 8, 2)] != ['silead', 'cdfinger', 'focaltech', 'egis']:
++        raise ValueError('Unexpected module labels')
++    entries = [data[offset + i * 8:offset + (i + 1) * 8] for i in range(4)]
++    patched = data[:offset] + b''.join(entries[i] for i in [0, 2, 3, 1]) + data[offset + 32:]
++    assert len(patched) == len(data)
++    # Relocate module and label pointers together. No executable code changes.
++    if LOADER_PATCHED and digest(patched) != LOADER_PATCHED:
++        raise ValueError('Unexpected patched service hash')
++    return patched
++
++def patch_cdfinger(data):
++    current = digest(data)
++    if CDFINGER_PATCHED and current == CDFINGER_PATCHED:
++        return data
++    if current != CDFINGER_ORIGINAL:
++        raise ValueError('Unreviewed CDFinger backend version: ' + current)
++    old = b'data/system/cdfinger'
++    new = b'data/vendor/cdfinger'
++    assert len(old) == len(new)
++    if not data.count(old):
++        raise ValueError('Expected CDFinger vendor data path was not found')
++    patched = data.replace(old, new)
++    assert len(patched) == len(data)
++    if CDFINGER_PATCHED and digest(patched) != CDFINGER_PATCHED:
++        raise ValueError('Unexpected patched CDFinger hash')
++    return patched
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('blob', choices=['vendor/bin/hw/android.hardware.biometrics.fingerprint@2.1-service', 'vendor/lib/hw/cdfinger.fingerprint.default.so'])
++    parser.add_argument('path', type=Path)
++    parser.add_argument('--dry-run', action='store_true')
++    args = parser.parse_args()
++    original = args.path.read_bytes()
++    patched = patch_loader(original) if args.blob.startswith('vendor/bin/') else patch_cdfinger(original)
++    print(f'{args.blob}: {digest(original)} -> {digest(patched)}')
++    if not args.dry_run and patched != original:
++        args.path.write_bytes(patched)
++
++if __name__ == '__main__':
++    main()
+diff --git a/extract-files.sh b/extract-files.sh
+index 351b035a998c3993466b235e5868455c2df3c111..650f980ba245eb23101322aa85ae48825b0037de 100755
+--- a/extract-files.sh
++++ b/extract-files.sh
+@@ -26,6 +26,9 @@ source "${HELPER}"
+ 
+ function blob_fixup() {
+     case "${1}" in
++        vendor/bin/hw/android.hardware.biometrics.fingerprint@2.1-service|vendor/lib/hw/cdfinger.fingerprint.default.so)
++            python3 "${MY_DIR}/blob-fixups/fingerprint-backends.py" "${1}" "${2}"
++            ;;
+         vendor/lib/libsec-ril.so|vendor/lib/libsec-ril-dsds.so)
+             sed -i 's/ril.dds.call.slotid/vendor.calls.slotid/g' "${2}"
+             ;;
+diff --git a/manifest.xml b/manifest.xml
+index fb29119cdaf7ba91b969da310f53a045800d5658..0a7f43d43c6dde3aa9c4271b7343dbe28708bc69 100644
+--- a/manifest.xml
++++ b/manifest.xml
+@@ -498,4 +498,14 @@
+ 	</interface>
+ 	<fqname>@1.0::IFocalFingerprintService/default</fqname>
+     </hal>
++    <hal format="hidl">
++        <name>vendor.egistec.hardware.fingerprint</name>
++        <transport>hwbinder</transport>
++        <version>4.0</version>
++        <interface>
++            <name>IBiometricsFingerprintRbs</name>
++            <instance>default</instance>
++        </interface>
++        <fqname>@4.0::IBiometricsFingerprintRbs/default</fqname>
++    </hal>
+ </manifest>
+diff --git a/proprietary-files.txt b/proprietary-files.txt
+index ebd873e9db8ee6a68f3828315c0b96a0411c2618..508e69a3f16ac639d3e3d65c012bb776be0c1fda 100644
+--- a/proprietary-files.txt
++++ b/proprietary-files.txt
+@@ -2666,6 +2666,9 @@ vendor/lib/vendor.silead.hardware.fingerprintext@1.0.so
+ vendor/lib/vendor.qti.hardware.fingerprint@1.0.so
+ vendor/lib64/vendor.qti.hardware.fingerprint@1.0.so
+ vendor/lib/hw/fingerprint.focaltech.default.so
++vendor/lib/hw/cdfinger.fingerprint.default.so
++vendor/lib/hw/fingerprint.egis.default.so
++vendor/lib/vendor.egistec.hardware.fingerprint@4.0.so
+ vendor/bin/hw/vendor.focaltech.fingerprint@1.0-service
+ vendor/etc/init/vendor.focaltech.fingerprint@1.0-service.rc
+ 
+diff --git a/rootdir/init.target.rc b/rootdir/init.target.rc
+index 481ab0a33f724f85e98ba0042a12ae43a6ab49eb..f314ec35d701501dc9d097226196c20caba8fd9f 100644
+--- a/rootdir/init.target.rc
++++ b/rootdir/init.target.rc
+@@ -84,6 +84,8 @@ on post-fs-data
+ #Create folder for fingerprint
+     mkdir /data/vendor/focaltech 0770 system system
+     restorecon /data/vendor/focaltech
++    mkdir /data/vendor/cdfinger 0770 system system
++    restorecon_recursive /data/vendor/cdfinger
+ #HS70 code for HS70-26/HS70-161 by zhuqiang at 2019/10/11 end
+ 
+ on early-boot
+diff --git a/sepolicy/vendor/device.te b/sepolicy/vendor/device.te
+index ef9be8c1b21da5241e474651f56fd1b0f0732da8..5933f17c385d86aa093cc09b0502403c43817c01 100644
+--- a/sepolicy/vendor/device.te
++++ b/sepolicy/vendor/device.te
+@@ -6,5 +6,7 @@ type sec_efs_block_device, dev_type;
+ type steady_block_device, dev_type;
+ type ff_device, dev_type;
+ type silead_fpd_device, dev_type;
++type cdfinger_device, dev_type;
++type egis_fp_device, dev_type;
+ type omr_block_device, dev_type;
+ type keydata_block_device, dev_type;
+diff --git a/sepolicy/vendor/file.te b/sepolicy/vendor/file.te
+index 8a0092937134462fdf5d7366eae8009bc85a7283..bcdb7a650c43cdeaf19fbfe407acada1bc0d09ac 100644
+--- a/sepolicy/vendor/file.te
++++ b/sepolicy/vendor/file.te
+@@ -25,5 +25,6 @@ type persist_wifi_file, file_type;
+ # Fingerprint
+ type ff_data_file, data_file_type, file_type;
+ type silead_fpd_data_file, data_file_type, file_type;
++type cdfinger_data_file, file_type, data_file_type;
+ 
+ type sysfs_hw_info, fs_type, sysfs_type;
+diff --git a/sepolicy/vendor/file_contexts b/sepolicy/vendor/file_contexts
+index cdd95e638aba5f20b5cfa22054eca38206858244..baf54922c02c296c972662a44773eb41c9e7e651 100644
+--- a/sepolicy/vendor/file_contexts
++++ b/sepolicy/vendor/file_contexts
+@@ -44,7 +44,10 @@
+ /dev/focaltech_fp									u:object_r:ff_device:s0
+ /dev/silead_fp										u:object_r:silead_fpd_device:s0
+ /dev/silead_stub									u:object_r:silead_fpd_device:s0
++/dev/fpsdev0									u:object_r:cdfinger_device:s0
++/dev/esfp0										u:object_r:egis_fp_device:s0
+ /data/vendor/focaltech(/.*)?								u:object_r:ff_data_file:s0
++/data/vendor/cdfinger(/.*)?							u:object_r:cdfinger_data_file:s0
+ /data/(vendor|system)/silead(/.*)?							u:object_r:silead_fpd_data_file:s0
+ /(vendor|system/vendor)/bin/hw/vendor\.focaltech\.fingerprint@1\.0-service		u:object_r:hal_fingerprint_default_exec:s0
+ /(vendor|system/vendor)/bin/hw/vendor\.silead\.hardware\.fingerprintext@1\.0-service	u:object_r:hal_fingerprint_default_exec:s0
+diff --git a/sepolicy/vendor/hal_fingerprint_default.te b/sepolicy/vendor/hal_fingerprint_default.te
+index 031e6d20a914ff131538f2d43e0989d7fe0e4a35..4850f1833a12952612abcedcf18055facf775736 100644
+--- a/sepolicy/vendor/hal_fingerprint_default.te
++++ b/sepolicy/vendor/hal_fingerprint_default.te
+@@ -9,6 +9,12 @@ allow hal_fingerprint_default silead_fpd_device:chr_file rw_file_perms;
+ allow hal_fingerprint_default silead_fpd_data_file:dir create_dir_perms;
+ allow hal_fingerprint_default silead_fpd_data_file:file create_file_perms;
+ 
++# CDFinger and Egis device access
++allow hal_fingerprint_default cdfinger_device:chr_file rw_file_perms;
++allow hal_fingerprint_default egis_fp_device:chr_file rw_file_perms;
++allow hal_fingerprint_default cdfinger_data_file:dir create_dir_perms;
++allow hal_fingerprint_default cdfinger_data_file:file create_file_perms;
++
+ # TrustZone / ion
+ allow hal_fingerprint_default tee_device:chr_file rw_file_perms;
+ allow hal_fingerprint_default ion_device:chr_file rw_file_perms;
+diff --git a/sepolicy/vendor/hwservice_contexts b/sepolicy/vendor/hwservice_contexts
+index cad7419f50bbc79ec7db339685d6463001cfe77a..9c40d0b7b700554a40f0ad782a1ede1bc16a4b95 100644
+--- a/sepolicy/vendor/hwservice_contexts
++++ b/sepolicy/vendor/hwservice_contexts
+@@ -4,6 +4,7 @@ vendor.samsung.hardware.miscpower::ISehMiscPower	u:object_r:hal_miscpower_hwserv
+ vendor.samsung.hardware.vibrator::ISehVibrator		u:object_r:hal_vibrator_hwservice:s0
+ vendor.focaltech.fingerprint::IFocalFingerprintService		u:object_r:ff_hwservice:s0
+ vendor.silead.hardware.fingerprintext::ISileadFingerprint	u:object_r:hal_fingerprint_hwservice:s0
++vendor.egistec.hardware.fingerprint::IBiometricsFingerprintRbs	u:object_r:hal_fingerprint_hwservice:s0
+ vendor.samsung.hardware.radio::ISehRadio			u:object_r:hal_telephony_hwservice:s0
+ vendor.samsung.hardware.radio.channel::ISehChannel	u:object_r:hal_telephony_hwservice:s0
+ vendor.samsung.hardware.radio.bridge::ISehBridge	u:object_r:hal_telephony_hwservice:s0

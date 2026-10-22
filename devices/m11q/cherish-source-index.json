@@ -1,14 +1,15 @@
 {
   "format_version": 1,
-  "updated_date": "2026-10-20",
-  "scope": "Fourteen CherishOS projects with the 2026-10-20 IMS API suffix; preventive changes have no new device acceptance.",
+  "updated_date": "2026-10-23",
+  "scope": "Fourteen current CherishOS projects: six synchronized platform forks and eight ordered patch recipes, including explicit microG/certificate-chain policies and shared device input enablement.",
   "checkpoint_manifests": [
     "platform/checkpoints/cherish-20261012/manifest.json",
     "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
     "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
-    "platform/checkpoints/ims-api-20261020/manifest.json"
+    "platform/checkpoints/ims-api-20261020/manifest.json",
+    "platform/checkpoints/cherish-20261023-local/manifest.json"
   ],
-  "full_source_policy": "Use the pinned synchronized fork commit OR its ordered upstream-base patch recipe per project, never both. Older donor refs are historical records.",
+  "full_source_policy": "Use the indexed synchronized platform fork commit OR its complete patch recipe, never both. The device uses the indexed patch recipe; m11q-volte is its only maintained shared branch.",
   "projects": [
     {
       "path": "frameworks/base",
@@ -40,6 +41,18 @@
           "sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc",
           "before_tree": "30a2ad149559a99bbdd618d74376fdd641133496",
           "after_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/frameworks__base/0001-microg-signature-compat.patch",
+          "sha256": "2bfc629f4a4913d58787a5a3dfe62863f714eed1181cad29c911f1083a140125",
+          "before_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
+          "after_tree": "fadcac2d09d4b44b8086e2d4d975318e03a6a311"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/frameworks__base/0002-certificate-chain-policy.patch",
+          "sha256": "01fcf580bf0da6fe185711ab7afef3caffec65893c63215d0ad3ac3a5e3ce400",
+          "before_tree": "fadcac2d09d4b44b8086e2d4d975318e03a6a311",
+          "after_tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c"
         }
       ],
       "reference_only_patches": [],
@@ -47,8 +60,8 @@
       "synchronized_fork": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_base.git",
         "branch": "cherish-13-m11q-ims",
-        "commit": "24d00aa0f58abb78dcb6e155b3fe4507aad568e7",
-        "tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
+        "commit": "80a5b4fca0bbb2a2d08c9acf4c6e11ed3bb467fd",
+        "tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c",
         "commits": [
           {
             "sha": "9538160b9f5b005c4601cf2baceb7f407522fe71",
@@ -77,10 +90,24 @@
             "tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
             "patch_path": "platform/checkpoints/ims-api-20261020/cherish/frameworks__base/sem-capabilities-factory.patch",
             "patch_sha256": "3ae18e896872b3c40a7a92f9e319b85fb1cd2f8bf3310e56564d4eeb079faddc"
+          },
+          {
+            "sha": "8a9f497d0633eec34cf68bc24313c4079ff4979a",
+            "parent": "24d00aa0f58abb78dcb6e155b3fe4507aad568e7",
+            "tree": "fadcac2d09d4b44b8086e2d4d975318e03a6a311",
+            "patch_path": "platform/checkpoints/cherish-20261023-local/frameworks__base/0001-microg-signature-compat.patch",
+            "patch_sha256": "2bfc629f4a4913d58787a5a3dfe62863f714eed1181cad29c911f1083a140125"
+          },
+          {
+            "sha": "80a5b4fca0bbb2a2d08c9acf4c6e11ed3bb467fd",
+            "parent": "8a9f497d0633eec34cf68bc24313c4079ff4979a",
+            "tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c",
+            "patch_path": "platform/checkpoints/cherish-20261023-local/frameworks__base/0002-certificate-chain-policy.patch",
+            "patch_sha256": "01fcf580bf0da6fe185711ab7afef3caffec65893c63215d0ad3ac3a5e3ce400"
           }
         ]
       },
-      "final_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
+      "final_tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c",
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_frameworks_base",
         "branch": "m11q-volte",
@@ -506,11 +533,34 @@
           "sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299",
           "before_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
           "after_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0001-fingerprint-backends.patch",
+          "sha256": "02b121bc6b5cb93814849309f0406f723b736b64c76ca9e53852deaf7aee9e1f",
+          "before_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
+          "after_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0002-shared-tsp-dt2w.patch",
+          "sha256": "7a3b6b3f9a817a2558d41f653844d9b597c6dbd44a4db5f1d4b9d0220dafedd9",
+          "before_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b",
+          "after_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a"
         }
       ],
       "reference_only_patches": [],
-      "source_route": "synchronized_fork_or_patch_recipe",
-      "synchronized_fork": {
+      "source_route": "patch_recipe",
+      "synchronized_fork": null,
+      "final_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a",
+      "historical_donor": {
+        "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
+        "branch": "m11q-volte",
+        "recorded_commits": [
+          "0f1da5855d27841d53743cd878ecd2d09679a941"
+        ],
+        "current_build_head_claimed": false,
+        "note": "Pinned device input; the current Cherish product registration and input integration are supplied by the ordered patch recipe."
+      },
+      "historical_synchronized_fork": {
         "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
         "branch": "cherish-13-m11q-ims",
         "commit": "f4a8473a4c8e14c85cce08241e2691e15ddd0a55",
@@ -523,17 +573,14 @@
             "patch_path": "platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch",
             "patch_sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299"
           }
-        ]
+        ],
+        "status": "Retained unchanged; not maintained or claimed as the current source."
       },
-      "final_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
-      "historical_donor": {
+      "maintained_shared_branch": {
         "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
         "branch": "m11q-volte",
-        "recorded_commits": [
-          "0f1da5855d27841d53743cd878ecd2d09679a941"
-        ],
-        "current_build_head_claimed": false,
-        "note": "Pinned device input; Cherish product registration is supplied by the indexed patch or new branch."
+        "commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
+        "policy": "Only this device branch is maintained. The existing Cherish device branch is unchanged and historical."
       }
     },
     {

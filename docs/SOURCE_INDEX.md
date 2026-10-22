@@ -11,27 +11,42 @@ This inventory does not cover every project in the Android manifest.
 The [2026-10-20 IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) extends the
 framework/base and Telephony source routes. The original data-service-state
 fix has a Jio tester report; the preventive group and crDroid port remain
-source/host-validated only. The Cherish index now has 22 ordered patches.
+source/host-validated only. The Cherish index now has 26 ordered patches.
+
+The [October 23 local-source update](CHERISH_LOCAL_CHANGES_20261023.md) explicitly
+adds the existing microG signature and certificate-chain product policies, plus
+the shared-device fingerprint and DT2W integration. These additions do not claim
+a new ROM build or hardware acceptance.
 
 ## Latest full-source branches
 
 | Android project | Full source | Equivalent patches |
 | --- | --- | --- |
-| `frameworks/base` | [Framework: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_base/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__base/live-source.patch), then [IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) |
+| `frameworks/base` | [Framework: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_base/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__base/live-source.patch), [IMS API supplement](IMS_API_SUPPLEMENT_20261020.md), then [October 23 policies](CHERISH_LOCAL_CHANGES_20261023.md) |
 | `frameworks/opt/net/ims` | [IMS framework: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_opt_net_ims/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__opt__net__ims/live-source.patch), then [capability test](../platform/checkpoints/cherish-20261012-ims-supplement/frameworks__opt__net__ims/emergency-capability-test.patch) |
 | `frameworks/opt/telephony` | [Telephony: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_frameworks_opt_telephony/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/frameworks__opt__telephony/live-source.patch), [legacy IWLAN MTU](../platform/checkpoints/cherish-20261016-vowifi/frameworks__opt__telephony/legacy-iwlan-mtu.patch), then [UICC API service](IMS_API_SUPPLEMENT_20261020.md) |
 | `packages/services/Telephony` | [Phone service: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_packages_services_Telephony/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/packages__services__Telephony/live-source.patch) |
 | `system/netd` | [netd: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_system_netd/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/system__netd/live-source.patch) |
 | `packages/services/Telecomm` | [Telecom: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_packages_services_Telecomm/tree/cherish-13-m11q-ims) | [Baseline](../platform/checkpoints/cherish-20261012/packages__services__Telecomm/live-source.patch), [permission](../platform/checkpoints/cherish-20261012-ims-supplement/packages__services__Telecomm/secims-permission.patch), then [initial Wi-Fi audio](../platform/checkpoints/cherish-20261016-vowifi/packages__services__Telecomm/initial-wifi-audio.patch) |
-| `device/samsung/m11q` | [Device: cherish-13-m11q-ims](https://github.com/chenjohnliu/android_device_samsung_m11q/tree/cherish-13-m11q-ims) | Pinned device source, then [Cherish product registration](../platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch) |
 
 The six platform branches start from the exact CherishOS bases recorded in the
-checkpoints; the device branch starts from the pinned device source with the
-Cherish product registration patch. Their complete Git trees match the patch replay
-results; this is stronger than comparing only the files changed in the latest
-fix. Exact commits, trees and patch-to-commit mappings are in the index.
+checkpoints. Their complete Git trees match the patch replay results; this is
+stronger than comparing only the files changed in the latest fix. Exact commits,
+trees and patch-to-commit mappings are in the index.
 
-For each of these seven projects, choose one source route: the indexed fork
+The device uses a patch recipe from the pinned `m11q-volte` source base: apply
+the [Cherish product registration patch](../platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch),
+then the two device patches in the
+[2026-10-23 local supplement](../platform/checkpoints/cherish-20261023-local/manifest.json).
+Those patches record the fingerprint changes already present on the shared
+`m11q-volte` branch and the shared Samsung TSP double-tap-to-wake command.
+`m11q-volte` remains the maintained shared device branch and release branch; it
+is provenance for the patch recipe, not a full Cherish source tree. The prior
+`cherish-13-m11q-ims` device fork record is retained as historical provenance.
+That branch is left unchanged and is not treated as the current synchronized
+source.
+
+For each of the six platform projects, choose one source route: the indexed fork
 commit already contains its entire listed patch chain. Applying those patches
 again would duplicate the integration. Alternatively, use the locked upstream
 base and apply its listed patch chain once. The current build checkout was not
@@ -57,6 +72,7 @@ patch route have the same four changed source files.
 | Project | Published source recipe |
 | --- | --- |
 | `packages/services/Mms` | [Combined baseline](../platform/checkpoints/cherish-20261012/packages__services__Mms/live-source.patch); the later supplement copy is reference-only |
+| `device/samsung/m11q` | Cherish product registration patch, then the two [2026-10-23 local supplement](../platform/checkpoints/cherish-20261023-local/manifest.json) patches |
 | `hardware/qcom-caf/msm8953/audio` | Build prerequisite in the [baseline manifest](../platform/checkpoints/cherish-20261012/manifest.json) |
 | `hardware/qcom-caf/msm8953/display` | Build prerequisite in the baseline manifest |
 | `vendor/qcom/opensource/commonsys-intf/display` | Build prerequisite in the baseline manifest |
@@ -66,7 +82,8 @@ patch route have the same four changed source files.
 
 The full Cherish patch route is the 2026-10-12 combined baseline, the two applicable
 patches from its IMS supplement, the two 2026-10-16 VoWiFi patches, then the
-four 2026-10-20 API suffix patches. The
+four 2026-10-20 API suffix patches and four explicitly indexed October 23
+product/device steps. The
 index resolves that global sequence into a separate ordered list for each
 project. The baseline is not an additional layer on top of the historical
 `ims-20261010` patch series.
@@ -93,10 +110,11 @@ state explicit. For the remaining dependencies, Cherish's locked manifest itself
 selects some LineageOS or AOSP projects; their source origin does not turn the
 target ROM into crDroid or require a second repository for the same source pin.
 
-The frameworks/base donor history also contains microG and Play Integrity
-changes outside the IMS checkpoint. This index describes the IMS source recipe;
-it does not silently import those separate customizations or claim an exact
-snapshot of every file in a previously built ROM.
+The frameworks/base donor history also contains microG and certificate-chain
+policy changes outside the historical IMS checkpoint. The October 23 supplement
+now explicitly indexes the current local versions as two separate product-policy
+patches. This does not claim a passing Play Integrity result or an exact snapshot
+of every project in a previously built ROM.
 
 The Telecom repository was recreated at the same URL as a direct fork of
 `CherishOS/android_packages_services_Telecomm`, replacing its earlier crDroid
@@ -107,11 +125,12 @@ inherited crDroid branches remain in the verified local backup rather than
 being republished. See the
 [fork-origin verification record](../devices/m11q/telecomm-fork-origin.json).
 
-The five other platform forks already have CherishOS parents, and the device
-fork remains based on ifoodplayer with its existing branch arrangement.
-Checkpoint and APK hash contracts, source commit pins and patch paths stay
-stable so the existing integration recipe and historical M11 links continue
-to work.
+The five other platform forks already have CherishOS parents. The device
+repository is maintained on the shared `m11q-volte` branch; the older
+`cherish-13-m11q-ims` branch remains historical provenance and is not updated
+or removed by this source-index change. Checkpoint and APK hash contracts,
+source commit pins and patch paths stay stable so the existing integration
+recipe and historical M11 links continue to work.
 
 ## Keeping the two source routes synchronized
 
@@ -136,7 +155,7 @@ Check index coverage, patch hashes, ordering and tree mappings offline:
 python3 tools/verify_cherish_source_index.py
 ```
 
-To also replay the patches against actual local fork objects, place the seven
+To also replay the patches against actual local fork objects, place the six
 clones under a common directory with the names below and the indexed commits
 available, then run:
 
@@ -152,7 +171,6 @@ python3 tools/verify_cherish_source_index.py --forks-root /absolute/path/to/fork
 | `packages/services/Telephony` | `phone_service/` |
 | `system/netd` | `netd/` |
 | `packages/services/Telecomm` | `telecomm/` |
-| `device/samsung/m11q` | `device/` |
 
 The local verification uses temporary indexes and preserves checkout refs,
 source files and the real indexes. It does not check GitHub availability or

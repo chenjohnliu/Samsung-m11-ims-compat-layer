@@ -29,7 +29,25 @@ class CherishSourceIndexTests(unittest.TestCase):
 
     def test_repository_index_and_artifacts_pass_offline(self) -> None:
         result = validate_index_data(self.mutated_index(), REPO_ROOT)
-        self.assertEqual(result, {"projects": 14, "patches": 22, "reference_only": 1, "forks_checked": 0})
+        self.assertEqual(result, {"projects": 14, "patches": 26, "reference_only": 1, "forks_checked": 0})
+
+    def test_local_supplement_keeps_device_on_patch_recipe(self) -> None:
+        data = self.mutated_index()
+        device = next(p for p in data["projects"] if p["path"] == "device/samsung/m11q")
+        self.assertEqual(data["checkpoint_manifests"][-1],
+                         "platform/checkpoints/cherish-20261023-local/manifest.json")
+        self.assertEqual(device["source_route"], "patch_recipe")
+        self.assertIsNone(device["synchronized_fork"])
+        self.assertEqual(len(device["patches"]), 3)
+        self.assertTrue(all(p["path"].startswith("platform/checkpoints/cherish-20261023-local/")
+                            for p in device["patches"][-2:]))
+
+    def test_local_supplement_tree_chain_cannot_be_reordered(self) -> None:
+        data = self.mutated_index()
+        entry = next(p for p in data["projects"] if p["path"] == "frameworks/base")
+        entry["patches"][-1]["before_tree"] = "0" * 40
+        with self.assertRaisesRegex(ValidationError, "patch metadata differs"):
+            self.validate(data)
 
     def test_api_supplement_cannot_be_omitted_from_manifest_order(self) -> None:
         data = self.mutated_index()

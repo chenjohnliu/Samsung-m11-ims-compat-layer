@@ -1,0 +1,24 @@
+diff --git a/core/java/com/android/internal/util/cherish/PixelPropsUtils.java b/core/java/com/android/internal/util/cherish/PixelPropsUtils.java
+index da9a0d687f50814a6cd19e63e187da90167dc059..66507c83925afbfac1315c458939c362b578b093 100644
+--- a/core/java/com/android/internal/util/cherish/PixelPropsUtils.java
++++ b/core/java/com/android/internal/util/cherish/PixelPropsUtils.java
+@@ -367,13 +367,13 @@ public class PixelPropsUtils {
+ 
+     public static void onEngineGetCertificateChain() {
+         // Check stack for SafetyNet or Play Integrity
+-        if (isCallerSafetyNet() || sIsFinsky) {
+-            Log.i(TAG, "Blocked key attestation sIsGms=" + sIsGms + " sIsFinsky=" + sIsFinsky);
+-            throw new UnsupportedOperationException();
+-        }
++        // if (isCallerSafetyNet() || sIsFinsky) {
++        //     Log.i(TAG, "Blocked key attestation sIsGms=" + sIsGms + " sIsFinsky=" + sIsFinsky);
++        //     throw new UnsupportedOperationException();
++        // }
+     }
+ 
+     public static void dlog(String msg) {
+         if (DEBUG) Log.d(TAG, msg);
+     }
+-}
+\ No newline at end of file
++}

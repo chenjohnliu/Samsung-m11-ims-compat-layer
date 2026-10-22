@@ -1,0 +1,61 @@
+{
+  "format_version": 1,
+  "date": "2026-10-23",
+  "scope": "Explicit local product policies and device input enablement; no Android build or new wake acceptance claimed.",
+  "maintained_device_branch": {
+    "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
+    "branch": "m11q-volte",
+    "commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
+    "policy": "Only this device branch is maintained. The existing Cherish device branch is unchanged and historical."
+  },
+  "external_dependencies": [
+    {
+      "repository": "https://github.com/chenjohnliu/proprietary_vendor_samsung_m11q.git",
+      "branch": "13-64",
+      "commit": "8aac25babaee78b9243c2ee05aaf8180d88b3902",
+      "role": "Previously published fingerprint backends; proprietary payloads are not copied into this compatibility repository."
+    }
+  ],
+  "projects": [
+    {
+      "path": "frameworks/base",
+      "base_commit": "bd837f94b5e87a4c4fbc9f40e0c0f597f74baf78",
+      "base_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/frameworks__base/0001-microg-signature-compat.patch",
+          "sha256": "2bfc629f4a4913d58787a5a3dfe62863f714eed1181cad29c911f1083a140125",
+          "before_tree": "9c53c0f422a1f2b67a6acd0485bd9544ff983418",
+          "after_tree": "fadcac2d09d4b44b8086e2d4d975318e03a6a311"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/frameworks__base/0002-certificate-chain-policy.patch",
+          "sha256": "01fcf580bf0da6fe185711ab7afef3caffec65893c63215d0ad3ac3a5e3ce400",
+          "before_tree": "fadcac2d09d4b44b8086e2d4d975318e03a6a311",
+          "after_tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c"
+        }
+      ],
+      "final_tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c"
+    },
+    {
+      "path": "device/samsung/m11q",
+      "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+      "base_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
+      "patches": [
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0001-fingerprint-backends.patch",
+          "sha256": "02b121bc6b5cb93814849309f0406f723b736b64c76ca9e53852deaf7aee9e1f",
+          "before_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
+          "after_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b"
+        },
+        {
+          "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0002-shared-tsp-dt2w.patch",
+          "sha256": "7a3b6b3f9a817a2558d41f653844d9b597c6dbd44a4db5f1d4b9d0220dafedd9",
+          "before_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b",
+          "after_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a"
+        }
+      ],
+      "final_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a"
+    }
+  ]
+}

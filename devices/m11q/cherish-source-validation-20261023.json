@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-23",
+  "status": "PASS",
+  "method": "Temporary-index forward and reverse replay over the indexed original bases; final trees compared to the audited working content.",
+  "android_build_run": false,
+  "new_hardware_wake_test": false,
+  "projects": [
+    {
+      "path": "frameworks/base",
+      "base_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+      "final_tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c",
+      "patch_steps": 6,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "frameworks/opt/net/ims",
+      "base_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+      "final_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8",
+      "patch_steps": 2,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "frameworks/opt/telephony",
+      "base_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+      "final_tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f",
+      "patch_steps": 3,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "packages/services/Telephony",
+      "base_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+      "final_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "system/netd",
+      "base_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+      "final_tree": "ba89c15b79d86144876f596de94cd579221d152e",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "packages/services/Telecomm",
+      "base_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+      "final_tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+      "patch_steps": 3,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "packages/services/Mms",
+      "base_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+      "final_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/audio",
+      "base_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+      "final_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/display",
+      "base_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+      "final_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "vendor/qcom/opensource/commonsys-intf/display",
+      "base_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+      "final_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "device/cherish/sepolicy",
+      "base_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+      "final_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "device/samsung/m11q",
+      "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+      "final_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a",
+      "patch_steps": 3,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "vendor/cherish",
+      "base_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+      "final_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    },
+    {
+      "path": "build/make",
+      "base_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+      "final_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "matches_audited_working_tree": true
+    }
+  ],
+  "projects_verified": 14,
+  "patch_steps": 26
+}
