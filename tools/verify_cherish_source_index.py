@@ -32,6 +32,7 @@ IMS_SUPPLEMENT_MANIFEST = "platform/checkpoints/cherish-20261012-ims-supplement/
 VOWIFI_MANIFEST = "platform/checkpoints/cherish-20261016-vowifi/manifest.json"
 API_MANIFEST = "platform/checkpoints/ims-api-20261020/manifest.json"
 LOCAL_MANIFEST = "platform/checkpoints/cherish-20261023-local/manifest.json"
+SHARED_DEVICE_MANIFEST = "platform/checkpoints/m11q-shared-20261023/manifest.json"
 INDEX_PATH = "devices/m11q/cherish-source-index.json"
 EXPECTED_PROJECT_COUNT = 14
 FORK_REPOSITORIES = {
@@ -262,6 +263,9 @@ def _extend_local_supplement(
             _validate_step_shape(patch, project_path, position)
             if not patch["path"].startswith(patch_prefix):
                 raise ValidationError(f"local supplement patch path is outside its checkpoint for {project_path}")
+            patch_file = _inside(repo_root, patch["path"], f"{project_path} local supplement patch")
+            if _sha256(patch_file) != patch["sha256"]:
+                raise ValidationError(f"local supplement patch hash mismatch for {project_path}: {patch['path']}")
             if patch["before_tree"] != previous_tree:
                 raise ValidationError(f"broken local supplement tree chain for {project_path}, patch {position}")
             chains[project_path].append({
@@ -274,6 +278,79 @@ def _extend_local_supplement(
         if record.get("final_tree") != previous_tree:
             raise ValidationError(f"local supplement final_tree differs from patch chain for {project_path}")
 
+    return True
+
+
+def _replace_shared_device_route(
+    repo_root: Path,
+    baseline_projects: dict[str, dict[str, Any]],
+    chains: dict[str, list[dict[str, str]]],
+) -> bool:
+    """Replace the historical device recipe with its maintained shared branch base."""
+    manifest_path = _inside(
+        repo_root, SHARED_DEVICE_MANIFEST, "shared device manifest", must_exist=False
+    )
+    if not manifest_path.exists():
+        return False
+
+    manifest = _load_json(manifest_path)
+    if manifest.get("format_version") != 1:
+        raise ValidationError("unsupported shared device manifest format_version")
+
+    device_path = "device/samsung/m11q"
+    project = manifest.get("project")
+    if not isinstance(project, dict) or project.get("path") != device_path:
+        raise ValidationError("shared device manifest must describe device/samsung/m11q")
+    if project.get("role") != "product":
+        raise ValidationError("shared device manifest role must be product")
+    if project.get("source_url") != baseline_projects[device_path].get("source_url"):
+        raise ValidationError("shared device manifest source URL differs from the pinned repository")
+    if project.get("branch") != "m11q-volte":
+        raise ValidationError("shared device manifest branch must be m11q-volte")
+
+    replaced = manifest.get("replaces")
+    baseline = baseline_projects[device_path]
+    if not isinstance(replaced, dict):
+        raise ValidationError("shared device manifest is missing replaces metadata")
+    if replaced.get("base_commit") != baseline.get("base_commit"):
+        raise ValidationError("shared device manifest replaces base commit mismatch")
+    if replaced.get("base_tree") != baseline.get("base_tree"):
+        raise ValidationError("shared device manifest replaces base tree mismatch")
+    if replaced.get("final_tree") != chains[device_path][-1]["after_tree"]:
+        raise ValidationError("shared device manifest replaces final tree mismatch")
+
+    base_commit = project.get("base_commit")
+    base_tree = project.get("base_tree")
+    if not isinstance(base_commit, str) or not OID_RE.fullmatch(base_commit):
+        raise ValidationError("shared device manifest has malformed base_commit")
+    if not isinstance(base_tree, str) or not OID_RE.fullmatch(base_tree):
+        raise ValidationError("shared device manifest has malformed base_tree")
+
+    patches = project.get("patches")
+    if not isinstance(patches, list) or len(patches) != 1:
+        raise ValidationError("shared device manifest must contain exactly one product patch")
+    patch = patches[0]
+    if not isinstance(patch, dict):
+        raise ValidationError("shared device product patch is invalid")
+    _validate_step_shape(patch, device_path, 1)
+    patch_prefix = SHARED_DEVICE_MANIFEST.rsplit("/", 1)[0] + "/"
+    if not patch["path"].startswith(patch_prefix):
+        raise ValidationError("shared device product patch path is outside its checkpoint")
+    if patch["before_tree"] != base_tree:
+        raise ValidationError("shared device product patch does not start from its branch base tree")
+    if project.get("final_tree") != patch["after_tree"]:
+        raise ValidationError("shared device final_tree differs from product patch result")
+
+    baseline["base_commit"] = base_commit
+    baseline["base_tree"] = base_tree
+    baseline["role"] = project["role"]
+    baseline["source_url"] = project["source_url"]
+    chains[device_path] = [{
+        "path": patch["path"],
+        "sha256": patch["sha256"],
+        "before_tree": patch["before_tree"],
+        "after_tree": patch["after_tree"],
+    }]
     return True
 
 
@@ -320,6 +397,8 @@ def validate_index_data(
         expected_manifests.append(API_MANIFEST)
     if _extend_local_supplement(repo_root, base_projects, expected_chains):
         expected_manifests.append(LOCAL_MANIFEST)
+    if _replace_shared_device_route(repo_root, base_projects, expected_chains):
+        expected_manifests.append(SHARED_DEVICE_MANIFEST)
     if manifests != expected_manifests:
         raise ValidationError("checkpoint_manifests must list the baseline and supplements in order")
 

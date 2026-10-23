@@ -1,15 +1,16 @@
 {
   "format_version": 1,
   "updated_date": "2026-10-23",
-  "scope": "Fourteen current CherishOS projects: six synchronized platform forks and eight ordered patch recipes, including explicit microG/certificate-chain policies and shared device input enablement.",
+  "scope": "Fourteen projects and 24 ordered patches. The device directly uses the pinned m11q-volte shared base plus one Cherish product patch; the six platform forks remain separate.",
   "checkpoint_manifests": [
     "platform/checkpoints/cherish-20261012/manifest.json",
     "platform/checkpoints/cherish-20261012-ims-supplement/manifest.json",
     "platform/checkpoints/cherish-20261016-vowifi/manifest.json",
     "platform/checkpoints/ims-api-20261020/manifest.json",
-    "platform/checkpoints/cherish-20261023-local/manifest.json"
+    "platform/checkpoints/cherish-20261023-local/manifest.json",
+    "platform/checkpoints/m11q-shared-20261023/manifest.json"
   ],
-  "full_source_policy": "Use the indexed synchronized platform fork commit OR its complete patch recipe, never both. The device uses the indexed patch recipe; m11q-volte is its only maintained shared branch.",
+  "full_source_policy": "Use each synchronized platform fork commit OR its patch recipe. For the device, use the indexed m11q-volte base and apply only its Cherish product-registration patch. Older device routes remain historical.",
   "projects": [
     {
       "path": "frameworks/base",
@@ -525,32 +526,20 @@
       "path": "device/samsung/m11q",
       "role": "product",
       "source_url": "https://github.com/chenjohnliu/android_device_samsung_m11q",
-      "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
-      "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+      "base_commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
+      "base_tree": "3f4fb779d9c4d07a6357806acf1771a9a7fa5087",
       "patches": [
         {
-          "path": "platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch",
+          "path": "platform/checkpoints/m11q-shared-20261023/cherish-product.patch",
           "sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299",
-          "before_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
-          "after_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df"
-        },
-        {
-          "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0001-fingerprint-backends.patch",
-          "sha256": "02b121bc6b5cb93814849309f0406f723b736b64c76ca9e53852deaf7aee9e1f",
-          "before_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
-          "after_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b"
-        },
-        {
-          "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0002-shared-tsp-dt2w.patch",
-          "sha256": "7a3b6b3f9a817a2558d41f653844d9b597c6dbd44a4db5f1d4b9d0220dafedd9",
-          "before_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b",
-          "after_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a"
+          "before_tree": "3f4fb779d9c4d07a6357806acf1771a9a7fa5087",
+          "after_tree": "9f00b7c9c2d9f62bea9eaa3bce00efa66161f856"
         }
       ],
       "reference_only_patches": [],
       "source_route": "patch_recipe",
       "synchronized_fork": null,
-      "final_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a",
+      "final_tree": "9f00b7c9c2d9f62bea9eaa3bce00efa66161f856",
       "historical_donor": {
         "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
         "branch": "m11q-volte",
@@ -558,7 +547,7 @@
           "0f1da5855d27841d53743cd878ecd2d09679a941"
         ],
         "current_build_head_claimed": false,
-        "note": "Pinned device input; the current Cherish product registration and input integration are supplied by the ordered patch recipe."
+        "note": "Earlier device input kept for historical reproduction. The current shared base is recorded in base_commit and maintained_shared_branch."
       },
       "historical_synchronized_fork": {
         "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
@@ -580,8 +569,34 @@
         "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
         "branch": "m11q-volte",
         "commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
-        "policy": "Only this device branch is maintained. The existing Cherish device branch is unchanged and historical."
-      }
+        "policy": "Current source directly uses this maintained shared branch at the pinned commit, followed only by the indexed Cherish product patch."
+      },
+      "historical_patch_recipe_20261023": {
+        "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+        "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+        "patches": [
+          {
+            "path": "platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch",
+            "sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299",
+            "before_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+            "after_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df"
+          },
+          {
+            "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0001-fingerprint-backends.patch",
+            "sha256": "02b121bc6b5cb93814849309f0406f723b736b64c76ca9e53852deaf7aee9e1f",
+            "before_tree": "6bca92c338d78ec6e8701c5192a408bffaf868df",
+            "after_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b"
+          },
+          {
+            "path": "platform/checkpoints/cherish-20261023-local/device__samsung__m11q/0002-shared-tsp-dt2w.patch",
+            "sha256": "7a3b6b3f9a817a2558d41f653844d9b597c6dbd44a4db5f1d4b9d0220dafedd9",
+            "before_tree": "514b26faedccddb1141989ce3ad1765c6b3be30b",
+            "after_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a"
+          }
+        ],
+        "final_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a"
+      },
+      "source_branch": "m11q-volte"
     },
     {
       "path": "vendor/cherish",

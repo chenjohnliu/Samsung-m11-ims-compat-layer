@@ -1,5 +1,10 @@
 # Current CherishOS source changes: October 23, 2026
 
+This records the earlier local-tree audit on October 23. Its device route was
+subsequently replaced by the [direct m11q-volte source reference](DEVICE_SHARED_SOURCE_20261023.md).
+The current device instructions are the shared pin plus one product patch; the
+three-step device recipe and 26-step audit below remain historical evidence.
+
 The source audit covered the 15 CherishOS projects with local changes. Twelve
 project trees already exactly matched the published source index, and the vendor
 tree exactly matched the previously published fingerprint commit. The new source
@@ -27,7 +32,7 @@ is maintained. The existing device `cherish-13-m11q-ims` branch is retained at
 `f4a8473a4c8e14c85cce08241e2691e15ddd0a55`; this update neither advances nor deletes it.
 The framework repository's Cherish branch is separate from this device policy.
 
-The complete current Cherish device tree is reproduced with the indexed patch
+The earlier audited Cherish device tree was reproduced with the indexed patch
 recipe: the pinned base, the existing Cherish product-registration patch, the
 fingerprint integration and then DT2W. The shared branch is provenance for the
 device changes, not a claim that its whole tree is the Cherish product tree.
@@ -55,10 +60,11 @@ Publishing does not require resetting those source trees or rebuilding the ROM.
 ## Reproduction and validation
 
 The [local supplement manifest](../platform/checkpoints/cherish-20261023-local/manifest.json)
-adds four ordered patch steps. The [source index](../devices/m11q/cherish-source-index.json)
-contains 14 projects and 26 steps, with six synchronized platform forks and eight
-patch-only routes. Device branch history is kept explicitly historical rather
-than advertising a stale complete-source pin.
+added four ordered patch steps. That audit covered 14 projects and 26 steps,
+with six synchronized platform forks and eight patch-only routes. The current
+[source index](../devices/m11q/cherish-source-index.json) has 24 steps after the
+device base migration described in the shared-device guide. Device branch
+history is kept explicitly historical.
 
 The accompanying [validation record](../devices/m11q/cherish-source-validation-20261023.json)
 records exact forward/reverse tree replay and comparison with the audited current

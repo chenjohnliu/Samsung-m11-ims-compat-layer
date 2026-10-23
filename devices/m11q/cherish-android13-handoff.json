@@ -20,7 +20,7 @@
     "validated_rom_available": true,
     "strict_independent_rebuild_ready": false,
     "deployable": false,
-    "note": "The user reported a passing manual build and runtime acceptance on 2026-10-13 after all six previously omitted changes were applied; a validated ROM is available. deployable remains false because the fresh IMS artifact's independent strict producer profile/rebuild gap is still open, not because ROM build or device validation is pending. ER1 stock-input provenance is closed; that does not establish ERIS/IPsec execution."
+    "note": "The user reported a passing manual build and runtime acceptance on 2026-10-13 after all six previously omitted changes were applied; a validated ROM is available. deployable remains false because the fresh IMS artifact's independent strict producer profile/rebuild gap is still open, not because ROM build or device validation is pending. ER1 stock-input provenance is closed; that does not establish ERIS/IPsec execution. The shared-device reference selected later on 2026-10-23 is source-validated only; prior runtime acceptance does not certify that new source route."
   },
   "source_repositories": [
     {
@@ -34,15 +34,15 @@
       "name": "android_device_samsung_m11q",
       "url": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
       "ref": "m11q-volte",
-      "revision": "0f1da5855d27841d53743cd878ecd2d09679a941",
-      "role": "Device configuration and integration source."
+      "revision": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
+      "role": "Current maintained shared device source; apply only the indexed Cherish product-registration patch."
     },
     {
       "name": "proprietary_vendor_samsung_m11q",
       "url": "https://github.com/chenjohnliu/proprietary_vendor_samsung_m11q.git",
       "ref": "13-64",
-      "revision": "6a8923918e90b734913cab84bc8ac7022a2dc143",
-      "role": "Vendor repository source."
+      "revision": "8aac25babaee78b9243c2ee05aaf8180d88b3902",
+      "role": "Matching published fingerprint vendor dependency."
     },
     {
       "name": "android_packages_services_Telecomm",
@@ -83,9 +83,10 @@
     "vowifi_20261016_application_policy": "After the combined checkpoint and earlier IMS supplement, apply the initial incoming Wi-Fi audio and legacy IWLAN MTU patches once; see docs/CHERISH_VOWIFI_FIXES_20261016.md. Earlier checkpoint and APK pins are unchanged.",
     "source_index": "devices/m11q/cherish-source-index.json",
     "source_index_guide": "docs/SOURCE_INDEX.md",
-    "source_selection_policy": "For projects with a synchronized fork pin, use that complete commit OR the ordered patch recipe, never both. Historical source_repositories pins above remain donor/baseline records; current synchronized source pins are in the source index.",
+    "source_selection_policy": "Use each synchronized platform fork commit OR its patch recipe. For the device, use the indexed m11q-volte base and apply only its Cherish product-registration patch. Older device routes remain historical.",
     "local_20261023_supplement": "platform/checkpoints/cherish-20261023-local/manifest.json",
-    "local_20261023_policy": "The current index explicitly includes the two non-IMS product policies and shared device input patches. The previously synchronized Cherish device branch is historical; maintain m11q-volte only."
+    "local_20261023_policy": "The two framework product policies remain current. The earlier three-step device recipe is superseded by the shared-device manifest; fingerprint and DT2W are already in its m11q-volte base.",
+    "shared_device_source_manifest": "platform/checkpoints/m11q-shared-20261023/manifest.json"
   },
   "public_source_inventory": {
     "ims_framework_sms_and_subscription_compatibility": [
@@ -324,7 +325,8 @@
     "platform/checkpoints/README.md",
     "patches/README.md",
     "tools/verify_cherish_source_index.py",
-    "devices/m11q/telecomm-fork-origin.json"
+    "devices/m11q/telecomm-fork-origin.json",
+    "platform/checkpoints/m11q-shared-20261023/manifest.json"
   ],
   "runtime_acceptance": {
     "date": "2026-10-13",
@@ -382,7 +384,10 @@
       "repository": "https://github.com/chenjohnliu/android_device_samsung_m11q.git",
       "branch": "m11q-volte",
       "commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
-      "policy": "Only this device branch is maintained. The existing Cherish device branch is unchanged and historical."
+      "base_tree": "3f4fb779d9c4d07a6357806acf1771a9a7fa5087",
+      "product_patch": "platform/checkpoints/m11q-shared-20261023/cherish-product.patch",
+      "final_tree": "9f00b7c9c2d9f62bea9eaa3bce00efa66161f856",
+      "validation": "Source and forward/reverse patch replay only; no ROM build, live checkout update, or new device runtime validation."
     },
     "vendor": {
       "repository": "https://github.com/chenjohnliu/proprietary_vendor_samsung_m11q.git",

@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-23",
+  "status": "PASS",
+  "method": "Isolated shared-device source and temporary-index forward/reverse replay of every current project recipe.",
+  "live_rom_checkouts_changed": false,
+  "android_build_run": false,
+  "new_hardware_test": false,
+  "projects": [
+    {
+      "path": "frameworks/base",
+      "base_commit": "bd837f94b5e87a4c4fbc9f40e0c0f597f74baf78",
+      "base_tree": "766293228a269161c782d365ab3ba86f2db070c9",
+      "final_tree": "a44e10cfe83c7d6257bb58d5dc2a48906a229e3c",
+      "patch_steps": 6,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "frameworks/opt/net/ims",
+      "base_commit": "ddd67c647e3f1e51abb4727bcb14873b53cb3799",
+      "base_tree": "cc11e843357cd2048bdee3ec3af5e32f8c0a0ac8",
+      "final_tree": "7debdb23edb288a03ae7ec5550b0ced2711be7b8",
+      "patch_steps": 2,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "frameworks/opt/telephony",
+      "base_commit": "d8ea3f40256b74d228f98448c4e75a15db547921",
+      "base_tree": "e17fbc5fac77e3bdfc302042d37dbca9e4787843",
+      "final_tree": "e0308c4362cdcfa9d07712cdb977d5007cb79f4f",
+      "patch_steps": 3,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "packages/services/Telephony",
+      "base_commit": "abbe1d49d26bf05ed6287eaad07a3e94136377d9",
+      "base_tree": "636fcf82853a4a8bb0f364082251305f57cceb15",
+      "final_tree": "fe1d23acab96c6d05a3c72e4288624ee87994401",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "system/netd",
+      "base_commit": "0a1e4b250e798479cafc3297a4b8a22c5158da29",
+      "base_tree": "1706afd03d8559e27c7e830070b1a9ea7abbb522",
+      "final_tree": "ba89c15b79d86144876f596de94cd579221d152e",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "packages/services/Telecomm",
+      "base_commit": "1465f7e0ef17aae40bccd5cf6b4a7b5b19176244",
+      "base_tree": "602eb7e403d3458b48a83c45c74333bf49ac14a7",
+      "final_tree": "b2c191d69d2055770b1d96f6baddff6abe472252",
+      "patch_steps": 3,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "packages/services/Mms",
+      "base_commit": "88c00908f6f248edc300e38044cb88e08eea942e",
+      "base_tree": "e162822c92303dea0d3896a2da025838125e0cb9",
+      "final_tree": "4ba5b0397871ce6c985a93ca957d86dd802a1d12",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/audio",
+      "base_commit": "b6b4b95176283ccd966e3cf388ec2fc2acbe4ef6",
+      "base_tree": "25b719db0a3a42df069d2af00f7fb246326d9ccf",
+      "final_tree": "c4506ae5509f0edfcc1e43f7cf62f3b9d4603ce5",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "hardware/qcom-caf/msm8953/display",
+      "base_commit": "6fe03b204444745439fe8d164dc78ee0a5576ca8",
+      "base_tree": "48ca22cad17b7691231605378d9ca2fc438247dc",
+      "final_tree": "0d5817aa6707bc6717a36517e1611dbe58cc420b",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "vendor/qcom/opensource/commonsys-intf/display",
+      "base_commit": "ba6b55fdd5e13290a9e97a0f947fd21ee2f228af",
+      "base_tree": "476710e47e7532e6bf4567d7b6c39fa00e8f3bac",
+      "final_tree": "2f32dcc25690e503bd9e7cb1d990c4e73bd86356",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "device/cherish/sepolicy",
+      "base_commit": "c6ecfded4535af0ea163bfd1ff1c9f131f6c2507",
+      "base_tree": "993bc0a8b3a721c379b73391016310c04072409c",
+      "final_tree": "4d226627e1933e48c4d52ccc5dc07c766e5c4c6d",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "device/samsung/m11q",
+      "base_commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
+      "base_tree": "3f4fb779d9c4d07a6357806acf1771a9a7fa5087",
+      "final_tree": "9f00b7c9c2d9f62bea9eaa3bce00efa66161f856",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": [
+        "CHANGELOG.md",
+        "README.md",
+        "docs/release-history/20260720-13.md",
+        "docs/release-history/20260808-13.md",
+        "docs/release-history/20260813-13.md",
+        "docs/release-history/20260815-13.md",
+        "docs/release-history/20260822-13.md",
+        "docs/release-history/20260824-13.md",
+        "docs/release-history/20260907-13.md",
+        "docs/release-history/20260910-13-rc1.md",
+        "docs/release-history/20260912-13.md",
+        "docs/release-history/20260926-13-Cherish.md",
+        "docs/release-history/20261010-13-CrDroid.md",
+        "docs/release-history/20261012-13-Cherish.md",
+        "docs/release-history/README.md",
+        "ims/Android.mk",
+        "ims/README.md",
+        "ims/compat/sve/Android.bp"
+      ]
+    },
+    {
+      "path": "vendor/cherish",
+      "base_commit": "4b061ffab32779b72e10249fddb1f69a6561d777",
+      "base_tree": "cecc09145daa82c023e3ea052e9b16f264a0de08",
+      "final_tree": "bf7397e13e6caadb9a9bd23597219c4b02e2bdec",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    },
+    {
+      "path": "build/make",
+      "base_commit": "a74a178b502303584cc55ecbf6d2d7d3ae22c8b2",
+      "base_tree": "314f32810b50e179ab9c42c832bcc6036ecfa884",
+      "final_tree": "c7b9c5bb54dbfac2e29b4fa37270af986d0148a1",
+      "patch_steps": 1,
+      "forward_replay": "PASS",
+      "reverse_replay": "PASS",
+      "differences_from_prior_live_snapshot": []
+    }
+  ],
+  "projects_verified": 14,
+  "patch_steps": 24
+}

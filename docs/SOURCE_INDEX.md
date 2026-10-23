@@ -11,12 +11,16 @@ This inventory does not cover every project in the Android manifest.
 The [2026-10-20 IMS API supplement](IMS_API_SUPPLEMENT_20261020.md) extends the
 framework/base and Telephony source routes. The original data-service-state
 fix has a Jio tester report; the preventive group and crDroid port remain
-source/host-validated only. The Cherish index now has 26 ordered patches.
+source/host-validated only. The Cherish index now has 24 ordered patches.
 
 The [October 23 local-source update](CHERISH_LOCAL_CHANGES_20261023.md) explicitly
 adds the existing microG signature and certificate-chain product policies, plus
 the shared-device fingerprint and DT2W integration. These additions do not claim
 a new ROM build or hardware acceptance.
+
+The [shared-device source update](DEVICE_SHARED_SOURCE_20261023.md) now selects
+`m11q-volte` directly. Its pinned base already includes fingerprint and DT2W;
+only the Cherish product-registration patch is applied on top.
 
 ## Latest full-source branches
 
@@ -34,17 +38,14 @@ checkpoints. Their complete Git trees match the patch replay results; this is
 stronger than comparing only the files changed in the latest fix. Exact commits,
 trees and patch-to-commit mappings are in the index.
 
-The device uses a patch recipe from the pinned `m11q-volte` source base: apply
-the [Cherish product registration patch](../platform/checkpoints/cherish-20261012/device__samsung__m11q/live-source.patch),
-then the two device patches in the
-[2026-10-23 local supplement](../platform/checkpoints/cherish-20261023-local/manifest.json).
-Those patches record the fingerprint changes already present on the shared
-`m11q-volte` branch and the shared Samsung TSP double-tap-to-wake command.
-`m11q-volte` remains the maintained shared device branch and release branch; it
-is provenance for the patch recipe, not a full Cherish source tree. The prior
-`cherish-13-m11q-ims` device fork record is retained as historical provenance.
-That branch is left unchanged and is not treated as the current synchronized
-source.
+The current device base is [m11q-volte at a42e98ad](https://github.com/chenjohnliu/android_device_samsung_m11q/tree/a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7).
+Apply only the [Cherish product-registration patch](../platform/checkpoints/m11q-shared-20261023/cherish-product.patch)
+recorded in the [shared-device manifest](../platform/checkpoints/m11q-shared-20261023/manifest.json).
+Fingerprint, shared-TSP DT2W and the current native IMS library packaging are
+already in that shared base. The new device route supersedes the earlier
+three-step recipe; its fingerprint and DT2W patches are historical, not extra
+steps to apply on top of the current base. The older device
+`cherish-13-m11q-ims` branch is left unchanged as historical provenance.
 
 For each of the six platform projects, choose one source route: the indexed fork
 commit already contains its entire listed patch chain. Applying those patches
@@ -72,7 +73,7 @@ patch route have the same four changed source files.
 | Project | Published source recipe |
 | --- | --- |
 | `packages/services/Mms` | [Combined baseline](../platform/checkpoints/cherish-20261012/packages__services__Mms/live-source.patch); the later supplement copy is reference-only |
-| `device/samsung/m11q` | Cherish product registration patch, then the two [2026-10-23 local supplement](../platform/checkpoints/cherish-20261023-local/manifest.json) patches |
+| `device/samsung/m11q` | Pinned `m11q-volte` base, then the single [Cherish product-registration patch](../platform/checkpoints/m11q-shared-20261023/cherish-product.patch) |
 | `hardware/qcom-caf/msm8953/audio` | Build prerequisite in the [baseline manifest](../platform/checkpoints/cherish-20261012/manifest.json) |
 | `hardware/qcom-caf/msm8953/display` | Build prerequisite in the baseline manifest |
 | `vendor/qcom/opensource/commonsys-intf/display` | Build prerequisite in the baseline manifest |
@@ -82,11 +83,12 @@ patch route have the same four changed source files.
 
 The full Cherish patch route is the 2026-10-12 combined baseline, the two applicable
 patches from its IMS supplement, the two 2026-10-16 VoWiFi patches, then the
-four 2026-10-20 API suffix patches and four explicitly indexed October 23
-product/device steps. The
-index resolves that global sequence into a separate ordered list for each
-project. The baseline is not an additional layer on top of the historical
-`ims-20261010` patch series.
+four 2026-10-20 API suffix patches and the two October 23 framework product-policy
+steps. For the device only, the shared-device manifest replaces the earlier
+base and chain with `m11q-volte` plus one product patch. Use each project's
+current ordered list in the index; the chronological historical manifests are
+not all extra layers to apply. The baseline is not an additional layer on top
+of the historical `ims-20261010` patch series.
 
 ## Older forks and historical checkpoints
 

@@ -135,11 +135,12 @@ Git.
 ## 3. Integrate the M11 device tree
 
 For a CherishOS 4.12 source tree, use the six exact platform fork pins or their
-ordered patch recipes in the [Cherish source index](SOURCE_INDEX.md). The device
-uses its own indexed patch recipe: start at its pinned base, apply the Cherish
-product-registration patch, then the fingerprint and shared-TSP DT2W patches.
-The [October 23 source update](CHERISH_LOCAL_CHANGES_20261023.md) records those
-steps and the matching vendor dependency.
+ordered patch recipes in the [Cherish source index](SOURCE_INDEX.md). For the
+device, use [m11q-volte at a42e98ad](https://github.com/chenjohnliu/android_device_samsung_m11q/tree/a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7)
+and apply only the [Cherish product-registration patch](../platform/checkpoints/m11q-shared-20261023/cherish-product.patch).
+Fingerprint, shared-TSP DT2W and the native IMS library packaging are already
+included in that base. The [shared-device source guide](DEVICE_SHARED_SOURCE_20261023.md)
+records the exact pin, replay checks and vendor dependency.
 
 `m11q-volte` is the only maintained device branch and remains the shared default
 and release target. The older device `cherish-13-m11q-ims` branch is retained

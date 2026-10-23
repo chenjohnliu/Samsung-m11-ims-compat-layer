@@ -1,0 +1,35 @@
+{
+  "format_version": 1,
+  "date": "2026-10-23",
+  "scope": "Current device source directly references maintained m11q-volte; only the Cherish product registration remains a patch.",
+  "project": {
+    "path": "device/samsung/m11q",
+    "role": "product",
+    "source_url": "https://github.com/chenjohnliu/android_device_samsung_m11q",
+    "branch": "m11q-volte",
+    "base_commit": "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7",
+    "base_tree": "3f4fb779d9c4d07a6357806acf1771a9a7fa5087",
+    "patches": [
+      {
+        "path": "platform/checkpoints/m11q-shared-20261023/cherish-product.patch",
+        "sha256": "1ccebc71d095e7cdb38a8b8ef10303846432e164550be1f462f9c5a3e8750299",
+        "before_tree": "3f4fb779d9c4d07a6357806acf1771a9a7fa5087",
+        "after_tree": "9f00b7c9c2d9f62bea9eaa3bce00efa66161f856"
+      }
+    ],
+    "final_tree": "9f00b7c9c2d9f62bea9eaa3bce00efa66161f856"
+  },
+  "replaces": {
+    "base_commit": "0f1da5855d27841d53743cd878ecd2d09679a941",
+    "base_tree": "8117f6e8b6a647c00904d55ab7758f135993bc1a",
+    "final_tree": "1a4e3aa3c93240614aee42690ca4ce5af369fa5a"
+  },
+  "validation": {
+    "shared_pin_fetched_from_public_branch": true,
+    "patch_apply_check": "PASS",
+    "forward_reverse_replay": "PASS",
+    "only_file_changed_on_shared_base": "AndroidProducts.mk",
+    "android_build_run": false,
+    "live_rom_checkout_changed": false
+  }
+}

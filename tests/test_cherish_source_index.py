@@ -29,18 +29,30 @@ class CherishSourceIndexTests(unittest.TestCase):
 
     def test_repository_index_and_artifacts_pass_offline(self) -> None:
         result = validate_index_data(self.mutated_index(), REPO_ROOT)
-        self.assertEqual(result, {"projects": 14, "patches": 26, "reference_only": 1, "forks_checked": 0})
+        self.assertEqual(result, {"projects": 14, "patches": 24, "reference_only": 1, "forks_checked": 0})
 
-    def test_local_supplement_keeps_device_on_patch_recipe(self) -> None:
+    def test_shared_device_route_uses_m11q_volte_without_duplicate_local_patches(self) -> None:
         data = self.mutated_index()
         device = next(p for p in data["projects"] if p["path"] == "device/samsung/m11q")
         self.assertEqual(data["checkpoint_manifests"][-1],
-                         "platform/checkpoints/cherish-20261023-local/manifest.json")
+                         "platform/checkpoints/m11q-shared-20261023/manifest.json")
         self.assertEqual(device["source_route"], "patch_recipe")
         self.assertIsNone(device["synchronized_fork"])
-        self.assertEqual(len(device["patches"]), 3)
-        self.assertTrue(all(p["path"].startswith("platform/checkpoints/cherish-20261023-local/")
-                            for p in device["patches"][-2:]))
+        self.assertEqual(device["base_commit"], "a42e98add2d431b5d677b4ec6e51f5f02ca3e0e7")
+        self.assertEqual(device["base_tree"], "3f4fb779d9c4d07a6357806acf1771a9a7fa5087")
+        self.assertEqual(len(device["patches"]), 1)
+        self.assertTrue(device["patches"][0]["path"].startswith(
+            "platform/checkpoints/m11q-shared-20261023/"))
+        self.assertEqual(device["historical_synchronized_fork"]["branch"],
+                         "cherish-13-m11q-ims")
+        self.assertEqual(device["maintained_shared_branch"]["branch"], "m11q-volte")
+
+    def test_shared_device_pin_drift_is_rejected(self) -> None:
+        data = self.mutated_index()
+        device = next(p for p in data["projects"] if p["path"] == "device/samsung/m11q")
+        device["base_commit"] = "0f1da5855d27841d53743cd878ecd2d09679a941"
+        with self.assertRaisesRegex(ValidationError, "source base mismatch for device/samsung/m11q"):
+            self.validate(data)
 
     def test_local_supplement_tree_chain_cannot_be_reordered(self) -> None:
         data = self.mutated_index()
