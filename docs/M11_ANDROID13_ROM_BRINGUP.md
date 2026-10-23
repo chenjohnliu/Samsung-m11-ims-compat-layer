@@ -134,13 +134,18 @@ Git.
 
 ## 3. Integrate the M11 device tree
 
-For a CherishOS 4.12 source tree, use the seven exact full-source pins or their
-ordered patch recipes in the [Cherish source index](SOURCE_INDEX.md). The
-`cherish-13-m11q-ims` device pin is `f4a8473a4c8e14c85cce08241e2691e15ddd0a55`;
-the other six project pins are listed beside it. Do not substitute the device
-donor branch for that synchronized Cherish source route. The device
-`m11q-volte` ref remains the live default and release target for the separate
-crDroid port described below.
+For a CherishOS 4.12 source tree, use the six exact platform fork pins or their
+ordered patch recipes in the [Cherish source index](SOURCE_INDEX.md). The device
+uses its own indexed patch recipe: start at its pinned base, apply the Cherish
+product-registration patch, then the fingerprint and shared-TSP DT2W patches.
+The [October 23 source update](CHERISH_LOCAL_CHANGES_20261023.md) records those
+steps and the matching vendor dependency.
+
+`m11q-volte` is the only maintained device branch and remains the shared default
+and release target. The older device `cherish-13-m11q-ims` branch is retained
+as historical provenance, not as a current complete-source pin. The six
+platform repositories still use their own `cherish-13-m11q-ims` branches; that
+does not require maintaining a Cherish-specific device branch.
 
 For the historical crDroid port, use the public M11 device-tree `m11q-volte`
 branch at its recorded handoff revision. Its IMS integration history is
